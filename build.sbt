@@ -16,8 +16,8 @@ val depsReactive = Seq(
 resolvers += "Sonatype OSS Snapshots" at
     "https://oss.sonatype.org/content/repositories/releases"
 
-libraryDependencies ++= Seq(
+libraryDependencies ++= (Seq(
     "com.storm-enroute" %% "scalameter-core" % "0.8.2"
-) ++ depsAkka ++ depsReactive
+) ++ depsAkka ++ depsReactive)
 
 scalacOptions ++= Seq("-deprecation", "-feature")
