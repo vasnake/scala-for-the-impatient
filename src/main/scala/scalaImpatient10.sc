@@ -163,3 +163,128 @@ Generally, traits are processed starting with the last one
 //    super[ConsoleLogger].log(...). The specified type must be an immediate supertype
 
 // 10.6 Overriding Abstract Methods in Traits
+
+{
+    trait Logger {
+        def log(msg: String) // This method is abstract
+    }
+    // add layer
+    trait TimestampLogger extends Logger {
+        override def log(msg: String) { // Overrides an abstract method
+            super.log(new java.util.Date() + " " + msg) // Is super.log defined?
+        }
+    }
+    // The compiler flags the call to super.log as an error
+    /*
+Scala takes the position that TimestampLogger.log is still abstract —
+it requires a concrete log method to be mixed in.
+You therefore need to tag the method with the 'abstract' keyword and the 'override' keyword,
+like this:
+abstract override def log(msg: String) { super.log(new java.util.Date() + " " + msg) }
+     */
+}
+
+// 10.7 Traits for Rich Interfaces
+
+/*
+A trait can have many utility methods that depend on a few abstract ones.
+One example is the Scala Iterator trait that defines dozens of methods in terms of
+the abstract next and hasNext methods.
+ */
+
+{
+    trait Logger {
+        def log(msg: String) // abstract
+        def info(msg: String) { log("INFO: " + msg) }
+        def warn(msg: String) { log("WARN: " + msg) }
+        def severe(msg: String) { log("SEVERE: " + msg) }
+    }
+    // Note the combination of abstract and concrete methods.
+
+    // A class that uses the Logger trait can now call any of these logging messages, for example:
+    class SavingsAccount extends Account with Logger {
+        def withdraw(amount: Double) {
+            if (amount > balance) severe("Insufficient funds")
+        }
+        override def log(msg:String) { println(msg); }
+    }
+}
+
+// 10.8 Concrete Fields in Traits
+
+/*
+A field in a trait can be concrete or abstract. If you supply an initial value, the field is concrete.
+
+In general, a class gets a field for each concrete field in one of its traits.
+These fields are not inherited; they are simply added to the subclass
+
+In the JVM, a class can only extend one superclass, so the trait fields can’t be inherited in the same
+way. Instead, the maxLength field is added to the SavingsAccount class, next to the interest field.
+You can think of concrete trait fields as “assembly instructions” for the classes that use the trait. Any
+such fields become fields of the class.
+ */
+{
+    trait Logged {
+        def log(msg: String) // abstract
+    }
+    trait ShortLogger extends Logged {
+        val maxLength = 15 // A concrete field
+    }
+    trait ConsoleLogger extends Logged {
+        override def log(msg: String) = println(msg)
+    }
+
+    class SavingsAccount extends Account with ConsoleLogger with ShortLogger {
+        var interest = 0.0
+        // Note that our subclass has a field interest. That’s a plain old field in the subclass.
+        // Where go 'maxLength'? It's copied to SavingsAccount
+        def withdraw(amount: Double) {
+            if (amount > balance) log("Insufficient funds")
+        }
+
+        // balance
+        class Account {
+            var balance = 0.0
+        }
+        // The SavingsAccount class inherits that field in the usual way.
+    }
+}
+
+// 10.9 Abstract Fields in Traits
+
+/*
+An uninitialized field in a trait is abstract and must be overridden in a concrete subclass.
+For example, the following maxLength field is abstract:
+ */
+{
+    trait Logged {
+        def log(msg: String)
+    }
+    trait ConsoleLogger extends Logged {
+        override def log(msg: String) = println(msg)
+    }
+
+    trait ShortLogger extends Logged {
+        val maxLength: Int // An abstract field
+
+        override def log(msg: String) {
+            super.log(
+                if (msg.length <= maxLength) msg
+                else msg.substring(0, maxLength - 3) + "...")
+            // The maxLength field is used in the implementation
+        }
+    }
+
+    // When you use this trait in a concrete class, you must supply the maxLength field
+    class SavingsAccount extends Account with ConsoleLogger with ShortLogger {
+        val maxLength = 20 // No 'override' necessary
+    }
+
+    // This way of supplying values for trait parameters is particularly handy
+    // when you construct objects on the fly
+    val acct = new SavingsAccount with ConsoleLogger with ShortLogger {
+        override val maxLength = 20
+    }
+}
+
+// 10.10 Trait Construction Order
