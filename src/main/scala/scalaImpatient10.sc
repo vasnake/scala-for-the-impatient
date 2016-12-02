@@ -1,3 +1,5 @@
+import java.io.{IOException, PrintStream}
+import javax.swing.JFrame
 // Scala for the Impatient
 // chapter 10: Traits
 
@@ -288,3 +290,181 @@ For example, the following maxLength field is abstract:
 }
 
 // 10.10 Trait Construction Order
+
+/*
+Just like classes, traits can have constructors, made up of field initializations
+and other statements in the trait’s body.
+
+These statements are executed during construction of any object incorporating the trait
+
+Constructors execute in the following order:
+• The superclass constructor is called first.
+• Trait constructors are executed after the superclass constructor but before the class constructor.
+• Traits are constructed left-to-right.
+• Within each trait, the parents get constructed first.
+• If multiple traits share a common parent, and that parent has already been constructed, it is not constructed again.
+• After all traits are constructed, the subclass is constructed.
+
+The constructor ordering is the reverse of the linearization of the class.
+
+For example, consider this class:
+    class SavingsAccount extends Account with FileLogger with ShortLogger
+The constructors execute in the following order:
+1. Account (the superclass).
+2. Logger (the parent of the first trait).
+3. FileLogger (the first trait).
+4. ShortLogger (the second trait). Note that its Logger parent has already been constructed.
+5. SavingsAccount (the class).
+
+The linearization is a technical specification of all supertypes of a type.
+The linearization gives the order in which super is resolved in a trait
+
+the rule:
+If C extends C1 with C2 with . . . with Cn,
+then lin(C) = C » lin(Cn) » . . . » lin(C2) » lin(C1)
+Here, » means “concatenate and remove duplicates, with the right winning out.”
+
+For example, lin(SavingsAccount)
+= SavingsAccount » lin(ShortLogger) » lin(FileLogger) » lin(Account)
+= SavingsAccount » (ShortLogger » Logger) » (FileLogger » Logger) » lin(Account)
+= SavingsAccount » ShortLogger » FileLogger » Logger » Account.
+ */
+
+// 10.11 Initializing Trait Fields
+
+/*
+Traits cannot have constructor parameters. Every trait has a single parameterless constructor
+
+Interestingly, the absence of constructor parameters is the only technical difference
+between traits and classes
+
+This limitation can be a problem for traits that need some customization to be useful
+ */
+{
+    trait Logger {
+        def log(msg: String) // This method is abstract
+    }
+    class SavingsAccount extends Account with Logger {
+        override def log(msg: String): Unit = {}
+    }
+
+    //The FileLogger can have an abstract field for the filename.
+    trait FileLogger extends Logger {
+        val filename: String
+        val out = new PrintStream(filename)
+        def log(msg: String) { out.println(msg); out.flush() }
+    }
+
+    // A class using this trait can override the filename field.
+    // Unfortunately, there is a pitfall.
+    // The straightforward approach does not work:
+    val acct = new SavingsAccount with FileLogger {
+        val filename = "myapp.log" // Does not work
+    }
+    // The problem is the construction order.
+    // The FileLogger constructor runs before the subclass constructor
+
+    // One remedy is an obscure feature that we described in Chapter 8: early definition.
+    // Here is the correct version:
+    val acct2 = new { // Early definition block after new
+        val filename = "myapp.log"
+    } with SavingsAccount with FileLogger
+    // It’s not pretty, but it solves our problem.
+
+    // If you need to do the same in a class, the syntax looks like this:
+    class SavingsAccount2 extends { // Early definition block after extends
+        val filename = "savings.log"
+    } with Account with FileLogger {
+        {} // SavingsAccount implementation
+    }
+
+    // Another alternative is to use a lazy value in the FileLogger constructor, like this:
+    trait FileLogger2 extends Logger {
+        val filename: String
+        lazy val out = new PrintStream(filename)
+        def log(msg: String) { out.println(msg) }
+    }
+    // However, lazy values are somewhat inefficient since they are
+    // checked for initialization before every use.
+}
+
+// 10.12 Traits Extending Classes
+
+/*
+As you have seen, a trait can extend another trait, and it is common to have a hierarchy of traits.
+Less commonly, a trait can also extend a class.
+That class becomes a superclass of any class mixing in the trait.
+ */
+{
+    trait Logged { def log(msg: String) { } }
+
+    // The LoggedException trait extends the Exception class:
+    trait LoggedException extends Exception with Logged {
+        def log() { log(getMessage()) }
+    }
+
+    // Now let’s form a class that mixes in this trait:
+    class UnhappyException extends LoggedException { // This class extends a trait
+        override def getMessage() = "arggh!"
+    }
+    // Exception is a superclass
+    // The Superclass of a trait becomes the superclass of any class mixing in the trait
+
+    // What if our class already extends another class?
+    // That’s OK, as long as it’s a subclass of the trait’s superclass.
+    // For example,
+    class UnhappyException2 extends IOException with LoggedException
+    // Here UnhappyException extends IOException, which already extends Exception.
+
+    // However, if our class extends an unrelated class,
+    // then it is not possible to mix in the trait.
+    // For example, you cannot form the following class:
+    class UnhappyFrame extends JFrame with LoggedException
+    // Error: Unrelated superclasses
+    // It would be impossible to add both JFrame and Exception as superclasses.
+}
+
+// 10.13 Self Types
+
+/*
+When a trait extends a class, there is a guarantee that the superclass is present
+in any class mixing in the trait.
+Scala has an alternate mechanism for guaranteeing this: self types.
+
+When a trait starts out with
+    this: Type =>
+then it can only be mixed into a subclass of the given type.
+ */
+{
+    trait Logged { def log(msg: String) { } }
+
+    trait LoggedException extends Logged {
+        this: Exception => // type of 'this' must be Exception
+
+        def log() { log(getMessage()) }
+    }
+    // Note that the trait does not extend the Exception class.
+    // Instead, it has a self type of Exception.
+    // That means, it can only be mixed into subclasses of Exception.
+
+    // A trait with a self type is similar to a trait with a supertype.
+    // In both cases, it is ensured that a type is present in a class that mixes in the trait
+
+    // There are a few situations where the self type notation is more flexible
+    // than traits with supertypes
+    // -- Self types can handle circular dependencies between traits.
+    //  This can happen if you have two traitsthat need each other.
+    // -- Self types can also handle structural types
+
+    // structural types—types that merely specify the methods that a class must have,
+    // without naming the class.
+    // Here is the LoggedException using a structural type:
+    trait LoggedException2 extends Logged {
+        this: { def getMessage() : String } => // type of 'this' must have 'getMessage'
+
+        def log() { log(getMessage()) }
+    }
+    // The trait can be mixed into any class that has a getMessage method.
+}
+
+// 10.14 What Happens under the Hood
