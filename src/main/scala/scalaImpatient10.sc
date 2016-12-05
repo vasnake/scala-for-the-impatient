@@ -468,3 +468,88 @@ then it can only be mixed into a subclass of the given type.
 }
 
 // 10.14 What Happens under the Hood
+
+/*
+A trait that has only abstract methods is simply turned into a Java interface.
+
+If a trait has concrete methods, a companion class is created
+whose static methods hold the code of the trait’s methods.
+
+Fields in traits yield abstract getters and setters in the interface.
+
+If a trait extends a superclass, the companion class does not inherit that superclass.
+Instead, any class implementing the trait extends the superclass.
+ */
+
+//A trait that has only abstract methods is simply turned into a Java interface. For example,
+{
+    trait Logger {
+        def log(msg: String)
+    }
+//    turns into
+//        public interface Logger {
+//        void log (String msg);
+//    }
+}
+
+//If a trait has concrete methods, a companion class is created
+// whose static methods hold the code of the trait’s methods. For example,
+{
+    trait Logger {
+        def log(msg: String)
+    }
+    trait ConsoleLogger extends Logger {
+        def log(msg: String) { println(msg) }
+    }
+//turns into
+//  public interface ConsoleLogger extends Logger { // Generated Java interface
+//      void log(String msg);
+//  }
+//  public class ConsoleLogger$class {
+//      public static void log (ConsoleLogger self, String msg) {
+//          println(msg);
+//  }
+}
+
+//These companion classes don’t have any fields.
+// Fields in traits yield abstract getters and setters in the
+// interface. When a class implements the trait, the fields are added to that class
+//For example,
+{
+    trait Logger {
+        def log(msg: String)
+    }
+    trait ShortLogger extends Logger {
+        val maxLength = 15 // A concrete field
+    }
+//is translated to
+//    public interface ShortLogger extends Logger{
+//        public abstract int maxLength();
+//        public abstract void weird_prefix$maxLength_$eq(int);
+//    }
+
+//The weird setter is needed to initialize the field.
+//This happens in an initialization method of the companion class:
+//    public class ShortLogger$class {
+//        public void $init$(ShortLogger self) {
+//            self.weird_prefix$maxLength_$eq(15)
+//        }
+//    }
+// When the trait is mixed into a class, the class gets a maxLength field
+// with a getter and setter. The constructors of that class will call the initialization method.
+}
+
+// Exercises
+
+/*
+1. The java.awt.Rectangle class has useful methods 'translate' and 'grow'
+that are unfortunately absent from classes such as java.awt.geom.Ellipse2D.
+In Scala, you can fix this problem.
+Define a trait 'RectangleLike' with concrete methods 'translate' and 'grow'.
+Provide any abstract methods that you need for the implementation, so that you can mix in
+the trait like this:
+
+val egg = new java.awt.geom.Ellipse2D.Double(5, 10, 20, 30) with RectangleLike
+egg.translate(10, -10)
+egg.grow(10, 20)
+ */
