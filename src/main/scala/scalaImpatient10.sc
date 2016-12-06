@@ -1,5 +1,8 @@
 import java.io.{IOException, PrintStream}
 import javax.swing.JFrame
+
+import scala.collection.{BitSet, BitSetLike, GenSet, Iterable, Set, SetLike, SortedSet}
+import scala.collection.generic.{BitSetFactory, GenericSetTemplate}
 // Scala for the Impatient
 // chapter 10: Traits
 
@@ -453,10 +456,10 @@ then it can only be mixed into a subclass of the given type.
     // There are a few situations where the self type notation is more flexible
     // than traits with supertypes
     // -- Self types can handle circular dependencies between traits.
-    //  This can happen if you have two traitsthat need each other.
+    //  This can happen if you have two traits that need each other.
     // -- Self types can also handle structural types
 
-    // structural types—types that merely specify the methods that a class must have,
+    // structural types — types that merely specify the methods that a class must have,
     // without naming the class.
     // Here is the LoggedException using a structural type:
     trait LoggedException2 extends Logged {
@@ -552,4 +555,105 @@ the trait like this:
 val egg = new java.awt.geom.Ellipse2D.Double(5, 10, 20, 30) with RectangleLike
 egg.translate(10, -10)
 egg.grow(10, 20)
+ */
+{
+    import java.awt.{geom, Rectangle}
+
+    trait RectangleLike {
+        // self type: structural type
+        this: {
+            def setFrame(r: geom.Rectangle2D): Unit
+            def getFrame(): geom.Rectangle2D
+        } =>
+
+        def translate(dx: Int, dy: Int): Unit = {
+            val rct = new Rectangle()
+            rct.setFrame(getFrame)
+            rct.translate(dx, dy)
+            setFrame(rct.getFrame)
+        }
+
+        def grow(h: Int, v: Int): Unit = {
+            val rct = new Rectangle()
+            rct.setFrame(getFrame)
+            rct.grow(h, v)
+            setFrame(rct.getFrame)
+        }
+    }
+
+    val egg = new geom.Ellipse2D.Double(5, 10, 20, 30) with RectangleLike
+    egg.translate(10, -10)
+    egg.grow(10, 20)
+}
+
+/*
+2. Define a class 'OrderedPoint'
+by mixing scala.math.Ordered[Point] into java.awt.Point.
+Use lexicographic
+ordering, i.e. (x, y) < (x’, y’) if x < x’ or x = x’ and y < y’.
+ */
+{
+    import java.awt.{Point}
+
+    class OrderedPoint extends Point with scala.math.Ordered[Point] {
+        override def compare(that: Point): Int = {
+            val cx = this.x.compare(that.x)
+            if (cx == 0) this.y.compare(that.y) else cx
+        }
+    }
+}
+
+/*
+3. Look at the 'BitSet' class,
+and make a diagram of all its superclasses and traits.
+Ignore the type parameters (everything inside the [...]).
+Then give the linearization of the traits.
+
+The linearization is a technical specification of all supertypes of a type.
+The linearization gives the order in which super is resolved in a trait
+
+the rule: If
+    C extends C1 with C2 with . . . with Cn,
+then
+    lin(C) = C » lin(Cn) » . . . » lin(C2) » lin(C1)
+Here, » means “concatenate and remove duplicates, with the right winning out.”
+
+trait BitSet extends SortedSet[Int] with BitSetLike[BitSet]
+lin(BitSet) = BitSet >> lin(BitSetLike) >> lin(SortedSet)
+
+trait SortedSet[A] extends Set[A] with SortedSetLike[A, SortedSet[A]]
+lin(SortedSet) = SortedSet >> lin(SortedSetLike) >> lin(Set)
+
+trait Set[A] extends (A => Boolean)
+    with Iterable[A]
+    with GenSet[A]
+    with GenericSetTemplate[A, Set]
+    with SetLike[A, Set[A]]
+lin(Set) = Set >> lin(SetLike) >> lin(GenericSetTemplate) >> lin(GenSet) >> lin(Iterable) >> lin(A => Boolean)
+
+lin(A => Boolean) = A => Boolean
+
+trait Iterable[+A] extends Traversable[A]
+    with GenIterable[A]
+    with GenericTraversableTemplate[A, Iterable]
+    with IterableLike[A, Iterable[A]]
+lin(Iterable) = Iterable >> lin(IterableLike) >> lin(GenericTraversableTemplate)
+    >> lin(GenIterable) >> lin(Traversable)
+
+trait Traversable[+A] extends TraversableLike[A, Traversable[A]]
+    with GenTraversable[A]
+    with TraversableOnce[A]
+    with GenericTraversableTemplate[A, Traversable]
+lin(Traversable) = Traversable >> lin(GenericTraversableTemplate) >> lin(TraversableOnce)
+    >> lin(GenTraversable) >> lin(TraversableLike)
+
+trait TraversableLike[+A, +Repr] extends Any
+    with HasNewBuilder[A, Repr]
+    with FilterMonadic[A, Repr]
+    with TraversableOnce[A]
+    with GenTraversableLike[A, Repr]
+    with Parallelizable[A, ParIterable[A]]
+lin(TraversableLike) = TraversableLike >> lin(Parallelizable) >> lin(GenTraversableLike)
+    >> lin(TraversableOnce) >> lin(FilterMonadic) >> lin(HasNewBuilder) >> lin(Any)
+
  */
