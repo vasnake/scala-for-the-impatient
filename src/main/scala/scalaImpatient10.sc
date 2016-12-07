@@ -618,10 +618,12 @@ then
     lin(C) = C » lin(Cn) » . . . » lin(C2) » lin(C1)
 Here, » means “concatenate and remove duplicates, with the right winning out.”
 
-trait BitSet extends SortedSet[Int] with BitSetLike[BitSet]
+trait BitSet extends SortedSet[Int]
+    with BitSetLike[BitSet]
 lin(BitSet) = BitSet >> lin(BitSetLike) >> lin(SortedSet)
 
-trait SortedSet[A] extends Set[A] with SortedSetLike[A, SortedSet[A]]
+trait SortedSet[A] extends Set[A]
+    with SortedSetLike[A, SortedSet[A]]
 lin(SortedSet) = SortedSet >> lin(SortedSetLike) >> lin(Set)
 
 trait Set[A] extends (A => Boolean)
@@ -629,7 +631,8 @@ trait Set[A] extends (A => Boolean)
     with GenSet[A]
     with GenericSetTemplate[A, Set]
     with SetLike[A, Set[A]]
-lin(Set) = Set >> lin(SetLike) >> lin(GenericSetTemplate) >> lin(GenSet) >> lin(Iterable) >> lin(A => Boolean)
+lin(Set) = Set >> lin(SetLike) >> lin(GenericSetTemplate) >> lin(GenSet) >> lin(Iterable)
+    >> lin(A => Boolean)
 
 lin(A => Boolean) = A => Boolean
 
@@ -655,5 +658,94 @@ trait TraversableLike[+A, +Repr] extends Any
     with Parallelizable[A, ParIterable[A]]
 lin(TraversableLike) = TraversableLike >> lin(Parallelizable) >> lin(GenTraversableLike)
     >> lin(TraversableOnce) >> lin(FilterMonadic) >> lin(HasNewBuilder) >> lin(Any)
+
+lin(Any) = Any
+
+trait HasNewBuilder[+A, +Repr] extends Any
+lin(HasNewBuilder) = HasNewBuilder >> Any
+
+trait FilterMonadic[+A, +Repr] extends Any
+lin(FilterMonadic) = FilterMonadic >> Any
+
+trait TraversableOnce[+A] extends Any
+    with GenTraversableOnce[A]
+lin(TraversableOnce) = TraversableOnce >> lin(GenTraversableOnce) >> Any
+
+trait GenTraversableOnce[+A] extends Any
+lin(GenTraversableOnce) = GenTraversableOnce >> Any
+
+trait GenTraversableLike[+A, +Repr] extends Any
+    with GenTraversableOnce[A]
+    with Parallelizable[A, parallel.ParIterable[A]]
+lin(GenTraversableLike) = GenTraversableLike >> lin(Parallelizable) >> GenTraversableOnce >> Any
+
+trait Parallelizable[+A, +ParRepr <: Parallel] extends Any
+lin(Parallelizable) = Parallelizable >> Any
+
+trait GenTraversable[+A] extends GenTraversableLike[A, GenTraversable[A]]
+    with GenTraversableOnce[A]
+    with GenericTraversableTemplate[A, GenTraversable]
+lin(GenTraversable) = GenTraversable >> lin(GenericTraversableTemplate) >> lin(GenTraversableOnce)
+    >> lin(GenTraversableLike)
+
+trait GenericTraversableTemplate[+A, +CC[X] <: GenTraversable[X]]
+    extends HasNewBuilder[A, CC[A] @uncheckedVariance]
+lin(GenericTraversableTemplate) = GenericTraversableTemplate >> lin(HasNewBuilder)
+
+trait GenIterable[+A] extends GenIterableLike[A, GenIterable[A]]
+    with GenTraversable[A]
+    with GenericTraversableTemplate[A, GenIterable]
+lin(GenIterable) = GenIterable >> lin(GenericTraversableTemplate) >> lin(GenTraversable)
+    >> lin(GenIterableLike)
+
+trait GenIterableLike[+A, +Repr] extends Any
+    with GenTraversableLike[A, Repr]
+lin(GenIterableLike) = GenIterableLike >> lin(GenTraversableLike) >> Any
+
+trait IterableLike[+A, +Repr] extends Any
+    with Equals
+    with TraversableLike[A, Repr]
+    with GenIterableLike[A, Repr]
+lin(IterableLike) = IterableLike >> lin(GenIterableLike) >> lin(TraversableLike)
+    >> lin(Equals) >> Any
+
+trait Equals extends Any
+lin(Equals) = Equals >> Any
+
+trait GenSet[A] extends GenSetLike[A, GenSet[A]]
+    with GenIterable[A]
+    with GenericSetTemplate[A, GenSet]
+lin(GenSet) = GenSet >> lin(GenericSetTemplate) >> lin(GenIterable) >> lin(GenSetLike)
+
+trait GenSetLike[A, +Repr] extends GenIterableLike[A, Repr]
+    with (A => Boolean)
+    with Equals
+    with Parallelizable[A, parallel.ParSet[A]]
+lin(GenSetLike) = GenSetLike >> lin(Parallelizable) >> lin(Equals) >> A => Boolean
+    >> lin(GenIterableLike)
+
+trait GenericSetTemplate[A, +CC[X] <: GenSet[X]] extends GenericTraversableTemplate[A, CC]
+lin(GenericSetTemplate) = GenericSetTemplate >> lin(GenericTraversableTemplate)
+
+trait SetLike[A, +This <: SetLike[A, This] with Set[A]] extends IterableLike[A, This]
+    with GenSetLike[A, This]
+    with Subtractable[A, This]
+    with Parallelizable[A, ParSet[A]]
+lin(SetLike) = SetLike >> lin(Parallelizable) >> lin(Subtractable) >> lin(GenSetLike)
+    >> lin(IterableLike)
+
+lin(Subtractable) = Subtractable
+
+trait SortedSetLike[A, +This <: SortedSet[A] with SortedSetLike[A, This]]
+    extends Sorted[A, This]
+    with SetLike[A, This]
+lin(SortedSetLike) = SortedSetLike >> lin(SetLike) >> lin(Sorted)
+
+lin(Sorted) = Sorted
+
+trait BitSetLike[+This <: BitSetLike[This]
+    with SortedSet[Int]]
+    extends SortedSetLike[Int, This]
+lin(BitSetLike) = BitSetLike >> lin(SortedSetLike) >> lin(SortedSet)
 
  */
