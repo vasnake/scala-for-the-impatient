@@ -618,9 +618,504 @@ then
     lin(C) = C » lin(Cn) » . . . » lin(C2) » lin(C1)
 Here, » means “concatenate and remove duplicates, with the right winning out.”
 
-trait BitSet extends SortedSet[Int]
+trait BitSet
+    extends SortedSet[Int]
     with BitSetLike[BitSet]
-lin(BitSet) = BitSet >> lin(BitSetLike) >> lin(SortedSet)
+
+lin(BitSet) = BitSet
+    >> lin(BitSetLike)
+    >> lin(SortedSet)
+
+###############################################################################
+It was a hell of a job, very tedious.
+Don't do it if you don't interested in stdlib internals
+
+lin(BitSet) = BitSet
+    >> BitSetLike
+    >> SortedSet
+    >> SortedSetLike
+    >> Sorted
+    >> Set
+    >> SetLike
+    >> Subtractable
+    >> GenSet
+    >> GenericSetTemplate
+    >> GenSetLike
+    >> Iterable
+    >> IterableLike
+    >> Equals
+    >> GenIterable
+    >> GenIterableLike
+    >> Traversable
+    >> GenTraversable
+    >> GenericTraversableTemplate
+    >> TraversableLike
+    >> GenTraversableLike
+    >> Parallelizable
+    >> TraversableOnce
+    >> GenTraversableOnce
+    >> FilterMonadic
+    >> HasNewBuilder >> Any
+    >> A => Boolean
+
+###############################################################################
+
+lin(BitSetLike) = BitSetLike
+    >> lin(SortedSetLike)
+    >> lin(SortedSet)
+
+lin(BitSetLike) = BitSetLike
+    >> SortedSetLike
+    >> SetLike
+    >> Subtractable
+    >> GenSetLike
+        >> A => Boolean
+    >> IterableLike
+    >> GenIterableLike
+    >> TraversableLike
+        >> GenTraversableLike >> Parallelizable
+        >> TraversableOnce >> GenTraversableOnce
+        >> FilterMonadic
+        >> HasNewBuilder
+    >> Equals
+    >> Any
+    >> Sorted
+    >> SortedSet
+    >> SortedSetLike
+    >> SetLike
+    >> Subtractable
+    >> GenSetLike
+        >> A => Boolean
+    >> IterableLike
+    >> GenIterableLike
+    >> TraversableLike
+        >> GenTraversableLike >> Parallelizable
+        >> TraversableOnce >> GenTraversableOnce
+        >> FilterMonadic
+        >> HasNewBuilder
+    >> Equals
+    >> Any
+    >> Sorted
+    >> Set
+    >> SetLike
+        >> Parallelizable >> Any
+        >> Subtractable
+        >> GenSetLike
+            >> Equals
+            >> A => Boolean
+            >> GenIterableLike
+            >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+            >> Any
+        >> IterableLike
+        >> GenIterableLike
+        >> TraversableLike
+            >> GenTraversableLike >> Parallelizable
+            >> TraversableOnce >> GenTraversableOnce
+            >> FilterMonadic
+            >> HasNewBuilder
+        >> Equals
+        >> Any
+    >> GenericSetTemplate >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> GenSet
+        >> GenericSetTemplate >> GenericTraversableTemplate >> HasNewBuilder >> Any
+        >> GenIterable
+            >> GenTraversable
+            >> GenericTraversableTemplate >> HasNewBuilder
+            >> GenIterableLike
+                >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+                >> Any
+        >> GenSetLike
+        >> Equals
+        >> A => Boolean
+        >> GenIterableLike
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+        >> Any
+    >> Iterable
+    >> IterableLike
+        >> GenIterableLike
+            >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> TraversableLike
+            >> GenTraversableLike >> Parallelizable
+            >> TraversableOnce >> GenTraversableOnce
+            >> FilterMonadic
+            >> HasNewBuilder >> Any
+        >> Equals
+        >> Any
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> GenIterable
+        >> GenericTraversableTemplate >> HasNewBuilder >> Any
+        >> GenTraversable
+        >> GenericTraversableTemplate >> HasNewBuilder >> Any
+        >> GenTraversableOnce >> Any
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> GenIterableLike
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> Any
+    >> Traversable
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> TraversableOnce >> GenTraversableOnce >> Any
+    >> GenTraversable >> GenericTraversableTemplate >> HasNewBuilder >> GenTraversableLike
+        >> Parallelizable >> GenTraversableOnce >> Any
+    >> TraversableLike
+        >> Parallelizable >> Any
+        >> GenTraversableLike >> Parallelizable >> Any >> GenTraversableOnce >> Any
+        >> TraversableOnce >> GenTraversableOnce >> Any
+        >> FilterMonadic >> Any
+        >> HasNewBuilder >> Any
+    >> A => Boolean
+
+lin(SortedSet) = SortedSet
+    >> SortedSetLike
+        >> SetLike
+        >> Subtractable
+        >> GenSetLike
+            >> A => Boolean
+        >> IterableLike
+        >> GenIterableLike
+        >> TraversableLike
+            >> GenTraversableLike >> Parallelizable
+            >> TraversableOnce >> GenTraversableOnce
+            >> FilterMonadic
+            >> HasNewBuilder
+        >> Equals
+        >> Any
+        >> Sorted
+    >> Set
+    >> SetLike
+        >> Parallelizable >> Any
+        >> Subtractable
+        >> GenSetLike
+            >> Equals
+            >> A => Boolean
+            >> GenIterableLike
+            >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+            >> Any
+        >> IterableLike
+        >> GenIterableLike
+        >> TraversableLike
+            >> GenTraversableLike >> Parallelizable
+            >> TraversableOnce >> GenTraversableOnce
+            >> FilterMonadic
+            >> HasNewBuilder
+        >> Equals
+        >> Any
+    >> GenericSetTemplate >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> GenSet
+        >> GenericSetTemplate >> GenericTraversableTemplate >> HasNewBuilder >> Any
+        >> GenIterable
+            >> GenTraversable
+            >> GenericTraversableTemplate >> HasNewBuilder
+            >> GenIterableLike
+                >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+                >> Any
+        >> GenSetLike
+        >> Equals
+        >> A => Boolean
+        >> GenIterableLike
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+        >> Any
+    >> Iterable
+    >> IterableLike
+        >> GenIterableLike
+            >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> TraversableLike
+            >> GenTraversableLike >> Parallelizable
+            >> TraversableOnce >> GenTraversableOnce
+            >> FilterMonadic
+            >> HasNewBuilder >> Any
+        >> Equals
+        >> Any
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> GenIterable
+        >> GenericTraversableTemplate >> HasNewBuilder >> Any
+        >> GenTraversable
+        >> GenericTraversableTemplate >> HasNewBuilder >> Any
+        >> GenTraversableOnce >> Any
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> GenIterableLike
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> Any
+    >> Traversable
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> TraversableOnce >> GenTraversableOnce >> Any
+    >> GenTraversable >> GenericTraversableTemplate >> HasNewBuilder >> GenTraversableLike
+        >> Parallelizable >> GenTraversableOnce >> Any
+    >> TraversableLike
+        >> Parallelizable >> Any
+        >> GenTraversableLike >> Parallelizable >> Any >> GenTraversableOnce >> Any
+        >> TraversableOnce >> GenTraversableOnce >> Any
+        >> FilterMonadic >> Any
+        >> HasNewBuilder >> Any
+    >> A => Boolean
+
+lin(SortedSetLike) = SortedSetLike
+    >> SetLike
+    >> Subtractable
+    >> GenSetLike
+        >> A => Boolean
+    >> IterableLike
+    >> GenIterableLike
+    >> TraversableLike
+        >> GenTraversableLike >> Parallelizable
+        >> TraversableOnce >> GenTraversableOnce
+        >> FilterMonadic
+        >> HasNewBuilder
+    >> Equals
+    >> Any
+    >> Sorted
+
+lin(Set) = Set
+    >> lin(SetLike)
+    >> lin(GenericSetTemplate)
+    >> lin(GenSet)
+    >> lin(Iterable) >> A => Boolean
+
+lin(Set) = Set
+    >> SetLike
+        >> Parallelizable >> Any
+        >> Subtractable
+        >> GenSetLike
+            >> Equals
+            >> A => Boolean
+            >> GenIterableLike
+            >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+            >> Any
+        >> IterableLike
+        >> GenIterableLike
+        >> TraversableLike
+            >> GenTraversableLike >> Parallelizable
+            >> TraversableOnce >> GenTraversableOnce
+            >> FilterMonadic
+            >> HasNewBuilder
+        >> Equals
+        >> Any
+    >> GenericSetTemplate >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> GenSet
+        >> GenericSetTemplate >> GenericTraversableTemplate >> HasNewBuilder >> Any
+        >> GenIterable
+            >> GenTraversable
+            >> GenericTraversableTemplate >> HasNewBuilder
+            >> GenIterableLike
+                >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+                >> Any
+        >> GenSetLike
+        >> Equals
+        >> A => Boolean
+        >> GenIterableLike
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+        >> Any
+    >> Iterable
+    >> IterableLike
+        >> GenIterableLike
+            >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> TraversableLike
+            >> GenTraversableLike >> Parallelizable
+            >> TraversableOnce >> GenTraversableOnce
+            >> FilterMonadic
+            >> HasNewBuilder >> Any
+        >> Equals
+        >> Any
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> GenIterable
+        >> GenericTraversableTemplate >> HasNewBuilder >> Any
+        >> GenTraversable
+        >> GenericTraversableTemplate >> HasNewBuilder >> Any
+        >> GenTraversableOnce >> Any
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> GenIterableLike
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> Any
+    >> Traversable
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> TraversableOnce >> GenTraversableOnce >> Any
+    >> GenTraversable >> GenericTraversableTemplate >> HasNewBuilder >> GenTraversableLike
+        >> Parallelizable >> GenTraversableOnce >> Any
+    >> TraversableLike
+        >> Parallelizable >> Any
+        >> GenTraversableLike >> Parallelizable >> Any >> GenTraversableOnce >> Any
+        >> TraversableOnce >> GenTraversableOnce >> Any
+        >> FilterMonadic >> Any
+        >> HasNewBuilder >> Any
+    >> A => Boolean
+
+lin(SetLike) = SetLike
+    >> Parallelizable >> Any
+    >> Subtractable
+    >> GenSetLike
+        >> Equals
+        >> A => Boolean
+        >> GenIterableLike
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+        >> Any
+    >> IterableLike
+    >> GenIterableLike
+    >> TraversableLike
+        >> GenTraversableLike >> Parallelizable
+        >> TraversableOnce >> GenTraversableOnce
+        >> FilterMonadic
+        >> HasNewBuilder
+    >> Equals
+    >> Any
+
+lin(GenSet) = GenSet
+    >> GenericSetTemplate >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> GenIterable
+        >> GenTraversable
+        >> GenericTraversableTemplate >> HasNewBuilder
+        >> GenIterableLike
+            >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+            >> Any
+    >> GenSetLike
+    >> Equals
+    >> A => Boolean
+    >> GenIterableLike
+    >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+    >> Any
+
+lin(GenSetLike) = GenSetLike
+    >> Equals
+    >> A => Boolean
+    >> GenIterableLike
+    >> GenTraversableLike >> Parallelizable >> GenTraversableOnce
+    >> Any
+
+lin(GenericSetTemplate) = GenericSetTemplate >> GenericTraversableTemplate >> HasNewBuilder >> Any
+
+lin(Iterable) = Iterable
+    >> lin(IterableLike)
+    >> lin(GenericTraversableTemplate)
+    >> lin(GenIterable)
+    >> lin(Traversable)
+
+lin(Iterable) = Iterable
+    >> IterableLike
+        >> GenIterableLike
+            >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> TraversableLike
+            >> GenTraversableLike >> Parallelizable
+            >> TraversableOnce >> GenTraversableOnce
+            >> FilterMonadic
+            >> HasNewBuilder >> Any
+        >> Equals
+        >> Any
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> GenIterable
+        >> GenericTraversableTemplate >> HasNewBuilder >> Any
+        >> GenTraversable
+        >> GenericTraversableTemplate >> HasNewBuilder >> Any
+        >> GenTraversableOnce >> Any
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> GenIterableLike
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> Any
+    >> Traversable
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> TraversableOnce >> GenTraversableOnce >> Any
+    >> GenTraversable >> GenericTraversableTemplate >> HasNewBuilder >> GenTraversableLike
+        >> Parallelizable >> GenTraversableOnce >> Any
+    >> TraversableLike
+        >> Parallelizable >> Any
+        >> GenTraversableLike >> Parallelizable >> Any >> GenTraversableOnce >> Any
+        >> TraversableOnce >> GenTraversableOnce >> Any
+        >> FilterMonadic >> Any
+        >> HasNewBuilder >> Any
+
+lin(IterableLike) = IterableLike
+    >> GenIterableLike
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+    >> TraversableLike
+        >> GenTraversableLike >> Parallelizable
+        >> TraversableOnce >> GenTraversableOnce
+        >> FilterMonadic
+        >> HasNewBuilder >> Any
+    >> Equals
+    >> Any
+
+lin(GenIterable) = GenIterable
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> GenTraversable
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> GenTraversableOnce >> Any
+    >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+    >> GenIterableLike
+        >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+        >> Any
+
+lin(GenIterableLike) = GenIterableLike
+    >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+    >> Any
+
+lin(GenTraversableLike) = GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+
+lin(GenTraversable) = GenTraversable
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> GenTraversableOnce >> Any
+    >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+
+lin(GenericTraversableTemplate) = GenericTraversableTemplate >> HasNewBuilder >> Any
+
+lin(Traversable) = Traversable
+    >> lin(GenericTraversableTemplate)
+    >> lin(TraversableOnce)
+    >> lin(GenTraversable)
+    >> lin(TraversableLike)
+
+lin(Traversable) = Traversable
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> TraversableOnce >> GenTraversableOnce >> Any
+    >> GenTraversable >> GenericTraversableTemplate >> HasNewBuilder >> GenTraversableLike
+        >> Parallelizable >> GenTraversableOnce >> Any
+    >> TraversableLike
+        >> Parallelizable >> Any
+        >> GenTraversableLike >> Parallelizable >> Any >> GenTraversableOnce >> Any
+        >> TraversableOnce >> GenTraversableOnce >> Any
+        >> FilterMonadic >> Any
+        >> HasNewBuilder >> Any
+
+lin(TraversableOnce) = TraversableOnce >> GenTraversableOnce >> Any
+
+lin(GenTraversable) = GenTraversable
+    >> lin(GenericTraversableTemplate)
+    >> lin(GenTraversableOnce)
+    >> lin(GenTraversableLike)
+
+lin(GenTraversable) = GenTraversable
+    >> GenericTraversableTemplate >> HasNewBuilder >> Any
+    >> GenTraversableOnce >> Any
+    >> GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+
+lin(GenTraversableLike) = GenTraversableLike >> Parallelizable >> GenTraversableOnce >> Any
+
+lin(GenTraversableOnce) = GenTraversableOnce >> Any
+
+lin(GenericTraversableTemplate) = GenericTraversableTemplate >> HasNewBuilder >> Any
+
+lin(TraversableLike) = TraversableLike
+    >> Parallelizable >> Any
+    >> GenTraversableLike >> Parallelizable >> Any >> GenTraversableOnce >> Any
+    >> TraversableOnce >> GenTraversableOnce >> Any
+    >> FilterMonadic >> Any
+    >> HasNewBuilder >> Any
+
+lin(GenTraversableLike) = GenTraversableLike
+    >> Parallelizable >> Any
+    >> GenTraversableOnce >> Any
+
+lin(Parallelizable) = Parallelizable >> Any
+
+lin(HasNewBuilder) = HasNewBuilder >> Any
+lin(FilterMonadic) = FilterMonadic >> Any
+
+lin(TraversableOnce) = TraversableOnce
+    >> lin(GenTraversableOnce) >> Any
+
+lin(TraversableOnce) = TraversableOnce
+    >> lin(GenTraversableOnce) >> Any
+
+lin(TraversableOnce) = TraversableOnce >> GenTraversableOnce >> Any
+
+lin(GenTraversableOnce) = GenTraversableOnce >> Any
+
 
 trait SortedSet[A] extends Set[A]
     with SortedSetLike[A, SortedSet[A]]
