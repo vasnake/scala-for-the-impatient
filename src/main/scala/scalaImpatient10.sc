@@ -663,5 +663,55 @@ lin(BitSet) = BitSet
 4. Provide a 'CryptoLogger' trait that encrypts the log messages with the Caesar cipher.
 The key should be 3 by default, but it should be overridable by the user.
 Provide usage examples with the default key and a key of –3.
-
  */
+{
+    trait Logger {
+        def log(msg: String) // An abstract method
+    }
+
+    trait ConsoleLogger extends Logger {
+        def log(msg: String) = println(msg)
+    }
+
+    trait CryptoLogger extends Logger {
+        def key = 3 // default key
+        // alphabet
+        private val lower = 'a' to 'z'
+        private val upper = 'A' to 'Z'
+
+        // Scala takes the position that log is still abstract —
+        // it requires a concrete log method to be mixed in.
+        // You therefore need to tag the method with the abstract keyword and the override keyword,
+        // like this:
+        abstract override def log(msg: String): Unit = {
+            super.log(encode(msg, key))
+        }
+
+        // http://www.rosettacode.org/wiki/Caesar_cipher#Scala
+        def encode(msg: String, key: Int) = {
+            msg.map {
+                case char if lower.contains(char) => rotate(lower, char, key)
+                case char if upper.contains(char) => rotate(upper, char, key)
+                case char => char
+            }
+        }
+
+        private def rotate(abc: Seq[Char], char: Char, key: Int) = {
+            val idx = (char - abc.head + key + abc.size) % abc.size
+            abc(idx)
+        }
+    }
+
+    // test
+    class Test extends ConsoleLogger with CryptoLogger {
+        def test(msg: String) = {
+            log(msg)
+        }
+    }
+
+    val one = new Test
+    one.test("The five boxing wizards jump quickly")
+
+    val two = new Test { override val key = -3 }
+    two.test("Wkh ilyh eralqj zlcdugv mxps txlfnob")
+}
