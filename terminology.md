@@ -11,3 +11,10 @@ Parser Combinators
 Delimited Continuations
 
 Dynamic Invocation
+
+Package Object
+
+Companion Object
+
+Scaladoc
+: https://www.scala-lang.org/api/current/
