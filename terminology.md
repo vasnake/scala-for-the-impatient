@@ -12,6 +12,8 @@ Delimited Continuations
 
 Dynamic Invocation
 
+Implicit Classes
+
 Package Object
 
 Companion Object
