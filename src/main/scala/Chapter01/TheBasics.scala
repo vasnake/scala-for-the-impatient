@@ -45,7 +45,7 @@ object TheBasics {
 
     def ex9() = {
         "first char"(0) == "first".head
-        "last char".last == 'r
+        "last char".last == 'r'
     }
 
     def ex10() = {
