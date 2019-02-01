@@ -272,7 +272,126 @@ object ControlStructuresAndFunctions {
 object ControlStructuresAndFunctions_Exercises {
 
     def ex1 = {
-        ???
+        def signum(n: Int) = {
+            if (n > 0) 1
+            else if (n < 0) -1
+            else 0
+        }
     }
 
+    def ex2 = {
+        val eb = {} // eb: Unit = ()
+    }
+
+    def ex3 = {
+        var y = 0
+        val x: Unit = y = 1
+    }
+
+    def ex4 = {
+        // for (int i = 10; i >= 0; i--) println(i)
+        for (i <- Range.inclusive(10, 0, -1)) println(i)
+        for (i <- 10 to 0 by -1) println(i)
+    }
+
+    def ex5 = {
+
+        def countdownWithBug(n: Int) = {
+            for (i <- n to 0 by -1) println(i)
+        }
+
+        def countdown(n: Int): Unit = {
+            print(s"$n ")
+            if (n < 0) countdown(n+1)
+            else if (n > 0) countdown(n-1)
+        }
+
+    }
+
+    def ex6 = {
+        // product of the Unicode codes of all letters in a string
+        def unicode(ch: Char): Long = {
+            ch.toLong
+        }
+
+        def charProd(str: String): BigInt = {
+            var res: BigInt = 1
+            for {
+                ch <- str
+                uch = unicode(ch)
+            } res = res * uch
+
+            res
+        }
+
+        assert(charProd("Hello") == 9415087488L)
+    }
+
+    def ex7 = {
+        // w/o loop
+        def charProd(str: String): BigInt = {
+            //str.codePoints.toArray.product //.foldLeft(1)(_ * _)
+            //str.map(c => c.toLong).product
+            //str.foldLeft(1L)(_*_)
+            (1L /: str)(_*_)
+        }
+        assert(charProd("Hello") == 9415087488L)
+    }
+
+    def ex8 = {
+        def product(s: String) = (1L /: s)(_*_)
+    }
+
+    def ex9 = {
+        // recursive
+        def r_product(s: String): Long = {
+            if (s.isEmpty) 1L
+            else s.head * r_product(s.tail)
+        }
+        assert(r_product("Hello") == 9415087488L)
+    }
+
+    def ex10 = {
+        def even(n: Int): Boolean = n % 2 == 0
+        // x^n
+        def pow(x: Double, n: Int): Double = {
+            if (n == 0) 1
+            else if (n > 0) {
+                if (even(n)) {
+                    val y = pow(x, n/2); y*y
+                }
+                else x * pow(x, n-1)
+            }
+            else 1 / pow(x, -n)
+        }
+    }
+
+    // ex11
+    // define a string interpolator date""
+    // val d: LocalDate = date"$year-$month-$day"
+    import java.time.LocalDate
+    implicit class DateInterpolator(val sc: StringContext) extends AnyVal {
+        def date(args: Any*): LocalDate = {
+            import scala.util.Try
+            println(sc.parts.mkString("(", ",", ")"))
+
+            if (sc.parts.length != 4)// || sc.parts.slice(1, 3).exists(_ != '-'))
+                sys.error(s"wrong number of parts: ${sc.parts.length}; format: year-month-day")
+            if (!sc.parts.slice(1, 3).forall(_ == "-"))
+                sys.error(s"wrong dashes: '${sc.parts.slice(1, 3)}'")
+
+            val res = for {
+                year    <- Try {args(0).toString.toInt}
+                month   <- Try {args(1).toString.toInt}
+                day     <- Try {args(2).toString.toInt}
+            } yield LocalDate.of(year, month, day)
+
+            res.getOrElse(sys.error(s"unparsable args: '${args}'"))
+        }
+    }
+
+    def ex11 = {
+        val y, m, d = 11
+        date"$y-$m-$d"
+    }
 }
