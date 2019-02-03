@@ -162,4 +162,55 @@ object WorkingWithArrays_Exercises {
     def ex1 = {
         ???
     }
+
+    // loop: swap adjacent elements of an array (in place)
+    def ex2 = {
+        ???
+    }
+
+    // ex2 only create a new array
+    def ex3 = {
+        ???
+    }
+
+    // produce a new partially sorted array: all positives first, then zero or negatives; both parts in original order
+    def ex4 = {
+        ???
+    }
+
+    // average of an Array[Double]
+    def ex5 = {
+        ???
+    }
+
+    // reverse sorted order
+    def ex6 = {
+        ???
+    }
+
+    // remove duplicates
+    def ex7 = {
+        ???
+    }
+
+    // remove all negatives but first
+    def ex8 = {
+        ???
+    }
+
+    // improve ex8: move good elements instead of removing bad elements
+    def ex9 = {
+        ???
+    }
+
+    // collection of time zones
+    def ex10 = {
+        ???
+    }
+
+    // return Buffer from java
+    def ex11 = {
+        ???
+    }
+
 }
