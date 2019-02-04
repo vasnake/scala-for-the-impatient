@@ -4,7 +4,7 @@ object WorkingWithArrays {
 // topics:
     // fixed-length arrays
     // variable-length arrays: array buffers
-    // traversing arrays and array buffrs
+    // traversing arrays and array buffers
     // transforming arrays
     // common algorithms
     // deciphering scaladoc
@@ -48,7 +48,7 @@ object WorkingWithArrays {
         a.toBuffer
     }
 
-    // traversing arrays and array buffrs
+    // traversing arrays and array buffers
     def traversingArraysAndArrayBuffers = {
         val a = Array(1, 2, 3)
         for (i <- 0 until a.length) println(s"a[${i}] = ${a(i)}")
@@ -160,57 +160,171 @@ object WorkingWithArrays_Exercises {
 
     // a = array of n random integers between 0 inclusive and n exclusive
     def ex1 = {
-        ???
+        def intArray(n: Int): Array[Int] = {
+            Array.fill(n)(scala.util.Random.nextInt(n))
+        }
+        assert(intArray(10).length == 10 && !intArray(999).contains(999))
     }
 
     // loop: swap adjacent elements of an array (in place)
     def ex2 = {
-        ???
+        def shuffle(arr: Array[Int]): Array[Int] = {
+            def swap(i: Int, j: Int) = { val t = arr(i); arr(i) = arr(j); arr(j) = t }
+
+            for {
+                idx <- arr.indices
+                if idx % 2 == 1
+            } swap(idx - 1, idx)
+
+            arr
+        }
+
+        assert(shuffle(Array.empty[Int]).mkString(",") == Array.empty[Int].mkString(","))
+        assert(shuffle(Array(1)).mkString(",") == Array(1).mkString(","))
+        assert(shuffle(Array(1,2)).mkString(",") == Array(2,1).mkString(","))
+        assert(shuffle(Array(1,2,3,4,5)).mkString(",") == Array(2,1,4,3,5).mkString(","))
+        assert(shuffle(Array(1,2,3,4)).mkString(",") == Array(2,1,4,3).mkString(","))
     }
 
-    // ex2 only create a new array
+    // ex2 only create a new array using for/yield
     def ex3 = {
-        ???
+        def shuffle(arr: Array[Int]): Array[Int] = {
+            for {
+                idx <- arr.indices.toArray
+                j = if (idx % 2 == 0 ) idx+1 else idx-1
+                k = if (j < arr.length) j else idx
+            } yield arr(k)
+        }
     }
 
-    // produce a new partially sorted array: all positives first, then zero or negatives; both parts in original order
+    // produce a new partially sorted array: all positives first,
+    // then zero or negatives; both parts in original order
     def ex4 = {
-        ???
+        def sort(arr: Array[Int]): Array[Int] = {
+            val (a, b) = arr.partition(_ > 0)
+            a ++ b
+        }
+        assert(sort(Array(1,-2,3,-4,5,0)).mkString(",") == Array(1,3,5,-2,-4,0).mkString(","))
     }
 
     // average of an Array[Double]
     def ex5 = {
-        ???
+        def avg(arr: Array[Double]): Double = {
+            require(arr.nonEmpty, "Can't compute average of empty array")
+            arr.sum / arr.length
+        }
     }
 
-    // reverse sorted order
+    // reverse sorted order (in place?)
     def ex6 = {
-        ???
+        import scala.collection.mutable.ArrayBuffer
+
+        // array can be sorted in place easy using API
+        def reversedArray(arr: Array[Int]): Array[Int] = {
+            // create new
+            // arr.sorted.reverse
+            // arr.sortBy(x => -x)
+            // arr.sortWith(_ > _)
+
+            // in place
+            val rev = (a: Int, b: Int) => a > b
+            scala.util.Sorting.stableSort(arr, rev)
+            // or
+            val ord = math.Ordering.fromLessThan[Int](_ > _)
+            scala.util.Sorting.quickSort[Int](arr)(ord)
+
+            arr
+        }
+
+        // buffer can be sorted in place by implementing quicksort by hand
+        def reversedArrayBuffer(buf: ArrayBuffer[Int]): ArrayBuffer[Int] = {
+            buf.sortWith(_>_)
+        }
+
+        assert(reversedArray(Array(1,2,3)).mkString(",") == "3,2,1")
+        assert(reversedArrayBuffer(ArrayBuffer(1,2,3)).mkString(",") == "3,2,1")
     }
 
     // remove duplicates
     def ex7 = {
-        ???
+        def dropDuplicates[T](arr: Array[T]): Array[T] = {
+            arr.distinct
+        }
+        assert(dropDuplicates(Array(1,2,3,3,2,1)).sorted.mkString(",") == "1,2,3")
     }
 
     // remove all negatives but first
     def ex8 = {
-        ???
+        import scala.collection.mutable
+        def dropNegativesButFirst(arr: mutable.ArrayBuffer[Int]): Unit = {
+
+            val negativePositions: mutable.Buffer[Int] = for {
+                idx <- arr.indices.toBuffer
+                if arr(idx) < 0
+            } yield idx
+
+            val reversedNegPos = negativePositions.reverse
+            reversedNegPos.trimEnd(1)
+            reversedNegPos.foreach(arr.remove)
+        }
+
+        val arr = mutable.ArrayBuffer(1,2,3,-1,4,-2,5,-3); dropNegativesButFirst(arr)
+        assert(arr.mkString(",") == "1,2,3,-1,4,5")
     }
 
-    // improve ex8: move good elements instead of removing bad elements
+    // improve ex8: move good elements that needs moving instead of removing bad elements
     def ex9 = {
-        ???
+        import scala.collection.mutable
+
+        def dropNegativesButFirst(arr: mutable.ArrayBuffer[Int]): Unit = {
+
+            var first = true
+            def isFirstNegative(idx: Int): Boolean = {
+                require(arr(idx) < 0, "process only negative elements")
+                if (first) {
+                    first = false
+                    true
+                }
+                else false
+            }
+
+            val positivePositions = for {
+                idx <- arr.indices
+                if arr(idx) >= 0 || isFirstNegative(idx)
+            } yield idx
+
+            val from_to = positivePositions.zipWithIndex
+
+            from_to foreach { case (from, to) => if (from != to) arr(to) = arr(from) }
+            arr.trimEnd(arr.length - positivePositions.length)
+        }
+
+        val arr = mutable.ArrayBuffer(1,2,3,-1,4,-2,5,-3, 0); dropNegativesButFirst(arr)
+        assert(arr.mkString(",") == "1,2,3,-1,4,5,0")
     }
 
     // collection of time zones
     def ex10 = {
-        ???
+        def timeZones = {
+            val ids = java.util.TimeZone.getAvailableIDs
+            val amids = ids.filter( _.startsWith("America"))
+            amids.map(_.stripPrefix("America/")).sorted
+        }
     }
 
     // return Buffer from java
     def ex11 = {
-        ???
+        def nativeImageFlavor = {
+            import java.awt.datatransfer._
+            import scala.collection.mutable
+            import scala.collection.JavaConverters._
+
+            val flavors = SystemFlavorMap.getDefaultFlavorMap.asInstanceOf[SystemFlavorMap]
+            val res: mutable.Buffer[String] = flavors.getNativesForFlavor(DataFlavor.imageFlavor).asScala // List[String]
+
+            res
+        }
+
     }
 
 }
