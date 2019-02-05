@@ -1,8 +1,5 @@
 package Chapter04
 
-import java.awt.Font
-import java.util
-
 object MapsAndTuples {
 // topics:
     // constructing a map
@@ -134,7 +131,7 @@ object MapsAndTuples {
         import scala.collection.JavaConverters._
 
         // from java to scala
-        val scores: mutable.Map[String, Int] = new util.TreeMap[String, Int]().asScala
+        val scores: mutable.Map[String, Int] = new java.util.TreeMap[String, Int]().asScala
         // java.util.Properties = HashTable[Object, Object]
         val props: mutable.Map[String, String] = System.getProperties.asScala
 
@@ -173,51 +170,119 @@ object MapsAndTuples_Exercises {
 
     // map of prices; with discount
     def ex1 = {
-        ???
+        def gizmosOnSail = {
+            val gizmos = Map("phone" -> 30, "sail" -> 40, "acesspoint" -> 5)
+            val withDiscount = for ((k, v) <- gizmos) yield (k, v * 0.9)
+        }
     }
 
     // read words from a file; count words with mutable map
     def ex2 = {
-        ???
+        import scala.collection.mutable
+        def wordCount(path: String) = {
+            val counter = mutable.Map.empty[String, Int].withDefaultValue(0)
+            def processNextToken(str: String) = counter(str) = counter(str) + 1
+
+            val in = new java.util.Scanner(new java.io.File(path))
+            while (in.hasNext) processNextToken(in.next)
+
+            for ((w,c) <- counter) println(s"word: '$w' count: $c")
+        }
     }
 
     // ex2 with immutable map
     def ex3 = {
-        ???
+        def wordCount(path: String) = {
+            // mutable reference!
+            var counter = Map.empty[String, Int].withDefaultValue(0)
+            def processNextToken(str: String) = counter.updated(str, counter(str) + 1)
+
+            val in = new java.util.Scanner(new java.io.File(path))
+            while (in.hasNext) counter = processNextToken(in.next)
+
+            for ((w,c) <- counter) println(s"word: '$w' count: $c")
+        }
     }
 
     // ex3 with a sorted map
     def ex4 = {
-        ???
+        def wordCount(path: String) = {
+            import scala.collection.immutable
+            // mutable reference!
+            var counter = immutable.SortedMap.empty[String, Int].withDefaultValue(0)
+            def processNextToken(str: String) = counter.updated(str, counter(str) + 1)
+
+            val in = new java.util.Scanner(new java.io.File(path))
+            while (in.hasNext) counter = processNextToken(in.next)
+
+            for ((w,c) <- counter) println(s"word: '$w' count: $c")
+        }
     }
 
-    // ex4 with TreeMap
+    // ex4 with java TreeMap
     def ex5 = {
-        ???
+        def wordCount(path: String) = {
+            import scala.collection.JavaConverters._
+            // mutable map!
+            val counter = new java.util.TreeMap[String, Int]().asScala.withDefaultValue(0)
+            def processNextToken(str: String) = counter.update(str, counter(str) + 1)
+
+            val in = new java.util.Scanner(new java.io.File(path))
+            while (in.hasNext) processNextToken(in.next)
+
+            for ((w,c) <- counter) println(s"word: '$w' count: $c")
+        }
     }
 
     // linked hash map for week days, insertion order
     def ex6 = {
-        ???
+        def insertionOrder = {
+            import java.util.Calendar
+            import scala.collection.mutable
+            val days = mutable.LinkedHashMap("Monday" -> Calendar.MONDAY)
+
+            for ((k,v) <- List(
+                "Tuesday" -> Calendar.TUESDAY,
+                "Wednesday" -> Calendar.WEDNESDAY,
+                "Thursday" -> Calendar.THURSDAY,
+                "Friday" -> Calendar.FRIDAY)
+            ) days.update(k, v)
+
+            for ((k,v) <- days) println(s"name: ${k}, value: ${v}")
+        }
     }
 
     // all java properties, aligned
     def ex7 = {
-        ???
+        def java2scala = {
+            import scala.collection.JavaConverters._
+            val props = java.lang.System.getProperties.asScala
+            val longestKeySize = props.keys.maxBy(_.length).length
+            // def aligned(str: String) = { str + (" " * (longestKeySize - str.length)) }
+            // for ((k,v) <- props) println(s"${aligned(k)} | ${v}")
+            for ((k,v) <- props) println(s"""${k.padTo(longestKeySize, ' ')} | ${v}""")
+        }
     }
 
     // return (min, max) tuple
     def ex8 = {
-        ???
+        def minmaxPair(values: Array[Int]) = (values.min, values.max)
     }
 
     // return (lt, eq, gt) tuple
     def ex9 = {
-        ???
+        def lteqgtTuple(values: Array[Int], v: Int) = {
+            // can be done in one pass
+            val cntLess = values.count(_ < v)
+            val cntGreat = values.count(_ > v)
+            val cntEq = values.length - (cntLess + cntGreat)
+            (cntLess, cntEq, cntGreat)
+        }
     }
 
     // zip two words
     def ex10 = {
-        ???
+        "Hello" zip "World" // Vector((H,W), (e,o), (l,r), (l,l), (o,d))
+        // codec? compress/decompress?
     }
 }
