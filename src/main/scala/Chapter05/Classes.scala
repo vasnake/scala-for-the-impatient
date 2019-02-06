@@ -368,55 +368,133 @@ object Classes_Exercises {
 
     // improve the Counter class: it doesn't turn negative at Int.MaxValue
     def ex1 = {
-        ???
+        class Counter {
+            private[this] var value: Int = 0
+            def current: Int = value
+            def increment(): Unit = {
+                if (value == Int.MaxValue) sys.error("counter out of bounds")
+                else value += 1
+            }
+        }
     }
 
     // write class BankAccount: methods deposit, withdraw, read-only property balance
     def ex2 = {
-        ???
+        class BankAccount {
+            private[this] var _balance: Int = 0
+            def balance: Int = _balance
+            def deposit(n: Int): Unit = _balance += n
+            def withdraw(n: Int): Unit = _balance -= n
+        }
     }
 
     // write class Time: read-only properties hours, minutes, method before(other: Time): Boolean
     def ex3 = {
-        ???
+        class Time(val hours: Int, val minutes: Int) {
+            def before(other: Time): Boolean =
+                hours < other.hours || (hours == other.hours && minutes < other.minutes)
+        }
     }
 
     // rewrite class Time from ex3: internal repr. is the number of minutes since midnight
     def ex4 = {
-        ???
+        class Time(val hours: Int, val minutes: Int) {
+            private val totminutes = (hours * 60) + minutes
+            def before(other: Time): Boolean = totminutes < other.totminutes
+        }
+
     }
 
     // write class Student: read-write beans properties 'name', 'id'
     // use javap to check the methods generated
     def ex5 = {
-        ???
+        import scala.beans.BeanProperty
+        class Student {
+            @BeanProperty var name: String = "" // def name; def name_=; def getName; def setName
+            @BeanProperty var id: Long = 0
+        }
+        // Yes, I can. No, I shouldn't.
+
     }
 
     // class Person: provide a primary constructor that turns negative age to 0
     def ex6 = {
-        ???
+        class Person (var age: Int = 0) {
+            if (age < 0) age = 0
+        }
     }
 
     // write class Person: primary constructor("name lastname"); read-only properties firstName, lastName
     def ex7 = {
-        ???
+        class Person (names: String = "John Doe") {
+            val (firstName, lastName) = names.split(' ') match {
+                case Array(a: String, b: String, _*) => (a, b)
+                case _ => ("", "")
+            }
+        }
+        // plain parameter, no need for extra methods and fields
+        val p = new Person("Fred Smith")
+        println(s"${p.firstName} ${p.lastName}")
     }
 
     // write class Car: read-only properties for make, model, model year; read-write license plate
     def ex8 = {
-        ???
+        class Car(
+                     val manufacturer: String,
+                     val model: String,
+                     val year: Int = -1,
+                     var plate: String = "") {
+
+            def this(mnfct: String, mdl: String) = this(mnfct, mdl, -1, "")
+            def this(mnfct: String, mdl: String, yr: Int) = this(mnfct, mdl, yr, "")
+            def this(mnfct: String, mdl: String, plt: String) = this(mnfct, mdl, -1, plt)
+        }
+        // primary constructor with all properties, optional params allow to skip unknown data
+        val cr = new Car("ZAZ", "369", 1970)
     }
 
     // reimplement ex8 in java
     def ex9 = {
-        ???
+        // about 2..3 times shorter
+/*
+public class $line5.$read$$iw$$iw$Car {
+  private final java.lang.String manufacturer;
+  private final java.lang.String model;
+  private final int year;
+  private java.lang.String plate;
+  public java.lang.String manufacturer();
+  public java.lang.String model();
+  public int year();
+  public java.lang.String plate();
+  public void plate_$eq(java.lang.String);
+  public $line5.$read$$iw$$iw$Car(java.lang.String, java.lang.String, int, java.lang.String);
+  public $line5.$read$$iw$$iw$Car(java.lang.String, java.lang.String);
+  public $line5.$read$$iw$$iw$Car(java.lang.String, java.lang.String, int);
+  public $line5.$read$$iw$$iw$Car(java.lang.String, java.lang.String, java.lang.String);
+}
+ */
     }
 
-    // class Employee: rewrite it to use explicit fields and default primary constructor
+    /*
+Consider the class
+class Employee(val name: String, var salary: Double) {
+  def this() { this("John Q. Public", 0.0) }
+}
+Rewrite it to use explicit fields and a default primary constructor.
+Which form do you prefer? Why?
+ */
     def ex10 = {
-        ???
+        class Employee {
+            private var _name = "John Q. Public"
+            private var _salary = 0.0
+            def this(name: String, salary: Double) = {
+                this(); _name = name; _salary = salary
+            }
+            def name: String = _name
+            def salary: Double = _salary
+            // first more concise, I prefer first form
+        }
     }
-
 }
 
 class Person {

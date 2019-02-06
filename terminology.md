@@ -20,3 +20,13 @@ Companion Object
 
 Scaladoc
 : https://www.scala-lang.org/api/current/
+
+Self Type
+
+Type Projection
+
+Class Parameters
+
+Object-private
+
+Uniform Access Principle
