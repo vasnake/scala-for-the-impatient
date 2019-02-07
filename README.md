@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/vasnake/scala-for-the-impatient.png)](https://travis-ci.com/vasnake/scala-for-the-impatient)
+
 # Scala for the Impatient
 Second edition
 
