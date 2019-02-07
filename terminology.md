@@ -33,3 +33,7 @@ Uniform Access Principle
 
 Sbt Logging
 : https://www.scala-sbt.org/release/docs/Howto-Logging.html
+
+Chained Package
+
+Import Selector Syntax
