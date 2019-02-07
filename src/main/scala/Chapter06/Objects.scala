@@ -156,49 +156,104 @@ object Objects_Exercises {
     // 1. Write an object Conversions with methods inchesToCentimeters,
     // gallonsToLiters, and milesToKilometers.
     def ex1 = {
-        ???
+        object Conversions {
+            def inchesToCentimeters(inches: Double): Double = inches * 2.54
+            def gallonsToLiters(gallons: Double): Double = gallons * 3.78541
+            def milesToKilometers(miles: Double): Double = miles * 1.60934
+        }
     }
 
     // 2. The preceding problem wasn’t very object-oriented. Provide a general superclass
-    //UnitConversion and define objects InchesToCentimeters, GallonsToLiters,
-    //and MilesToKilometers that extend it.
+    // UnitConversion and define objects InchesToCentimeters, GallonsToLiters,
+    // and MilesToKilometers that extend it.
     def ex2 = {
-        ???
+        trait UnitConversion {
+            def coefficient: Double
+            def apply(x: Double): Double = x * coefficient
+        }
+        object InchesToCentimeters extends UnitConversion {
+            override def coefficient: Double = 2.54
+        }
+        object GallonsToLiters extends UnitConversion {
+            override def coefficient: Double =  3.78541
+        }
+        object MilesToKilometers extends UnitConversion {
+            override def coefficient: Double = 1.60934
+        }
+
+        MilesToKilometers(10000)
     }
 
     // 3. Define an Origin object that extends java.awt.Point. Why is this not actually a good
-    //idea? (Have a close look at the methods of the Point class.)
+    // idea? (Have a close look at the methods of the Point class.)
     def ex3 = {
-        ???
+        object Origin extends  java.awt.Point
+        // Point is a mutable data object
+        // Origin is a singleton, should be immutable
     }
 
     // 4. Define a Point class with a companion object so that you can construct Point instances as
-    //Point(3, 4), without using new.
+    // Point(3, 4), without using new.
     def ex4 = {
-        ???
+        class Point(val x: Int, val y: Int)
+        object Point {
+            def apply(x: Int, y: Int) = new Point(x, y)
+        }
+
+        Point(3, 7)
     }
 
     // 5. Write a Scala application, using the App trait, that prints its command-line arguments in
-    //reverse order, separated by spaces. For example, scala Reverse Hello World should
-    //print World Hello.
+    // reverse order, separated by spaces. For example, scala Reverse Hello World should
+    // print World Hello.
     def ex5 = {
-        ???
+        object Reverse extends App {
+            println(args.reverse.mkString(" "))
+        }
     }
 
     // 6. Write an enumeration describing the four playing card suits so that the toString method
-    //returns ♣, ♦, ♥, or ♠.
+    // returns ♣, ♦, ♥, or ♠.
     def ex6 = {
-        ???
+        object SuitsEnum extends Enumeration {
+            val club    = Value("♣")
+            val diamond = Value("♦")
+            val heart   = Value("♥")
+            val spade   = Value("♠")
+        }
+
+        for (s <- SuitsEnum.values) println(s"suit: $s")
+        // or
+        SuitsEnum.values foreach println
     }
 
     // 7. Implement a function that checks whether a card suit value from the preceding exercise is red.
     def ex7 = {
-        ???
+        object SuitsEnum extends Enumeration {
+            type Suit = SuitsEnum.Value
+            val club    = Value("♣")
+            val diamond = Value("♦")
+            val heart   = Value("♥")
+            val spade   = Value("♠")
+
+            def isRed(suit: Suit): Boolean = { suit == heart || suit == diamond }
+        }
+
+        SuitsEnum.isRed(SuitsEnum.heart)
     }
 
     // 8. Write an enumeration describing the eight corners of the RGB color cube. As IDs, use the color
-    //values (for example, 0xff0000 for Red).
+    // values (for example, 0xff0000 for Red).
     def ex8 = {
-        ???
+        object ColorsEnum extends Enumeration {
+            val RED =       Value(0xff0000)
+            val MAGENTA =   Value(0xff00ff)
+            val YELLOW =    Value(0xffff00)
+            val GREEN =     Value(0x00ff00)
+            val BLUE =      Value(0x0000ff)
+            val CYAN =      Value(0x00ffff)
+            val WHITE =     Value(0xffffff)
+            val BLACK =     Value(0x000000)
+        }
     }
 }
