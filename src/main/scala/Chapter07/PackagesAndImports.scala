@@ -241,12 +241,15 @@ object PackagesAndImports_Exercises {
     //    package horstmann
     //    package impatient
     def ex1 = {
-        ???
+        import exercises.{ex1_1, ex1_2}
+        val p1 = ex1_1.com.horstmann.impatient.a
+        val p2 = ex1_2.com.horstmann.impatient.a
     }
 
     // 2. Write a puzzler that baffles your Scala friends, using a package com that isn’t at the top level.
     def ex2 = {
-        ???
+        import exercises.{ex2 => pex2}
+        val p = pex2.horstmann.nut
     }
 
     // 3. Write a package random with functions nextInt(): Int, nextDouble(): Double,
@@ -255,30 +258,48 @@ object PackagesAndImports_Exercises {
     //    next = (previous × a + b) mod 2^n
     // where a = 1664525, b = 1013904223, n = 32, and the initial value of previous is seed.
     def ex3 = {
-        ???
+        import exercises.{ex3 => pex3}
+        val ri = pex3.random.nextInt()
+        val t = pex3.random.test.a
     }
 
     // 4. Why do you think the Scala language designers provided the package object syntax
     // instead of simply letting you add functions and variables to a package?
     def ex4 = {
-        ???
+        // first: jvm limitations
+        // second: all object code will be collected in one package.class anyway
     }
 
     // 5. What is the meaning of private[com] def giveRaise(rate: Double)? Is it
     // useful?
     def ex5 = {
-        ???
+        // method accessible only for 'com' package members. Yes and no:
+        // fine-grained access control is good, com package is no-good.
     }
 
     // 6. Write a program that copies all elements from a Java hash map into a Scala hash map. Use
     // imports to rename both classes.
     def ex6 = {
-        ???
+        import java.util.{HashMap => juHashMap}
+        import scala.collection.mutable.{HashMap => cmHashMap, Map}
+        import scala.collection.JavaConverters._
+
+        def copy[T, S](a: Map[T, S], b: cmHashMap[T, S]): Unit = {
+            for ((k,v) <- a) b.update(k, v)
+        }
+
+        val shm = cmHashMap.empty[String, Int]
+        val jhm: Map[String, Int] = new juHashMap[String, Int]().asScala
+        jhm.put("one", 1)
+        jhm.put("two", 2)
+
+        copy(jhm, shm)
+        for ((k,v) <- shm) println(s"$k: $v")
     }
 
     // 7. In the preceding exercise, move all imports into the innermost scope possible.
     def ex7 = {
-        ???
+        ex6
     }
 
     // 8. What is the effect of
@@ -286,7 +307,12 @@ object PackagesAndImports_Exercises {
     //    import javax._
     // Is this a good idea?
     def ex8 = {
-        ???
+        import java._
+        import javax._
+        // same names in both packages,
+        // javax._ will redefine java._ names
+        // in these packages contains a lot of names, do you need them all?
+        // bad idea
     }
 
     // 9. Write a program that imports the java.lang.System class, reads the user name from the
@@ -295,12 +321,80 @@ object PackagesAndImports_Exercises {
     // the standard output stream. Do not use any other imports, and do not use any qualified names
     // (with dots).
     def ex9 = {
-        ???
+        // 1 - Do not use any other imports,
+        // 2 - and do not use any qualified names (with dots).
+        // I'm not sure, what you mean stating limitation #2?
+        // repeat packages structure? package java.lang.System; scala.io
+        object app extends App {
+            import java.lang.{System => jls}
+            val uname = jls.getProperty("user.name", "John/Jane Doe")
+            val pwd = scala.io.StdIn.readLine(s"your name is $uname and your password is:")
+            if (pwd == "secret") println(s"Hello $uname, welcome back!")
+            else jls.err.println(s"$uname, wait please, we sending a car for you.")
+        }
     }
 
-    // 10. Apart from StringBuilder, what other members of java.lang does the scala
-    // package override?
+    // 10. Apart from StringBuilder, what other members of java.lang does the scala package override?
     def ex10 = {
-        ???
+//        Boolean, Byte, Long, ...
+// https://www.scala-lang.org/api/current/scala/index.html
+// https://docs.oracle.com/javase/8/docs/api/java/lang/package-summary.html
     }
+}
+
+package exercises {
+
+    package ex1_1 {
+        package com.horstmann.impatient {
+            // no problem
+            object a { val coll = collection.mutable.Map.empty }
+        }
+        package com.horstmann.collection {
+            object mutable { val Map = ??? }
+        }
+    }
+    package ex1_2 {
+        package com { package horstmann { package impatient {
+            object a {
+                // oops, problem
+                // val coll = collection.mutable.Map.empty
+            }
+        }}}
+        package com.horstmann.collection {
+            object mutable { val Map = ??? }
+        }
+    }
+
+    package ex2 {
+        package horstmann.com {
+            object nuts { val almond = ??? }
+        }
+        package horstmann {
+            import com.nuts._
+            object nut { val value = almond }
+        }
+    }
+
+    package ex3 {
+        package object random {
+            def nextInt(): Int = next().toInt
+            def nextDouble(): Double = next()
+            def setSeed(seed: Int): Unit = { prev = seed }
+
+            private val a = 1664525
+            private val b = 1013904223
+            private val n = 32
+            private var prev = compat.Platform.currentTime.toDouble
+
+            // linear congruential generator
+            private def next(): Double = {
+                prev = (prev * a + b) % math.pow(2, n)
+                prev
+            }
+        }
+        package random {
+            object test { val a = nextInt() }
+        }
+    }
+
 }
