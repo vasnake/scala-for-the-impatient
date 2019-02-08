@@ -38,8 +38,12 @@ Chained Package
 
 Import Selector Syntax
 
-Anonymous Subclasses
-
 Early Definitions
 
 Value Classes
+
+Anonymous Subclasses
+
+Structural Type
+
+Universal Traits
