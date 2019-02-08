@@ -37,3 +37,9 @@ Sbt Logging
 Chained Package
 
 Import Selector Syntax
+
+Anonymous Subclasses
+
+Early Definitions
+
+Value Classes

@@ -15,3 +15,4 @@ https://www.google.ru/search?q=scala+for+the+impatient+2nd+edition+cay+horstmann
 5. [Classes](src/main/scala/Chapter05/Classes.scala)
 6. [Objects](src/main/scala/Chapter06/Objects.scala)
 7. [Packages and Imports](src/main/scala/Chapter07/PackagesAndImports.scala)
+8. [Inheritance](src/main/scala/Chapter08/Inheritance.scala)
