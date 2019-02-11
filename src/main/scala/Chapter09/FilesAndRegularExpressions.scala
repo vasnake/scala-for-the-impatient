@@ -1,5 +1,9 @@
 package Chapter09
 
+import java.io.ObjectOutputStream
+
+import scala.collection.mutable.ArrayBuffer
+
 object FilesAndRegularExpressions {
 // topics:
     // reading lines
@@ -22,57 +26,259 @@ object FilesAndRegularExpressions {
 
     // reading lines
     def readingLines = {
-        ???
+        // reading text file
+
+        import scala.io.Source
+        val src = Source.fromFile("/tmp/test.txt", "UTF-8")
+        try {
+            val lineIterator = src.getLines
+            for (line <- lineIterator) println(line)
+        } finally {
+            src.close()
+        }
+
     }
 
     // reading characters
     def readingCharacters = {
-        ???
+        // Source extends Iterator[Char]
+
+        import scala.io.Source
+        val src = Source.fromFile("/tmp/test.txt", "UTF-8")
+        try {
+            for (char <- src) print(char)
+        } finally {
+            src.close()
+        }
+
+        def buffered = {
+            // peek without consuming
+            val src = Source.fromFile("/tmp/test.txt", "UTF-8")
+            try {
+                val iter = src.buffered // cache head
+                while (iter.hasNext) {
+                    if (iter.head != 'Q') {
+                        print(iter.head)
+                    }
+                    val nextchar = iter.next()
+                }
+
+                //or, if file is small:
+                val contents: String = src.mkString
+            } finally {
+                src.close()
+            }
+        }
     }
 
     // reading tokens and numbers
     def readingTokensAndNumbers = {
-        ???
+        // quick-and-dirty way of reading all whitespace-separated tokens
+
+        import scala.io.Source
+        val src = Source.fromFile("/tmp/test.txt", "UTF-8")
+        try {
+            val tokens = src.mkString.split(raw"\s+")
+            val numbers = tokens.map(_.toDouble)
+        } finally {
+            src.close()
+        }
+
+        // you can always use the java.util.Scanner to process a mixture of text and numbers
+
+        // or, from stdin
+        import scala.io.StdIn
+        val age = StdIn.readInt()
     }
 
     // reading from URLs and other sources
     def readingFromURLsAndOtherSources = {
-        ???
+        import scala.io.Source
+        val urlSrc = Source.fromURL("http://ya.ru", "UTF-8")
+        val stringSrc = Source.fromString("Hello, World!") // useful for debugging
+        val sinSrc = Source.stdin
+
+        List(urlSrc, stringSrc, sinSrc).foreach(_.close)
     }
 
     // reading binary files
     def readingBinaryFiles = {
-        ???
+        // scala has no provision for reading binary files
+
+        import java.io.{File, FileInputStream}
+        val file = new File("/tmp/test.bin")
+        val ins = new FileInputStream(file)
+        try {
+            val buff = new Array[Byte](file.length.toInt)
+            ins.read(buff)
+        } finally {
+            ins.close()
+        }
     }
 
     // writing text files
     def writingTextFiles = {
-        ???
+        // scala has no built-in support for writing files, use java.io.PrintWriter
+        import java.io.PrintWriter
+        val out = new PrintWriter("/tmp/out.txt")
+        try {
+            for (n <- 1 to 100) out.println(n)
+
+            // you may have problems with printf
+            val price = 42.0
+            out.printf("%10.2f", price.asInstanceOf[AnyRef]) // ugh
+
+            // instead, use string interpolation
+            out.print(f"${price}%10.2f")
+
+        } finally {
+            out.close()
+        }
+
     }
 
     // visiting directories
     def visitingDirectories = {
-        ???
+        // there are no built-in classes for traversing a file system
+        // use java.nio.file Files.list, Files.walk
+
+        import java.nio.file.{Files, Paths, Path}
+        import scala.util.Try
+        def processPath(path: Path) = {
+            val res = Try { println(path.toAbsolutePath.toString) }
+            if (res.isFailure) println(res.failed.get.getMessage)
+        }
+
+        // not good: throws java.io.UncheckedIOException
+        val allEntries = Files.walk(Paths.get("/tmp")) // recursive, DFS
+        val onelevelEntries = Files.list(Paths.get("/tmp")) // not recursive
+        try {
+            allEntries.forEach(p => processPath(p))
+        } finally {
+            println("closing streams ...")
+            allEntries.close(); onelevelEntries.close()
+        }
+
     }
 
     // serialization
     def serialization = {
-        ???
+        // short-term storage or transmission to another jvm
+
+        @SerialVersionUID(42L) class Person extends Serializable {
+            // scala collections are serializable
+            private val friends = ArrayBuffer.empty[Person]
+        }
+
+        import java.io.{ObjectOutputStream, FileOutputStream, ObjectInputStream, FileInputStream}
+        val fred = new Person
+        // save
+        val out = new ObjectOutputStream(new FileOutputStream("/tmp/test.obj"))
+        out.writeObject(fred)
+        out.close()
+        // load
+        val in = new ObjectInputStream(new FileInputStream("/tmp/test.obj"))
+        val savedFred = in.readObject().asInstanceOf[Person]
+        in.close()
+
     }
 
     // process control
     def processControl = {
-        ???
+        // shell commands, scripts
+        // postfix syntax is being deprecated
+        // implicit conversion from strings to ProcessBuilder
+        import java.io.File
+        import java.net.URL
+        import scala.sys.process._
+
+        var exitcode = "ls -al /tmp".! // print listing to stdout
+        val listing = "ls -al /tmp".!! // if exitcode != 0 => exception
+
+        // pipe
+        exitcode = ("ls -al /tmp" #| "grep u").!
+        // redirect
+        exitcode = ("ls -al /tmp" #> new File("/tmp/list.txt")).!
+        // append
+        exitcode = ("ls -al /opt" #>> new File("/tmp/list.txt")).!
+        // from a file
+        exitcode = ("grep u" #< new File("/tmp/list.txt")).!
+        exitcode = ("grep Scala" #< new URL("http://ya.ru")).!
+        // you can combine processes with #&& and #||
+
+        // # prefix ensure equal precedence for all ops
+
+        // custom environment: Process object
+        val p = Process("ls -la", new File("/tmp"), ("LANG", "en_US.utf8"))
+        exitcode = (p #| "grep u").!
+
+        // for perverts: scala for shell script
+        /*
+        #!/bin/sh
+        exec scala "$0" "$@"
+        !#
+        Scala commands
+         */
+
+        // scala script from java program, javax.script
+        // ScriptEngine engine = new ScriptEngineManager().getScriptEngineByName("scala")
     }
 
     // regular expressions
     def regularExpressions = {
-        ???
+        // scala.util.matching.Regex
+        val numPattern = "[0-9]+".r
+        val wsnumwsPattern = """\s+[0-9]+\s+""".r // raw string syntax
+
+        // find all
+        for (s <- numPattern.findAllIn("99 bottles, 98 bottles")) println(s) // 99, 98
+
+        // find first
+        val firstmatch = wsnumwsPattern.findFirstIn("99 bottles, 98 bottles") // Some("98")
+
+        // check whole string against regex pattern
+        "^[0-9]+$".r findFirstIn "some string" match {
+            case None => println("not numeric")
+            case Some(x) => println("all numbers")
+        }
+        // or
+        if ("some string".matches("[0-9]+")) println("all numbers")
+
+        // replace
+        println(numPattern.replaceFirstIn("99 bottles, 98 bottles", "XX"))
+        println(numPattern.replaceAllIn("99 bottles, 98 bottles", "XX"))
+        println(numPattern.replaceSomeIn("99 bottles, 98 bottles", {
+            m => if (m.matched.toInt % 2 == 0) Some("XX") else None
+        }))
+
+        // more complex example of replace
+        val varPattern = """\$[0-9]+""".r
+        def format(message: String, vars: String*) = varPattern.replaceSomeIn(message, {
+            m => vars.lift(m.matched.tail.toInt)
+        })
+        println(format("At $1, there was $2 on $0",
+            "planet 7", "12:30 pm", "a disturbance of the force"))
     }
 
     // regular expression groups
     def regularExpressionGroups = {
-        ???
+        // get subexpressions of regex: parentheses and Match object
+
+        val numitemPattern = "([0-9]+) ([a-z]+)".r
+        // m.matched: string
+        // m.group(n): n-th group
+        // m.start, m.end, m.start(n), m.end(n): substring indices
+        for (m <- numitemPattern.findAllMatchIn("99 bottles, 98 bottles")) println(m.group(0))
+
+        // groups by name
+        val namedNumitemPattern = "([0-9]+) ([a-z]+)".r("num", "item")
+
+        // using extractor: it MUST match the string, there MUST be a group for each variable
+        val numitemPattern(num, item) = "99 bottles"
+
+        // groups with multiple matches
+        for (numitemPattern(num, item) <- numitemPattern.findAllIn("99 bottles, 98 bottles"))
+            println(s"${num}: $item")
     }
 
 }
