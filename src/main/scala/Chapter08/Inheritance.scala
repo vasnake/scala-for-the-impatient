@@ -542,7 +542,6 @@ public class $line13.$read$$iw$$iw$SecretAgent extends $line12.$read$$iw$$iw$Per
         import Chapter08.valueClasses.exercise11
         val p = exercise11.Point(0, 0)
 
-//        // TODO: add tests for corner cases / negative coords
 //        class Point private(private val xy: Long) extends AnyVal {
 //            def x: Int = (xy >> 32).toInt
 //            def y: Int = xy.toInt
@@ -557,6 +556,8 @@ public class $line13.$read$$iw$$iw$SecretAgent extends $line12.$read$$iw$$iw$Per
 }
 
 package valueClasses {
+    // value class may not be a local class
+
     class MilitaryTime(val time: Int) extends AnyVal {
         def minutes = time % 100
         def hours = time / 100
