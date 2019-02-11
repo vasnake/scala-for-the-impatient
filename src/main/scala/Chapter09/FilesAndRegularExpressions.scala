@@ -1,9 +1,5 @@
 package Chapter09
 
-import java.io.ObjectOutputStream
-
-import scala.collection.mutable.ArrayBuffer
-
 object FilesAndRegularExpressions {
 // topics:
     // reading lines
@@ -167,6 +163,7 @@ object FilesAndRegularExpressions {
 
         @SerialVersionUID(42L) class Person extends Serializable {
             // scala collections are serializable
+            import scala.collection.mutable.ArrayBuffer
             private val friends = ArrayBuffer.empty[Person]
         }
 
@@ -288,19 +285,99 @@ object FilesAndRegularExpressions_Exercises {
     // 1. Write a Scala code snippet that reverses the lines in a file
     // (making the last line the first one, and so on).
     def ex1 = {
-        ???
+        val fname = "/tmp/lines.txt"
+
+        def getLines(fn: String): Seq[String] = {
+            import scala.io.Source
+            val src = Source.fromFile(fn)
+            val lines = src.getLines().toArray
+            src.close()
+            lines
+        }
+
+        def putLines(fn: String, ls: Seq[String]): Unit = {
+            import java.io.PrintWriter
+            val out = new PrintWriter(fn)
+            ls.foreach(out.println)
+            out.close()
+        }
+
+        val revLines = getLines(fname).reverse
+        putLines(fname, revLines)
+
+        // with try .. catch
+        def inTry = {
+            import scala.util.{Try, Success, Failure}
+            val fname = "/tmp/lines.txt.nosuchfile"
+
+            val res = Try{ getLines(fname).reverse }.flatMap(revlines =>
+                Try { putLines(fname, revlines) })
+
+            res match {
+                case Success(x) => println("writed")
+                case Failure(x) => println(s"failed: ${x.getMessage}")
+            }
+        }
     }
 
-    // 2. Write a Scala program that reads a file with tabs, replaces each tab with spaces so that tab
-    // stops are at n-column boundaries, and writes the result to the same file.
+    // 2. Write a Scala program that reads a file with tabs,
+    // replaces each tab with spaces so
+    // that tab stops are at n-column boundaries,
+    // and writes the result to the same file.
     def ex2 = {
-        ???
+        // n-column boundaries: if tabsize = 4: 0, 4, 8, 12, ...
+        // n % 4 = 0,1,2,3,0,1,2,3,...
+
+        // replace tabs for spaces in one line
+        def tab2spaces(line: String, tabsize: Int = 4): String = {
+            def nspaces(col: Int): Int = tabsize - (col % tabsize) // 0 => 4, 1 => 3, 2 => 2, 3 => 1
+            val res = StringBuilder.newBuilder
+            for (ch <- line) {
+                if (ch == '\t') res.append(" " * nspaces(res.length))
+                else res.append(ch)
+            }
+            res.toString
+        }
+
+        // mini test
+        def check(s1: String, s2: String) = {
+            assert(tab2spaces(s1).equals(s2), s"wrong: '${tab2spaces(s1)}' != '$s2'")
+        }
+        check("\t1", "    1")
+        check("1\t2", "1   2")
+        check("12\t3", "12  3")
+        check("123\t4", "123 4")
+        check("1234\t5", "1234    5")
+        check("12345\t6", "12345   6")
+
+        // process file
+        import scala.io.Source
+        import java.io.PrintWriter
+        import scala.util.Try
+
+        val fname = "/tmp/tabs.txt"
+        val res = Try {
+            val text = {
+                for (line <- Source.fromFile(fname).getLines) yield tab2spaces(line)
+            }.toArray // need to copy before PrintWriter // write to the same file
+            val out = new PrintWriter(fname)
+            text.foreach(out.println)
+            out.close()
+        }
+        if (res.isSuccess) println("file updated")
+        else println(s"error:$res")
+
     }
 
-    // 3. Write a Scala code snippet that reads a file and prints all words with more than 12 characters
+    // 3. Write a Scala code snippet that
+    // reads a file and prints all words with more than 12 characters
     // to the console. Extra credit if you can do this in a single line.
     def ex3 = {
-        ???
+        import scala.io.Source
+        val fname = "/tmp/tabs.txt"
+        val sep = """\s+"""
+
+        Source.fromFile(fname).getLines.flatMap(_.split(sep)).filter(_.length > 12).foreach(println(_))
     }
 
     // 4. Write a Scala program that reads a text file containing only floating-point numbers. Print the
