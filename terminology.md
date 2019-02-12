@@ -47,3 +47,7 @@ Anonymous Subclasses
 Structural Type
 
 Universal Traits
+
+Extractor
+
+Lift method
