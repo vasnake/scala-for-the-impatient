@@ -17,74 +17,398 @@ object Traits {
     // self types
     // what happens under the hood
 
+    // class extends one or more traits;
+    // traits can supply state and behaviour;
+    // traits can require (implementing) classes to have certain features;
+    // the order matters -- first execute the trait on the back;
+
     // why no multiple inheritance?
     def whyNoMultipleInheritance = {
-        ???
+        // if you combine classes with common features, you have a lot of mess;
+        // what feature from what class override other?
+
+        // diamond inheritance problem:
+        //  person: name; student extends person; employee extends person; assistant extends student, employee
+
+        // jvm: only one superclass; any number of interfaces;
+        // interfaces: abstract, static, default methods; no fields;
+
+        // traits can have methods and fields, like classes, but no constructor parameters;
+        // class can mix-in multiple traits;
+        // trait fields will be placed in a class;
     }
 
     // traits as interfaces
     def traitsAsInterfaces = {
-        ???
+
+        //interface
+        trait Logger {
+            def log(msg: String): Unit // abstract
+        }
+
+        //implementation
+        class ConsoleLogger extends Logger {
+            def log(msg: String): Unit = println(msg)
+        }
+        // n.b. no override for abstract members
+
+        // add other traits using 'with'
+        class ConsoleLogger2 extends
+            Logger with Cloneable with Serializable {
+            def log(msg: String): Unit = println(msg)
+        }
+        // n.b. all java interfaces can be used as traits
+
+        // n.b. class extends construct 'Logger with Cloneable with Serializable'
     }
 
     // traits with concrete implementations
     def traitsWithConcreteImplementations = {
-        ???
+        // not abstract members of a trait
+
+        trait ConsoleLogger {
+            def log(msg: String): Unit = println(msg) // not abstract, implementation provided
+        }
+
+        // usage example
+        class SavingsAccount extends
+            Account with ConsoleLogger {
+
+            def withdraw(amount: Double) = {
+                if (amount > balance) log("Insufficient funds") // from trait, mixed in
+                else balance -= amount
+            }
+        }
+        class Account { var balance = 0.0 }
     }
 
     // objects with traits
     def objectsWithTraits = {
-        ???
+        // you can add trait to an any class instance
+
+        trait Logger {
+            def log(msg: String): Unit // abstract
+        }
+
+        // abstract too, because of logger
+        abstract class SavingsAccount extends
+            Account with Logger {
+
+            def withdraw(amount: Double) = {
+                if (amount > balance) log("Insufficient funds") // abstract 'log'
+                else balance -= amount
+            }
+        }
+
+        // but, you can mix in implementation when constructing an object
+        val acct = new SavingsAccount with ConsoleLogger
+        // dependency injection?
+
+        class Account { var balance = 0.0 }
+        trait ConsoleLogger {
+            def log(msg: String): Unit = println(msg) // not abstract, implementation provided
+        }
     }
 
     // layered traits
     def layeredTraits = {
-        ???
+        // traits that invoke each other via 'super'
+
+        trait Logger {
+            def log(msg: String): Unit // abstract
+        }
+        trait ConsoleLogger {
+            def log(msg: String): Unit = println(msg) // not abstract, implementation provided
+        }
+        trait TimestampLogger extends ConsoleLogger {
+            // call super
+            override def log(msg: String): Unit = super.log(s"${java.time.Instant.now} $msg")
+        }
+        trait ShortLogger extends ConsoleLogger {
+            // call super
+            override def log(msg: String): Unit = super.log(if (msg.length <= 15) msg else s"${msg.take(15)}")
+        }
+
+        // you can't be sure that super will be ConsoleLogger,
+        // only object construction order can give an answer
+        // back to front rule
+        val acct1 = new SavingsAccount with TimestampLogger with ShortLogger
+        // acc.log calls shortlogger.log calls timestamplogger.log calls consolelogger.log
+        val acct2 = new SavingsAccount with ShortLogger with TimestampLogger
+        // acc.log calls timestamplogger.log calls shortlogger.log calls consolelogger.log
+
+        // you can control which trait's method is invoked
+        trait TimestampConsoleLogger extends ConsoleLogger {
+            // call super only from ConsoleLogger
+            override def log(msg: String): Unit = super[ConsoleLogger].log(s"${java.time.Instant.now} $msg")
+            // ConsoleLogger must be immediate supertype
+        }
+
+        abstract class SavingsAccount extends Account with Logger {
+            def withdraw(amount: Double) = {
+                if (amount > balance) log("Insufficient funds")
+                else balance -= amount
+            }
+        }
+        class Account { var balance = 0.0 }
     }
 
     // overriding abstract methods in traits
     def overridingAbstractMethodsInTraits = {
-        ???
+        // one trait override another trait abstract member
+
+        trait Logger {
+            def log(msg: String): Unit // abstract
+        }
+
+//        trait TimestampLogger extends Logger {
+//            // call abstract super, compile error, should be marked as abstract
+//            override def log(msg: String): Unit = super.log(s"${java.time.Instant.now} $msg")
+//        }
+
+        trait TimestampLogger extends Logger {
+            // call abstract super => abstract
+            abstract override def log(msg: String): Unit = super.log(s"${java.time.Instant.now} $msg")
+        }
+
     }
 
     // traits for rich interfaces
     def traitsForRichInterfaces = {
-        ???
+        // many utility methods that depend on a few abstract, e.g. Iterator trait;
+        // very common in scala
+
+        trait Logger {
+            def log(msg: String): Unit // abstract
+
+            def info(msg: String) = log(s"INFO: ${msg}")
+            def warn(msg: String) = log(s"WARN: ${msg}")
+            def severe(msg: String) = log(s"SEVERE: ${msg}")
+        }
+
+        // usage
+        abstract class SavingsAccount extends Account with Logger {
+            def withdraw(amount: Double) = {
+                if (amount > balance) severe("Insufficient funds")
+                else balance -= amount
+            }
+        }
+        class Account { var balance = 0.0 }
+
     }
 
     // concrete fields in traits
     def concreteFieldsInTraits = {
-        ???
+        // field with initial value: concrete
+
+        trait Logger {
+            def log(msg: String): Unit // abstract
+        }
+
+        trait ShortLogger extends Logger {
+            val maxLength = 15 // a concrete field
+            abstract override def log(msg: String): Unit = super.log(
+                if (msg.length <= maxLength) msg
+                else s"${msg.take(maxLength)}")
+        }
+
+        // a class that mixes in this trait gets a field, not inherited but added to subclass
+        // consequence: if trait changes, all classes that mix in that trait must be recompiled!
+
+        // superclass: balance
+        // subclass: interest, maxLength
+        class SavingsAccount extends Account with ConsoleLogger with ShortLogger {
+            var interest = 0.0
+            def withdraw(amount: Double) = {
+                if (amount > balance) log("Insufficient funds")
+                else balance -= amount
+            }
+        }
+        class Account { var balance = 0.0 }
+        trait ConsoleLogger {
+            def log(msg: String): Unit = println(msg)
+        }
+
     }
 
     // abstract fields in traits
     def abstractFieldsInTraits = {
-        ???
+        // uninitialized, must be overridden
+
+        trait Logger {
+            def log(msg: String): Unit // abstract
+        }
+        trait ShortLogger extends Logger {
+            val maxLength: Int // abstract
+            abstract override def log(msg: String): Unit = super.log(
+                if (msg.length <= maxLength) msg
+                else s"${msg.take(maxLength)}")
+        }
+
+        // must supply maxLength field
+        class SavingsAccount extends Account with ConsoleLogger with ShortLogger {
+            val maxLength: Int = 20 // no override necessary
+        }
+        class Account { var balance = 0.0 }
+        trait ConsoleLogger extends Logger { def log(msg: String): Unit = println(msg) }
+
+        // handy when constructing objects on the fly
+        val acct = new SavingsAccount2 with ConsoleLogger with ShortLogger { override val maxLength: Int = 20 }
+        abstract class SavingsAccount2 extends Account with Logger { }
+
     }
 
     // trait construction order
     def traitConstructionOrder = {
-        ???
+
+        //example
+        trait Logger { def log(msg: String): Unit }
+        trait FileLogger extends Logger {
+            // constructor
+            val out = new java.io.PrintWriter("/tmp/app.log")
+            out.println(s"# ${java.time.Instant.now}")
+            def log(msg: String): Unit = { out.println(msg); out.flush() }
+        }
+        // executed during construction of any object incorporating the trait
+
+        // constructors execution order:
+        //  superclass
+        //  traits left-to-right
+        //  within each trait, parents constructed first (each parent only once)
+        //  subclass
+
+        // e.g.
+        // class SavingsAccount extends Account with FileLogger with ShortLogger
+        //  Account as superclass
+        //  Logger as parent of FileLogger
+        //  FileLogger
+        //  ShortLogger w/o Logger
+        //  SavingsAccount
+
+        // constructor ordering is the _reverse_ of the linearization
+
+        // linearization of the class: tech spec of all superclasses, defined by rule:
+        // if C extends C1 with C2 with ... Cn,
+        // then lin(C) = C >> lin(Cn) >> ... >> lin(C2) >> lin(C1)
+        // where '>>' means "concatenate and remove duplicates, with the right winning out"
+        // e.g. lin(SavingsAccount)
+        //  = SavingsAccount >> lin(ShortLogger) >> lin(FileLogger) >> lin(Account)
+        //  = SavingsAcount >> (ShortLogger >> Logger) >> (FileLogger >> Logger) >> Account
+        //  = SavingsAcount >> ShortLogger >> FileLogger >> Logger >> Account
+
+        // linearization gives the order (left-to-right) in which 'super' is resolved in a _trait_
+
     }
 
     // initializing trait fields
     def initializingTraitFields = {
-        ???
+        // traits cannot have constructor parameters
+
+        class SavingsAccount { }
+        trait Logger { def log(msg: String): Unit }
+
+        trait FileLogger extends Logger {
+            // but we would like to specify the log file:
+            val out = new java.io.PrintWriter("/tmp/app.log")
+            out.println(s"# ${java.time.Instant.now}")
+            def log(msg: String): Unit = { out.println(msg); out.flush() }
+        }
+        // what should we do?
+
+        // abstract field with later overriding?
+        trait FileLogger2 extends Logger {
+            val filename: String
+            val out = new java.io.PrintWriter(filename)
+            def log(msg: String): Unit = { out.println(msg); out.flush() }
+        }
+        val acct = new SavingsAccount with FileLogger {
+            val filename = "/tmp/app.log" // no, does not work
+            // problem: construction order, FileLogger before this structural type
+        }
+
+        // use early definition (structural type):
+        val acct2 = new { val filename = "/tmp/app.log" } with SavingsAccount with FileLogger
+
+        // or, use early definition (class)
+        class SavingsAccount2 extends { val filename = "/tmp/oops.log" } with SavingsAccount with FileLogger { }
+
+        // or, use lazy value for file in a trait along with abstract filename
+        trait FileLogger3 extends Logger {
+            val filename: String
+            lazy val out = new java.io.PrintWriter(filename) // on first call
+            def log(msg: String): Unit = { out.println(msg); out.flush() }
+        } // lazy add some overhead, may be ineffective
+        val acct3 = new SavingsAccount with FileLogger3 {
+            val filename = "/tmp/app.log" // works just fine with lazy file handler initialization
+        }
+
     }
 
     // traits extending classes
     def traitsExtendingClasses = {
-        ???
+        // hierarchy of traits: it's common and normal;
+        // not so common: trait extending a class
+
+        // that class becomes a superclass of any class mixing it the trait
+
+        trait LoggedException extends
+            Exception with ConsoleLogger {
+            // Exception will be a superclass for any user of this trait
+            def log() = log(getMessage)
+        }
+
+        // class with implicit superclass
+        class UnhappyException extends LoggedException { override def getMessage: String = "arggh!" }
+
+        // it's possible for user to extend another class
+        // as long as it's a subclass of Exception
+        class UnhappyException2 extends java.io.IOException with LoggedException {
+            override def getMessage: String = "arggh!" }
+
+        // other extensions is not possible (only one superclass in jvm)
+        // class UnhappyException3 extends javax.swing.JFrame with LoggedException // no way
+
+
+        trait Logger { def log(msg: String): Unit }
+        trait ConsoleLogger { def log(msg: String) = println(msg) }
     }
 
     // self types
     def selfTypes = {
-        ???
+        // if trait extends a class, there is a
+        // guarantee that superclass members are available, services is present
+
+        // alternate mechanism for guaranteeing this: self type
+
+        trait LoggedException extends ConsoleLogger {
+            this: Exception => // self type of Exception, trait can only be mixed into Exception subtype
+
+            def log() = { log(getMessage) }
+        }
+
+        // self type notation is more flexible
+        // can handle circular dependencies but, more important:
+        // can handle structural types
+        trait LoggedException2 extends ConsoleLogger {
+            this: { def getMessage: String } => // mix with any class that have getMessage
+
+            def log() = { log(getMessage) }
+        }
+
+
+        trait Logger { def log(msg: String): Unit }
+        trait ConsoleLogger { def log(msg: String) = println(msg) }
     }
 
     // what happens under the hood
     def whatHappensUnderTheHood = {
-        ???
+        // after all, classes and traits become classes and interfaces in jvm.
+
+        // trait turned into java interface;
+        // trait methods become interface default methods;
+        // trait fields: interface has abstract getter and setter (and 'init');
+        //  class gets a field and getter/setter implementation; constructor invokes init of the trait;
+        // if trait extends a superclass, class gets this superclass;
     }
 
 }

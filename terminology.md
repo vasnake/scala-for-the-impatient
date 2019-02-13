@@ -51,3 +51,9 @@ Universal Traits
 Extractor
 
 Lift method
+
+Diamond Inheritance Problem
+
+Default Methods
+
+Linearization of the Class
