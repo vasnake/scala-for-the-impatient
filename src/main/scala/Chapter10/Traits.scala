@@ -416,66 +416,216 @@ object Traits {
 object Traits_Exercises {
 
     // 1. The java.awt.Rectangle class has useful methods translate and grow that are
-    //unfortunately absent from classes such as java.awt.geom.Ellipse2D. In Scala, you can
-    //fix this problem. Define a trait RectangleLike with concrete methods translate and
-    //grow. Provide any abstract methods that you need for the implementation, so that you can mix
-    //in the trait like this:
-    //Click here to view code image
-    //val egg = new java.awt.geom.Ellipse2D.Double(5, 10, 20, 30) with RectangleLike
-    //egg.translate(10, -10)
-    //egg.grow(10, 20)
+    // unfortunately absent from classes such as java.awt.geom.Ellipse2D.
+    // In Scala, you can fix this problem.
+    // Define a trait RectangleLike with concrete methods translate and grow.
+    // Provide any abstract methods that you need for the implementation, so
+    // that you can mix in the trait like this:
+    //  val egg = new java.awt.geom.Ellipse2D.Double(5, 10, 20, 30) with RectangleLike
+    //  egg.translate(10, -10)
+    //  egg.grow(10, 20)
     def ex1 = {
-        ???
+        import java.awt.{geom, Rectangle}
+
+        trait RectangleLike {
+            // self type: structural type
+            this: {
+                def setFrame(r: geom.Rectangle2D): Unit
+                def getFrame(): geom.Rectangle2D
+            } =>
+
+            def translate(dx: Int, dy: Int): Unit = {
+                val rct = new Rectangle()
+                rct.setFrame(getFrame)
+                rct.translate(dx, dy)
+                setFrame(rct.getFrame)
+            }
+
+            def grow(h: Int, v: Int): Unit = {
+                val rct = new Rectangle()
+                rct.setFrame(getFrame)
+                rct.grow(h, v)
+                setFrame(rct.getFrame)
+            }
+        }
+
+        val egg = new geom.Ellipse2D.Double(5, 10, 20, 30) with RectangleLike
+        egg.translate(10, -10)
+        egg.grow(10, 20)
     }
 
     // 2. Define a class OrderedPoint by mixing scala.math.Ordered[Point] into
-    //java.awt.Point. Use lexicographic ordering, i.e. (x, y) < (x’, y’) if x < x’ or x = x’ and y < y’.
+    // java.awt.Point. Use lexicographic ordering, i.e.
+    // (x, y) < (x’, y’) if x < x’ or x = x’ and y < y’.
     def ex2 = {
-        ???
+        import java.awt.Point
+
+        class OrderedPoint extends
+            Point with scala.math.Ordered[Point] {
+
+            override def compare(that: Point): Int = {
+                val cx = this.x.compare(that.x)
+                if (cx == 0) this.y.compare(that.y) else cx
+            }
+        }
     }
 
-    // 3. Look at the BitSet class, and make a diagram of all its superclasses and traits. Ignore the
-    //type parameters (everything inside the [...]). Then give the linearization of the traits.
+    // 3. Look at the BitSet class, and make a diagram of all its superclasses and traits.
+    // Ignore the type parameters (everything inside the [...]).
+    // Then give the linearization of the traits.
     def ex3 = {
-        ???
+        /*
+trait BitSet extends
+    SortedSet[Int] with BitSetLike[BitSet]
+
+lin(BitSet) = BitSet
+    >> lin(BitSetLike)
+    >> lin(SortedSet)
+
+It was a hell of a job, very tedious.
+Don't do it if you don't interested in stdlib internals
+
+lin(BitSet) = BitSet
+    >> BitSetLike
+    >> SortedSet
+    >> SortedSetLike
+    >> Sorted
+    >> Set
+    >> SetLike
+    >> Subtractable
+    >> GenSet
+    >> GenericSetTemplate
+    >> GenSetLike
+    >> Iterable
+    >> IterableLike
+    >> Equals
+    >> GenIterable
+    >> GenIterableLike
+    >> Traversable
+    >> GenTraversable
+    >> GenericTraversableTemplate
+    >> TraversableLike
+    >> GenTraversableLike
+    >> Parallelizable
+    >> TraversableOnce
+    >> GenTraversableOnce
+    >> FilterMonadic
+    >> HasNewBuilder >> Any
+    >> A => Boolean
+         */
     }
 
-    // 4. Provide a CryptoLogger trait that encrypts the log messages with the Caesar cipher. The
-    //key should be 3 by default, but it should be overridable by the user. Provide usage examples
-    //with the default key and a key of –3.
+    // 4. Provide a CryptoLogger trait that encrypts the log messages with the Caesar cipher.
+    // The key should be 3 by default, but it should be overridable by the user.
+    // Provide usage examples with the default key and a key of –3.
     def ex4 = {
-        ???
+        // http://www.rosettacode.org/wiki/Caesar_cipher#Scala
+
+        // abstract logger
+        trait Logger { def log(msg: String): Unit }
+        // simple logger
+        trait ConsoleLogger extends Logger { def log(msg: String) = println(msg) }
+
+        trait CryptoLogger extends Logger {
+            abstract override def log(msg: String): Unit = {
+                super.log(encode(msg, key))
+            }
+
+            protected def key = 3 // default key
+            // alphabet
+            private val lower = 'a' to 'z'
+            private val upper = 'A' to 'Z'
+
+            private def encode(msg: String, key: Int) = msg.map {
+                case a if lower.contains(a) => rotate(lower, a, key)
+                case b if upper.contains(b) => rotate(upper, b, key)
+                case char => char
+            }
+
+            private def rotate(abc: Seq[Char], char: Char, key: Int) = {
+                val idx = (char - abc.head + key + abc.size) % abc.size
+                abc(idx)
+            }
+        }
+
+        // test
+        class Test extends
+            ConsoleLogger with CryptoLogger {
+
+            def test(msg: String) = { log(msg) }
+        }
+
+        val one = new Test
+        one.test("The five boxing wizards jump quickly")
+
+        val two = new Test { override val key = -3 }
+        two.test("Wkh ilyh eralqj zlcdugv mxps txlfnob")
     }
 
-    // 5. The JavaBeans specification has the notion of a property change listener, a standardized way
-    //for beans to communicate changes in their properties. The PropertyChangeSupport class
-    //is provided as a convenience superclass for any bean that wishes to support property change
-    //listeners. Unfortunately, a class that already has another superclass—such as JComponent—
-    //must reimplement the methods. Reimplement PropertyChangeSupport as a trait, and mix
-    //it into the java.awt.Point class.
+    // 5. The JavaBeans specification has the notion of a 'property change listener',
+    // a standardized way for beans to communicate changes in their properties.
+    // The PropertyChangeSupport class is provided as a convenience superclass for any bean
+    // that wishes to support property change listeners.
+    // Unfortunately, a class that already has another superclass — such as JComponent —
+    // must reimplement the methods.
+    // Reimplement PropertyChangeSupport as a trait, and mix it into the java.awt.Point class.
     def ex5 = {
-        ???
+        import java.beans.{PropertyChangeSupport, PropertyChangeListener, PropertyChangeEvent}
+        import java.awt.Point
+
+        trait PropertyChangeSupportTrait {
+            val pcs = new PropertyChangeSupport(this)
+
+            def addPropertyChangeListener(propertyName: String, listener: PropertyChangeListener): Unit =
+                pcs.addPropertyChangeListener(propertyName, listener)
+        }
+
+        class PointWithMonitoring extends
+            Point with PropertyChangeSupportTrait {
+
+            override def setLocation(x: Double, y: Double): Unit = {
+                pcs.firePropertyChange("setLocation", (getX, getY), (x, y))
+                super.setLocation(x, y)
+            }
+        }
+
+        // test
+
+        class SimpleListener extends PropertyChangeListener {
+            override def propertyChange(evt: PropertyChangeEvent): Unit =
+                println(s"propertyChange: ${evt.getSource.getClass}, ${evt.getPropertyName} " +
+                    s"${evt.getOldValue} => ${evt.getNewValue}")
+        }
+
+        val point = new PointWithMonitoring
+        point.addPropertyChangeListener("setLocation", new SimpleListener)
+        point.setLocation(1d, 2d)
     }
 
     // 6. In the Java AWT library, we have a class Container, a subclass of Component that
-    //collects multiple components. For example, a Button is a Component, but a Panel is a
-    //Container. That’s the composite pattern at work. Swing has JComponent and JButton,
-    //but if you look closely, you will notice something strange. JComponent extends
-    //Container, even though it makes no sense to add other components to, say, a JButton.
-    //Ideally, the Swing designers would have preferred the design in Figure 10–4.
-    //But that’s not possible in Java. Explain why not. How could the design be executed in Scala
-    //with traits?
+    // collects multiple components.
+    // For example, a Button is a Component, but a Panel is a Container.
+    // That’s the composite pattern at work.
+    // Swing has JComponent and JButton, but if you look closely, you will notice something strange.
+    // JComponent extends Container, even though it makes no sense to add other components to, say, a JButton.
+    // Ideally, the Swing designers would have preferred the design in Figure 10–4.
+    // But that’s not possible in Java.
+    // Explain why not. How could the design be executed in Scala with traits?
     def ex6 = {
-        ???
+        // JContainer on a diagram extends two classes: JComponent and Container;
+        // JComponent and Container both derived from Component.
+        // Evidently, Component and Container should be implemented as traits.
+        // Or, JComponent could be made as a trait.
     }
 
     // 7. Construct an example where a class needs to be recompiled when one of the mixins changes.
-    //Start with class SavingsAccount extends Account with ConsoleLogger.
-    //Put each class and trait in a separate source file. Add a field to Account. In Main (also in a
-    //separate source file), construct a SavingsAccount and access the new field. Recompile all
-    //files except for SavingsAccount and verify that the program works. Now add a field to
-    //ConsoleLogger and access it in Main. Again, recompile all files except for
-    //SavingsAccount. What happens? Why?
+    // Start with class SavingsAccount extends Account with ConsoleLogger.
+    // Put each class and trait in a separate source file.
+    // Add a field to Account. In Main (also in a separate source file),
+    // construct a SavingsAccount and access the new field.
+    // Recompile all files except for SavingsAccount and verify that the program works.
+    // Now add a field to ConsoleLogger and access it in Main.
+    // Again, recompile all files except for SavingsAccount. What happens? Why?
     def ex7 = {
         ???
     }
