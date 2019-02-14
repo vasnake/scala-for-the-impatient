@@ -726,10 +726,28 @@ lin(BitSet) = BitSet
         file.close()
     }
 
-    // 11. Implement a class IterableInputStream that extends java.io.InputStream with
-    //the trait Iterable[Byte].
+    // 11. Implement a class IterableInputStream that extends java.io.InputStream with the trait Iterable[Byte].
     def ex11 = {
-        ???
+
+        import java.io.{InputStream, FileInputStream}
+
+        class IterableInputStream(is: InputStream) extends
+            InputStream with Iterable[Byte] {
+
+            override def read(): Int = is.read()
+            override def iterator: Iterator[Byte] = Iterator.continually(read().toByte).takeWhile(_ >= 0)
+
+//            override def iterator: Iterator[Byte] = new Iterator[Byte] {
+//                override def hasNext: Boolean = is.available > 0
+//                override def next(): Byte = read().toByte
+//            }
+
+        }
+
+        // in REPL you have to use lazy iterator, or it will be evaluated immediately
+        lazy val file = new IterableInputStream(new FileInputStream("/tmp/test.txt"))
+        val chars = file.iterator.map(_.toChar)
+        println(chars.mkString)
     }
 
     // 12. Using javap -c -private, analyze how the call super.log(msg) is translated to
