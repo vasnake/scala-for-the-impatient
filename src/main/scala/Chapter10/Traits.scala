@@ -112,7 +112,7 @@ object Traits {
 
         // prep stage
         trait Logger { def log(msg: String): Unit } // abstract
-        trait ConsoleLogger { def log(msg: String): Unit = println(msg) } // not abstract, implementation provided
+        trait ConsoleLogger extends Logger { def log(msg: String): Unit = println(msg) } // not abstract, implementation provided
         abstract class SavingsAccount extends Account with Logger {
             def withdraw(amount: Double) = { if (amount > balance) log("Insufficient funds") else balance -= amount }
         }
@@ -750,10 +750,129 @@ lin(BitSet) = BitSet
         println(chars.mkString)
     }
 
-    // 12. Using javap -c -private, analyze how the call super.log(msg) is translated to
-    //Java. How does the same call invoke two different methods, depending on the mixin order?
+    // 12. Using javap -c -private,
+    // analyze how the call super.log(msg) is translated to Java.
+    // How does the same call invoke two different methods, depending on the mixin order?
     def ex12 = {
-        ???
+
+        trait Logger { def log(msg: String): Unit }
+        trait ConsoleLogger extends Logger { def log(msg: String): Unit = println(msg) }
+        // layered
+        trait TimestampLogger extends Logger {
+            abstract override def log(msg: String): Unit = super.log("ts " + msg)
+        }
+        trait ShortLogger extends Logger {
+            abstract override def log(msg: String): Unit = super.log("short " + msg)
+        }
+
+        class Base { val id = "Base" }
+
+        class A extends Base with ConsoleLogger with TimestampLogger with ShortLogger {override val id: String = "A"}
+        // log -> ShortLogger.log -> TimestampLogger.log -> ConsoleLogger.log
+
+        class B extends Base with ConsoleLogger with ShortLogger with TimestampLogger {override val id: String = "B"}
+        // log -> TimestampLogger.log -> ShortLogger.log -> ConsoleLogger.log
+
+/*
+scala> :javap -cp A
+Compiled from "<pastie>"
+public class $line18.$read$$iw$$iw$A extends $line18.$read$$iw$$iw$Base implements $line18.$read$$iw$$iw$ConsoleLogger,$line18.$read$$iw$$iw$TimestampLogger,$line18.$read$$iw$$iw$ShortLogger {
+  private final java.lang.String id;
+
+  public void $line18$$read$$iw$$iw$ShortLogger$$super$log(java.lang.String);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokestatic  #32                 // InterfaceMethod $line18/$read$$iw$$iw$TimestampLogger.log$:(L$line18/$read$$iw$$iw$TimestampLogger;Ljava/lang/String;)V
+       5: return
+
+  public void log(java.lang.String);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokestatic  #38                 // InterfaceMethod $line18/$read$$iw$$iw$ShortLogger.log$:(L$line18/$read$$iw$$iw$ShortLogger;Ljava/lang/String;)V
+       5: return
+
+  public void $line18$$read$$iw$$iw$TimestampLogger$$super$log(java.lang.String);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokestatic  #42                 // InterfaceMethod $line18/$read$$iw$$iw$ConsoleLogger.log$:(L$line18/$read$$iw$$iw$ConsoleLogger;Ljava/lang/String;)V
+       5: return
+
+  public java.lang.String id();
+    Code:
+       0: aload_0
+       1: getfield      #45                 // Field id:Ljava/lang/String;
+       4: areturn
+
+  public $line18.$read$$iw$$iw$A();
+    Code:
+       0: aload_0
+       1: invokespecial #49                 // Method $line18/$read$$iw$$iw$Base."<init>":()V
+       4: aload_0
+       5: invokestatic  #53                 // InterfaceMethod $line18/$read$$iw$$iw$ConsoleLogger.$init$:(L$line18/$read$$iw$$iw$ConsoleLogger;)V
+       8: aload_0
+       9: invokestatic  #56                 // InterfaceMethod $line18/$read$$iw$$iw$TimestampLogger.$init$:(L$line18/$read$$iw$$iw$TimestampLogger;)V
+      12: aload_0
+      13: invokestatic  #59                 // InterfaceMethod $line18/$read$$iw$$iw$ShortLogger.$init$:(L$line18/$read$$iw$$iw$ShortLogger;)V
+      16: aload_0
+      17: ldc           #60                 // String A
+      19: putfield      #45                 // Field id:Ljava/lang/String;
+      22: return
+}
+
+ */
+        /*
+scala> :javap -cp B
+Compiled from "<pastie>"
+public class $line18.$read$$iw$$iw$B extends $line18.$read$$iw$$iw$Base implements $line18.$read$$iw$$iw$ConsoleLogger,$line18.$read$$iw$$iw$ShortLogger,$line18.$read$$iw$$iw$TimestampLogger {
+  private final java.lang.String id;
+
+  public void $line18$$read$$iw$$iw$TimestampLogger$$super$log(java.lang.String);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokestatic  #32                 // InterfaceMethod $line18/$read$$iw$$iw$ShortLogger.log$:(L$line18/$read$$iw$$iw$ShortLogger;Ljava/lang/String;)V
+       5: return
+
+  public void log(java.lang.String);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokestatic  #38                 // InterfaceMethod $line18/$read$$iw$$iw$TimestampLogger.log$:(L$line18/$read$$iw$$iw$TimestampLogger;Ljava/lang/String;)V
+       5: return
+
+  public void $line18$$read$$iw$$iw$ShortLogger$$super$log(java.lang.String);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokestatic  #42                 // InterfaceMethod $line18/$read$$iw$$iw$ConsoleLogger.log$:(L$line18/$read$$iw$$iw$ConsoleLogger;Ljava/lang/String;)V
+       5: return
+
+  public java.lang.String id();
+    Code:
+       0: aload_0
+       1: getfield      #45                 // Field id:Ljava/lang/String;
+       4: areturn
+
+  public $line18.$read$$iw$$iw$B();
+    Code:
+       0: aload_0
+       1: invokespecial #49                 // Method $line18/$read$$iw$$iw$Base."<init>":()V
+       4: aload_0
+       5: invokestatic  #53                 // InterfaceMethod $line18/$read$$iw$$iw$ConsoleLogger.$init$:(L$line18/$read$$iw$$iw$ConsoleLogger;)V
+       8: aload_0
+       9: invokestatic  #56                 // InterfaceMethod $line18/$read$$iw$$iw$ShortLogger.$init$:(L$line18/$read$$iw$$iw$ShortLogger;)V
+      12: aload_0
+      13: invokestatic  #59                 // InterfaceMethod $line18/$read$$iw$$iw$TimestampLogger.$init$:(L$line18/$read$$iw$$iw$TimestampLogger;)V
+      16: aload_0
+      17: ldc           #60                 // String B
+      19: putfield      #45                 // Field id:Ljava/lang/String;
+      22: return
+}
+
+         */
     }
 
 }
