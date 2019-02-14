@@ -14,34 +14,129 @@ object Operators {
     // the unapplySeq method
     // dynamic invocation
 
+    // implementing your own operators;
+    // operators + implicit conversions = Domain Specific Language;
+    // special methods: apply, update, unapply;
+    // unary and binary operators are method calls;
+    // operator precedence depends on the first char, associativity on the last;
+    // extractors extract tuples or sequences of values; or single value or just bool;
+    // types with Dynamic trait can inspect/dispatch methods names and arguments at runtime;
+
     // identifiers
     def identifiers = {
-        ???
+        // names of variables, functions, classes, etc
+
+        // in identifiers:
+        // unicode chars are allowed;
+        // operator chars are allowed: the ASCII characters
+        //      ! # % & * + - / : < = > ? @ \ ^ | ~
+        //      that are not letters, digits, underscore,
+        //      the .,; punctuation marks, parentheses () [] {}, or quotation marks ' ` "
+
+        val √ = scala.math.sqrt _
+        println(s"sqrt of 2: ${√(2)}")
+
+        // The identifiers that reserved in the specification
+        //      @ # : = _ => <- <: <% >: ⇒ ←
+
+        // you can include just about any id in backquotes
+        val `val` = 42
+        val `yield`: () => Unit = java.lang.Thread.`yield`
     }
 
     // infix operators
     def infixOperators = {
-        ???
+        // binary operators
+        // a id b : operator between the arguments
+        // method with two parameters: implicit + explicit
+
+        val `1to10` = 1 to 10
+        val actually = 1.to(10)
+        // def to(end: Int): Range.Inclusive = Range.inclusive(self, end)
+
+        // operator chars
+        val ten = 1 -> 10 // tuple
+        val ten2 = 1.->(10)
+
+        // just define a method with desired name
+        class Fraction(n: Int, d: Int) {
+            private val num: Int = ???
+            private val den: Int = ???
+            def *(other: Fraction) = new Fraction(num * other.num, den * other.den)
+        }
     }
 
     // unary operators
     def unaryOperators = {
-        ???
+        // operator with one parameter: prefix, postfix
+
+        // + - ! ~ allowed as prefix operators
+        // converted into obj.unary_op
+        // e.g.     -a => a.unary_-
+
+        // postfix op can lead to parsing errors
+        import scala.language.postfixOps
+
+        // postfix operator follows its argument
+        // obj op => obj.op()
+        val `42` = 42 toString
+        // 42.toString()
     }
 
     // assignment operators
     def assignmentOperators = {
-        ???
+        // in the form op=
+        // means mutation
+
+        // obj op= obj2     => obj = obj op obj2
+        // e.g. a += b      => a = a + b
+
+        // <=, >=, != are NOT assignment operators
+        // operator starting with '=' is never an assignment op (==, ===, =/=, etc)
+        // if obj has a method 'op=' that method is called directly
     }
 
     // precedence
     def precedence = {
-        ???
+        // except for assignment operators, the precedence is determined by
+        // the FIRST character of the operator
+
+        /*
+        highest: an op character (# ? @ \ ~) other then those below
+
+        * / %
+        + -
+        :
+        < >
+        ! =
+        &
+        ^
+        |
+
+        a char that is not an operator char (alphanumeric)
+        lowest: assignment operators (op=)
+         */
+
+        // postfix operators have lower precedence than infix operators
+        // a infix b postfix => (a infix b) postfix
     }
 
     // associativity
     def associativity = {
-        ???
+        // evaluated left-to-right or right-to-left
+
+        // left-associative
+        val left = 17 - 2 - 9 // => (17 - 2) - 9
+
+        // all operators are left-associative
+        // except:  'op:' // end in a colon;
+        //          'op=' // assignment operators
+
+        val right = 1 :: 2 :: Nil // => 1 :: (2 :: Nil)
+        // def ::[B >: A] (x: B): List[B] = new scala.collection.immutable.::(x, this)
+
+        // right-associative binary operator is a method of its second argument
+        // 2 :: Nil =>  Nil.::(2)
     }
 
     // the apply and update methods

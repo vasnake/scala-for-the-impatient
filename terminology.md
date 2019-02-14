@@ -57,3 +57,9 @@ Diamond Inheritance Problem
 Default Methods
 
 Linearization of the Class
+
+Implicit Conversion
+
+Case Class
+
+Strongly Typed Language
