@@ -652,12 +652,34 @@ lin(BitSet) = BitSet
         }
     }
 
-    // 8. There are dozens of Scala trait tutorials with silly examples of barking dogs or philosophizing
-    //frogs. Reading through contrived hierarchies can be tedious and not very helpful, but designing
-    //your own is very illuminating. Make your own silly trait hierarchy example that demonstrates
-    //layered traits, concrete and abstract methods, and concrete and abstract fields.
+    // 8. There are dozens of Scala trait tutorials with silly examples of barking dogs or philosophizing frogs.
+    // Reading through contrived hierarchies can be tedious and not very helpful, but designing
+    // your own is very illuminating.
+    // Make your own silly trait hierarchy example that demonstrates
+    // layered traits,
+    // concrete and abstract methods,
+    // and concrete and abstract fields.
     def ex8 = {
-        ???
+        trait FooBase {
+            val name: String
+            val id = "FooBase"
+            def out(msg: String): Unit
+            def debugPrint(msg: String = ""): Unit = out(s"${java.time.Instant.now.toString}, " +
+                s"id: ${id}, name: ${name}, ext: '${msg}'")
+        }
+        trait Foo extends FooBase {
+            val name = "foo"
+            val description = "fffffooooooo"
+            override val id: String = "Foo"
+            override def debugPrint(msg: String = ""): Unit = super.debugPrint(
+                s"description: ${description}, msg: ${msg}")
+        }
+
+        val foo = new { override val name = "bar" } with Foo {
+            override def out(msg: String): Unit = print(msg)
+        }
+        foo.debugPrint("baz")
+        //2019-02-14T11:07:12.949Z, id: Foo, name: bar, ext: 'description: fffffooooooo, msg: baz'
     }
 
     // 9. In the java.io library, you add buffering to an input stream with a
