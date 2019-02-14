@@ -22,6 +22,11 @@ object Traits {
     // traits can require (implementing) classes to have certain features;
     // the order matters -- first execute the trait on the back;
 
+    // prepare stage, some base classes
+    class Account { var balance = 0.0 }
+    trait Logger { def log(msg: String): Unit } // abstract
+    trait ConsoleLogger extends Logger { def log(msg: String): Unit = println(msg) } // not abstract, implementation provided
+
     // why no multiple inheritance?
     def whyNoMultipleInheritance = {
         // if you combine classes with common features, you have a lot of mess;
@@ -86,10 +91,6 @@ object Traits {
     def objectsWithTraits = {
         // you can add trait to an any class instance
 
-        trait Logger {
-            def log(msg: String): Unit // abstract
-        }
-
         // abstract too, because of logger
         abstract class SavingsAccount extends
             Account with Logger {
@@ -103,23 +104,19 @@ object Traits {
         // but, you can mix in implementation when constructing an object
         val acct = new SavingsAccount with ConsoleLogger
         // dependency injection?
-
-        class Account { var balance = 0.0 }
-        trait ConsoleLogger {
-            def log(msg: String): Unit = println(msg) // not abstract, implementation provided
-        }
     }
 
     // layered traits
     def layeredTraits = {
         // traits that invoke each other via 'super'
 
-        trait Logger {
-            def log(msg: String): Unit // abstract
+        // prep stage
+        trait Logger { def log(msg: String): Unit } // abstract
+        trait ConsoleLogger { def log(msg: String): Unit = println(msg) } // not abstract, implementation provided
+        abstract class SavingsAccount extends Account with Logger {
+            def withdraw(amount: Double) = { if (amount > balance) log("Insufficient funds") else balance -= amount }
         }
-        trait ConsoleLogger {
-            def log(msg: String): Unit = println(msg) // not abstract, implementation provided
-        }
+
         trait TimestampLogger extends ConsoleLogger {
             // call super
             override def log(msg: String): Unit = super.log(s"${java.time.Instant.now} $msg")
@@ -143,14 +140,6 @@ object Traits {
             override def log(msg: String): Unit = super[ConsoleLogger].log(s"${java.time.Instant.now} $msg")
             // ConsoleLogger must be immediate supertype
         }
-
-        abstract class SavingsAccount extends Account with Logger {
-            def withdraw(amount: Double) = {
-                if (amount > balance) log("Insufficient funds")
-                else balance -= amount
-            }
-        }
-        class Account { var balance = 0.0 }
     }
 
     // overriding abstract methods in traits
@@ -201,12 +190,10 @@ object Traits {
     def concreteFieldsInTraits = {
         // field with initial value: concrete
 
-        trait Logger {
-            def log(msg: String): Unit // abstract
-        }
-
         trait ShortLogger extends Logger {
             val maxLength = 15 // a concrete field
+
+            // call abstract super
             abstract override def log(msg: String): Unit = super.log(
                 if (msg.length <= maxLength) msg
                 else s"${msg.take(maxLength)}")
@@ -223,10 +210,6 @@ object Traits {
                 if (amount > balance) log("Insufficient funds")
                 else balance -= amount
             }
-        }
-        class Account { var balance = 0.0 }
-        trait ConsoleLogger {
-            def log(msg: String): Unit = println(msg)
         }
 
     }
@@ -253,9 +236,8 @@ object Traits {
         trait ConsoleLogger extends Logger { def log(msg: String): Unit = println(msg) }
 
         // handy when constructing objects on the fly
-        val acct = new SavingsAccount2 with ConsoleLogger with ShortLogger { override val maxLength: Int = 20 }
         abstract class SavingsAccount2 extends Account with Logger { }
-
+        val acct = new SavingsAccount2 with ConsoleLogger with ShortLogger { override val maxLength: Int = 20 }
     }
 
     // trait construction order
@@ -354,7 +336,7 @@ object Traits {
         trait LoggedException extends
             Exception with ConsoleLogger {
             // Exception will be a superclass for any user of this trait
-            def log() = log(getMessage)
+            def log(): Unit = log(getMessage)
         }
 
         // class with implicit superclass
@@ -383,7 +365,7 @@ object Traits {
         trait LoggedException extends ConsoleLogger {
             this: Exception => // self type of Exception, trait can only be mixed into Exception subtype
 
-            def log() = { log(getMessage) }
+            def log(): Unit = { log(getMessage) }
         }
 
         // self type notation is more flexible
@@ -392,7 +374,7 @@ object Traits {
         trait LoggedException2 extends ConsoleLogger {
             this: { def getMessage: String } => // mix with any class that have getMessage
 
-            def log() = { log(getMessage) }
+            def log(): Unit = { log(getMessage) }
         }
 
 
@@ -627,7 +609,47 @@ lin(BitSet) = BitSet
     // Now add a field to ConsoleLogger and access it in Main.
     // Again, recompile all files except for SavingsAccount. What happens? Why?
     def ex7 = {
-        ???
+
+        def before = {
+            // logger src file
+            trait Logger { def log(msg: String): Unit }
+            trait ConsoleLogger { def log(msg: String): Unit = println(msg) }
+            // account src file
+            class Account { var balance = 0.0 }
+            class SavingsAccount extends
+                Account with ConsoleLogger {
+                def withdraw(amount: Double) = {
+                    if (amount > balance) log("Insufficient funds")
+                    else balance -= amount
+                }
+            }
+            // main src file
+            val acct = new SavingsAccount
+            println(s"${acct.balance}")
+        }
+
+        def after = {
+            // logger src file
+            trait Logger { def log(msg: String): Unit }
+            trait ConsoleLogger {
+                def log(msg: String): Unit = println(msg)
+                var count = 0
+            }
+            // account src file
+            class Account { var balance = 0.0 }
+            class SavingsAccount extends
+                Account with ConsoleLogger {
+                def withdraw(amount: Double) = {
+                    if (amount > balance) log("Insufficient funds")
+                    else balance -= amount
+                }
+            }
+            // main src file
+            val acct = new SavingsAccount
+            println(s"${acct.balance}")
+            println(s"${acct.count}") // field added to SavingsAccount only after recompile
+            // fields from traits go to classes that mix in that traits
+        }
     }
 
     // 8. There are dozens of Scala trait tutorials with silly examples of barking dogs or philosophizing
