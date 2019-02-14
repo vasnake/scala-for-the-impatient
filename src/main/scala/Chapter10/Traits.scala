@@ -682,17 +682,48 @@ lin(BitSet) = BitSet
         //2019-02-14T11:07:12.949Z, id: Foo, name: bar, ext: 'description: fffffooooooo, msg: baz'
     }
 
-    // 9. In the java.io library, you add buffering to an input stream with a
-    //BufferedInputStream decorator. Reimplement buffering as a trait. For simplicity,
-    //override the read method.
+    // 9. In the java.io library, you add buffering to an input stream with a BufferedInputStream decorator.
+    // Reimplement buffering as a trait.
+    // For simplicity, override the read method.
     def ex9 = {
-        ???
+        import java.io.{FileInputStream, BufferedInputStream, InputStream}
+        trait BufferedIS { this: InputStream =>
+            val buff = new BufferedInputStream(this)
+            override def read(b: Array[Byte]): Int = buff.read(b)
+            override def mark(readlimit: Int): Unit = buff.mark(readlimit)
+            override def markSupported(): Boolean = buff.markSupported()
+            override def reset(): Unit = buff.reset()
+        }
+
+        val file = new FileInputStream("/tmp/test.txt") with BufferedIS
+        val buff = Array.ofDim[Byte](1024)
+        file.mark(3)
+        file.read(buff); println(buff.map(_.toChar).mkString)
+        file.reset()
+        file.read(buff); println(buff.map(_.toChar).mkString)
+        file.close()
     }
 
     // 10. Using the logger traits from this chapter, add logging to the solution of the preceding problem
-    //that demonstrates buffering.
+    // that demonstrates buffering.
     def ex10 = {
-        ???
+
+        import java.io.{FileInputStream, BufferedInputStream, InputStream}
+        trait Logger { def log(msg: String): Unit }
+        trait ConsoleLogger extends Logger { def log(msg: String): Unit = println(msg) }
+
+        trait BufferedIS extends Logger { this: InputStream =>
+            val buff = {log(s"new buffer for ${this}"); new BufferedInputStream(this)}
+            override def read(): Int = {
+                log(s"(buf bytes - stream bytes): ${buff.available - this.available}")
+                buff.read()
+            }
+        }
+
+        val file = new FileInputStream("/tmp/test.txt") with BufferedIS with ConsoleLogger
+        val chars = Iterator.continually(file.read).takeWhile(b => b >= 0).map(_.toChar)
+        println(chars.mkString)
+        file.close()
     }
 
     // 11. Implement a class IterableInputStream that extends java.io.InputStream with
