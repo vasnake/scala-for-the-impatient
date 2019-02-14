@@ -18,3 +18,4 @@ https://www.google.ru/search?q=scala+for+the+impatient+2nd+edition+cay+horstmann
 8. [Inheritance](src/main/scala/Chapter08/Inheritance.scala)
 9. [Files and Regular Expressions](/src/main/scala/Chapter09/FilesAndRegularExpressions.scala)
 10. [Traits](/src/main/scala/Chapter10/Traits.scala)
+11. [Operators](/src/main/scala/Chapter11/Operators.scala)
