@@ -349,6 +349,7 @@ lowest: assignment operators (op=)
         // + - have the same precedence // (3 + 4) -> 5 == (7, 5)
         val res = 3 + 4 -> 5
         assert(res == (7, 5))
+        // 3 -> 4 + 5 = (3, 4) + 5 = type mismatch
     }
 
     // 2. The BigInt class has a pow method, not an operator.
@@ -383,11 +384,15 @@ lowest: assignment operators (op=)
             private val num: Int = if (d == 0) 1 else n * sign(d) / gcd(n, d)
             private val den: Int = if (d == 0) 0 else d * sign(d) / gcd(n, d)
             override def toString = s"$num/$den"
+            private def _add(other: Fraction, plus: Boolean = true) = {
+                val sign = if (plus) 1 else -1
+                Fraction(num*other.den + sign * (other.num * den), den * other.den)
+            }
 
-            def add(other: Fraction): Fraction = ???
-            def subtract(other: Fraction): Fraction = ???
-            def product(other: Fraction): Fraction = ???
-            def divide(other: Fraction): Fraction = ???
+            def add(other: Fraction): Fraction = _add(other)
+            def subtract(other: Fraction): Fraction = _add(other, plus=false)
+            def product(other: Fraction): Fraction = Fraction(num * other.num, den * other.den)
+            def divide(other: Fraction): Fraction = Fraction(num * other.den, den * other.num)
 
             def +(other: Fraction): Fraction = add(other)
             def -(other: Fraction): Fraction = subtract(other)
@@ -396,10 +401,12 @@ lowest: assignment operators (op=)
         }
         object Fraction {
             def apply(n: Int, d: Int): Fraction = new Fraction(n, d)
-            def sign(a: Int) = if (a > 0) 1 else if (a < 0) -1 else 0
+            def sign(a: Int): Int = if (a > 0) 1 else if (a < 0) -1 else 0
             @tailrec def gcd(a: Int, b: Int): Int = if (b == 0) scala.math.abs(a) else gcd(b, a % b)
         }
 
+        val res = Fraction(1,2) + Fraction(3,4) - Fraction(5,6) * Fraction(7,8) / Fraction(9,10)
+        assert(res.toString == "95/216")
     }
 
     // 4. Implement a class Money with fields for dollars and cents.
