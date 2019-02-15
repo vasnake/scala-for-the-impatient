@@ -41,7 +41,7 @@ object Operators {
 
         // you can include just about any id in backquotes
         val `val` = 42
-        val `yield`: () => Unit = java.lang.Thread.`yield`
+        val `yield` = () => java.lang.Thread.`yield`()
     }
 
     // infix operators
@@ -216,17 +216,111 @@ object Operators {
 
     // extractors with one or no arguments
     def extractorsWithOneOrNoArguments = {
-        ???
+
+        // extractors for one component should return Option[value]
+        object Number {
+            def unapply(arg: String): Option[Int] = scala.util.Try { arg.trim.toInt }.toOption
+        }
+        val Number(n) = "123"
+        println(s"number $n")
+
+        // extractor for testing: return a bool
+        object IsCompound {
+            def unapply(arg: String): Boolean = arg.contains(" ")
+        }
+        object Name {
+            def unapply(arg: String): Option[(String, String)] = {val pos = arg.indexOf(" ");
+                if (pos < 0) None  else Some((arg take pos, arg drop pos+1)) } }
+        // n.b. 'IsCompound()' syntax, no 'last' name
+        "John van der Linden" match {
+            case Name(first, IsCompound()) => println(s"first: $first, last is compound")
+        }
     }
 
     // the unapplySeq method
     def theUnapplySeqMethod = {
-        ???
+        // extract arbitrary sequence of values: unapplySeq => Option[Seq[T]]
+
+        object Name {
+            def unapplySeq(arg: String): Option[Seq[String]] =
+                if (arg.trim == "") None else Some(arg.trim.split("""\s+"""))
+            // !do not supply both: unapply and unapplySeq with the same argument types!
+            // def unapply(arg: String): Option[(String, String)] = ???
+        }
+        "John van der Linden" match {
+            case Name(first, last) => println(s"2: $first $last")
+            case Name(first, middle, last) => println(s"3: $first $middle $last")
+            case Name(first, "van", "der", last) => println(s"van der: $first $last")
+            case _ => sys.error("oops")
+        }
     }
 
     // dynamic invocation
     def dynamicInvocation = {
-        ???
+        // best used with restraint, like operator overloading
+
+        // strongly typed language but it's possible to build dynamic dispatch subsystem;
+        // common problem for ORM libs: person.lastName = "Doe";
+
+        // trait scala.Dynamic: calls routed to special methods
+        import scala.language.dynamics // exotic feature
+
+        class Dynamite extends scala.Dynamic {
+            def log(msg: String): Unit = println(msg)
+            // *  foo.method("blah")      ~~> foo.applyDynamic("method")("blah")
+            // *  foo.method(x = "blah")  ~~> foo.applyDynamicNamed("method")(("x", "blah"))
+            // *  foo.method(x = 1, 2)    ~~> foo.applyDynamicNamed("method")(("x", 1), ("", 2))
+            // *  foo.field           ~~> foo.selectDynamic("field")
+            // *  foo.varia = 10      ~~> foo.updateDynamic("varia")(10)
+            // *  foo.arr(10) = 13    ~~> foo.selectDynamic("arr").update(10, 13)
+            def applyDynamic(method: String)(param: String): String = {
+                println(s"method: $method, parameter: $param")
+                "def applyDynamic(method: String)(param: String): String"
+            }
+            def applyDynamicNamed(method: String)(argpairs: (String, String)*): String = {
+                println(s"""method: $method, params: ${argpairs.toList.mkString(";")}""")
+                "def applyDynamicNamed(method: String)(argpairs: (String, String)*): String"
+            }
+            def updateDynamic(fldname: String)(value: String): Unit = {
+                println(s"update field: $fldname = $value")
+            }
+            def selectDynamic(fldname: String): String = {
+                println(s"read field: $fldname")
+                "def selectDynamic(fldname: String): String"
+            }
+        }
+        val obj = new Dynamite
+
+        // call log method
+        obj.log("foo")
+        // unnamed arguments: call applyDynamic("getFoo")(arg)
+        obj.getFoo("bar")
+        // named arguments, at least one: call applyDynamicNamed
+        obj.getFooExtended(file = "bar", section = "baz", "42")
+        // field assignment: call updateDynamic
+        obj.filename = "fileard"
+        // field accessor: call selectDynamic
+        val fn = obj.filename
+
+        // person.lastName = "Doe"
+        // val name = person.lastName
+        // val does = people.findByLastName("Doe")
+        // val johnDoes = people.find(lastName = "Doe", firstName = "John")
+
+        // book example
+        class DynamicProps(val props: java.util.Properties) extends Dynamic {
+            private def norm(name: String ) = name.replaceAll("_", ".")
+            def updateDynamic(name: String)(value: String) = props.setProperty(norm(name), value)
+            def selectDynamic(name: String) = props.getProperty(norm(name))
+            def applyDynamicNamed(name: String)(args: (String, String)*) = {
+                if (name != "add") throw new IllegalArgumentException
+                for ((k, v) <- args) props.setProperty(norm(k), v)
+            }
+        }
+        val sysProps = new DynamicProps(System.getProperties)
+        sysProps.username = "Fred"
+        val home = sysProps.java_home
+        sysProps.add(username="Fred", password="secret")
     }
 
 }
