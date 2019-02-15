@@ -141,12 +141,77 @@ object Operators {
 
     // the apply and update methods
     def theApplyAndUpdateMethods = {
-        ???
+        // 'function call' syntax
+
+        // f(args)          => f.apply(args)
+        // or, if f(args) is a left side of an assignment
+        // f(args) = v      => f.update(args, v)
+
+        val scores = scala.collection.mutable.HashMap.empty[String, Int]
+        scores("bob") = 100;            scores.update("bob", 100)
+        var bobsScore = scores("bob");  bobsScore = scores.apply("bob")
+
+        // apply in companion objects: factory method
+        class Fraction(n: Int, d: Int) { def *(other: Fraction): Fraction = ??? }
+        object Fraction {
+            // factory
+            def apply(n: Int, d: Int): Fraction = new Fraction(n, d)
+        }
+
+        // very convenient:
+        val res = Fraction(3,4) * Fraction(2,5)
     }
 
     // extractors
     def extractors = {
-        ???
+        // object with 'unapply' method
+        // extract values, check conditions;
+        // pattern matching facilitator
+
+        // example
+
+        class Fraction(n: Int, d: Int) { val num: Int = ???; val den: Int = ???; def *(other: Fraction): Fraction = ??? }
+        object Fraction {
+            // factory
+            def apply(n: Int, d: Int): Fraction = new Fraction(n, d)
+            // extractor's method // n.b. Option
+            def unapply(arg: Fraction): Option[(Int, Int)] =
+                if (arg.den == 0) None else Some((arg.num, arg.den))
+        }
+        // use in variable definition: extract 'a' and 'b'
+        var Fraction(a, b) = Fraction(3,4) * Fraction(2,5)
+        // or pattern match
+        Fraction(1,2) match {
+            // n, d are bound to num,den of object
+            case Fraction(n, d) => println(s"nominator: ${n}, denominator: ${d}")
+            case _ => sys.error("oops")
+        }
+
+        // you can use extractors to extract information from any object (if appropriate unapply defined)
+
+        // first, last name // no Name class, just extractor (object)
+        object Name {
+            def unapply(arg: String): Option[(String, String)] = {
+                val pos = arg.indexOf(" ")
+                if (pos < 0) None
+                else Some((arg take pos, arg drop pos+1))
+//                val parts = arg.split("""\s+""")
+//                if (parts.length > 1) Some((parts.head, parts.tail.mkString(" ")))
+//                else None
+            }
+        }
+        val Name(first, last) = "Cay Horstmann" // Name.unapply
+        println(s"$first, $last")
+
+        // case class
+
+        // every 'case class' automatically has companion with 'apply' and 'unapply'
+        case class Currency(value: Double, unit: String)
+        val money = Currency(29.95, "EUR") // apply
+        money match {
+            case Currency(amount, "USD") => println(s"$$$amount") // unapply
+        }
+
     }
 
     // extractors with one or no arguments

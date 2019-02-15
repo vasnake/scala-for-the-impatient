@@ -70,14 +70,14 @@ object Objects {
 
     // the apply method
     def theApplyMethod = {
-        // 'apply' method as a companion class fabric method
+        // 'apply' method as a companion class factory method
         val a = Array("Mary", "had") // object Array 'apply' method here
 
         // confusion
         val b = Array(1000) // one element of thousand
         val c = new Array(1000) // 1000 elements of null
 
-        // e.g. you can use only fabric: private constructor
+        // e.g. you can use only factory: private constructor
         class Account private (val id: Int, initialBalance: Double) {
             //val id = Account.newUniqueNumber()
             private var balance = initialBalance
