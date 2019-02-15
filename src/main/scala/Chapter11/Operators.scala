@@ -381,27 +381,30 @@ lowest: assignment operators (op=)
 
         class Fraction(n: Int, d: Int) {
             import Fraction._
-            private val num: Int = if (d == 0) 1 else n * sign(d) / gcd(n, d)
-            private val den: Int = if (d == 0) 0 else d * sign(d) / gcd(n, d)
+
+            private[this] val _gcd = gcd(n.abs, d.abs)
+            val num: Int = if (d == 0) 1 else n * d.signum / _gcd
+            val den: Int = if (d == 0) 0 else d * d.signum / _gcd
+
             override def toString = s"$num/$den"
-            private def _add(other: Fraction, plus: Boolean = true) = {
-                val sign = if (plus) 1 else -1
-                Fraction(num*other.den + sign * (other.num * den), den * other.den)
-            }
+
+            def +(other: Fraction): Fraction = add(other)
+            def -(other: Fraction): Fraction = subtract(other)
+            def *(other: Fraction): Fraction = product(other)
+            def /(other: Fraction): Fraction = divide(other)
 
             def add(other: Fraction): Fraction = _add(other)
             def subtract(other: Fraction): Fraction = _add(other, plus=false)
             def product(other: Fraction): Fraction = Fraction(num * other.num, den * other.den)
             def divide(other: Fraction): Fraction = Fraction(num * other.den, den * other.num)
 
-            def +(other: Fraction): Fraction = add(other)
-            def -(other: Fraction): Fraction = subtract(other)
-            def *(other: Fraction): Fraction = product(other)
-            def /(other: Fraction): Fraction = divide(other)
+            private def _add(other: Fraction, plus: Boolean = true) = {
+                val sign = if (plus) 1 else -1
+                Fraction(num*other.den + sign * (other.num * den), den * other.den)
+            }
         }
         object Fraction {
             def apply(n: Int, d: Int): Fraction = new Fraction(n, d)
-            def sign(a: Int): Int = if (a > 0) 1 else if (a < 0) -1 else 0
             @tailrec def gcd(a: Int, b: Int): Int = if (b == 0) scala.math.abs(a) else gcd(b, a % b)
         }
 
@@ -414,7 +417,27 @@ lowest: assignment operators (op=)
     // For example, Money(1, 75) + Money(0, 50) == Money(2, 25) should be true.
     // Should you also supply * and / operators? Why or why not?
     def ex4 = {
-        ???
+        // Should you also supply * and / operators? Why or why not?
+        // $1.25 multiply by $3.33 ? or $4.2 divide by $3.42 ? it's meaningless
+
+        class Money($dollars: Int, $cents: Int) {
+            private val totalCents = Money.totalCents($dollars, $cents)
+            require(totalCents >= 0, "no support for negative amounts")
+
+            val dollars: Int = totalCents / 100
+            val cents: Int = totalCents % 100
+
+            def +(other: Money): Money = Money(dollars + other.dollars, cents + other.cents)
+            def -(other: Money): Money = Money(dollars - other.dollars, cents - other.cents)
+            def ==(other: Money): Boolean = totalCents == other.totalCents
+            def <(other: Money): Boolean = totalCents < other.totalCents
+        }
+        object Money {
+            def apply(dollars: Int, cents: Int): Money = new Money(dollars, cents)
+            def totalCents(dollars: Int, cents: Int): Int = dollars * 100 + cents
+        }
+
+        assert( Money(1, 75) + Money(0, 50) == Money(2, 25) )
     }
 
     // 5. Provide operators that construct an HTML table.
