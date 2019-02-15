@@ -446,7 +446,26 @@ lowest: assignment operators (op=)
     //should produce
     //  <table><tr><td>Java</td><td>Scala</td></tr><tr><td>Gosling...
     def ex5 = {
-        ???
+        class Table {
+            def |(cell: String): Table = ???
+            def ||(row: String): Table = ???
+
+            override def toString: String = ???
+        }
+        object Table {
+            def apply() = new Table
+        }
+
+        val res = Table() | "Java" | "Scala" || "Gosling" | "Odersky" || "JVM" | "JVM, .NET"
+        val expected =
+            """
+              |<table>
+              |<tr><td>Java</td><td>Scala</td></tr>
+              |<tr><td>Gosling</td><td>Odersky</td></tr>
+              |<tr><td>JVM</td><td>JVM, .NET</td></tr>
+              |</table>
+            """.stripMargin.replaceAll("""\n\s*""", "").trim
+        assert(res.toString == expected)
     }
 
     // 6. Provide a class ASCIIArt whose objects contain figures such as
