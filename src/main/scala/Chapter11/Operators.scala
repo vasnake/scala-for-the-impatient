@@ -462,20 +462,52 @@ lowest: assignment operators (op=)
         assert( Money(1, 75) + Money(0, 50) == Money(2, 25) )
     }
 
-    // 5. Provide operators that construct an HTML table.
-    // For example,
-    //  Table() | "Java" | "Scala" || "Gosling" | "Odersky" || "JVM" | "JVM, .NET"
-    //should produce
-    //  <table><tr><td>Java</td><td>Scala</td></tr><tr><td>Gosling...
+    // 5. Provide operators that construct an HTML table. For example,
+    //      Table() | "Java" | "Scala" || "Gosling" | "Odersky" || "JVM" | "JVM, .NET"
+    // should produce
+    //      <table><tr><td>Java</td><td>Scala</td></tr><tr><td>Gosling...
     def ex5 = {
-        class Table {
-            def |(cell: String): Table = ???
-            def ||(row: String): Table = ???
 
-            override def toString: String = ???
+        case class Row(cells: Seq[String] = Seq.empty) {
+            def append(cell: String): Row = Row(cells :+ cell)
+        }
+
+        class Table(private val completeRows: Seq[Row] = Seq.empty,
+                    private val currentRow: Row = Row(Seq.empty)) {
+            // interface
+            def |(cell: String): Table = addCell2CurrentRow(cell)
+            def ||(cell: String): Table = addCell2NewRow(cell)
+            override def toString: String = htmlTable
+
+            // implementation
+            def addCell2CurrentRow(cell: String): Table = {
+                new Table(completeRows, currentRow.append(cell))
+            }
+            def addCell2NewRow(cell: String): Table = {
+                val completerows = completeRows :+ currentRow
+                new Table(completerows, Row().append(cell))
+            }
+            def htmlTable: String = { Table.htmlTable(completeRows :+ currentRow) }
         }
         object Table {
+            // interface
             def apply() = new Table
+
+            // implementation
+            def htmlCell(cell: String): String = { "<td>" + cell + "</td>" }
+            def htmlRow(row: Row): String = {
+                val cells = for {
+                    cell <- row.cells
+                } yield htmlCell(cell)
+                "<tr>" + cells.mkString + "</tr>"
+            }
+            def htmlTable(table: Seq[Row]): String = {
+                val rows = for {
+                    row <- table
+                    if row.cells.nonEmpty
+                } yield htmlRow(row)
+                "<table>" + rows.mkString + "</table>"
+            }
         }
 
         val res = Table() | "Java" | "Scala" || "Gosling" | "Odersky" || "JVM" | "JVM, .NET"
@@ -487,6 +519,7 @@ lowest: assignment operators (op=)
               |<tr><td>JVM</td><td>JVM, .NET</td></tr>
               |</table>
             """.stripMargin.replaceAll("""\n\s*""", "").trim
+
         assert(res.toString == expected)
     }
 
