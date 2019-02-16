@@ -439,27 +439,29 @@ lowest: assignment operators (op=)
             }
         }
 
-        class Money(private val totalCents: Int) {
-            val (dollars, cents) = Money.dollarsAndCents(totalCents)
+        def v2 = {
+            class Money(private val totalCents: Int) {
+                val (dollars, cents) = Money.dollarsAndCents(totalCents)
 
-            def +(other: Money): Money = new Money(totalCents + other.totalCents)
-            def -(other: Money): Money = new Money(totalCents - other.totalCents)
-            def <(other: Money): Boolean = totalCents < other.totalCents
+                def +(other: Money): Money = new Money(totalCents + other.totalCents)
+                def -(other: Money): Money = new Money(totalCents - other.totalCents)
+                def <(other: Money): Boolean = totalCents < other.totalCents
 
-            // def ==(other: Money): Boolean = totalCents == other.totalCents
-            final override def equals(other: Any): Boolean = other match {
-                case that: Money => this.totalCents == that.totalCents
-                case _ => false
+                // def ==(other: Money): Boolean = totalCents == other.totalCents
+                final override def equals(other: Any): Boolean = other match {
+                    case that: Money => this.totalCents == that.totalCents
+                    case _ => false
+                }
+                override def hashCode(): Int = totalCents
             }
-            override def hashCode(): Int = totalCents
-        }
-        object Money {
-            def apply(dollars: Int, cents: Int): Money = new Money(totalCents(dollars, cents))
-            def totalCents(dollars: Int, cents: Int): Int = dollars * 100 + cents
-            def dollarsAndCents(cents: Int): (Int, Int) = (cents / 100, cents % 100)
-        }
+            object Money {
+                def apply(dollars: Int, cents: Int): Money = new Money(totalCents(dollars, cents))
+                def totalCents(dollars: Int, cents: Int): Int = dollars * 100 + cents
+                def dollarsAndCents(cents: Int): (Int, Int) = (cents / 100, cents % 100)
+            }
 
-        assert( Money(1, 75) + Money(0, 50) == Money(2, 25) )
+            assert( Money(1, 75) + Money(0, 50) == Money(2, 25) )
+        }
     }
 
     // 5. Provide operators that construct an HTML table. For example,
@@ -480,76 +482,112 @@ lowest: assignment operators (op=)
             object Table { def apply(): Table = new Table() }
         }
 
-        case class Row(cells: Seq[String] = Seq.empty) {
-            def append(cell: String): Row = Row(cells :+ cell)
+        def immutable = {
+            case class Row(cells: Seq[String] = Seq.empty) {
+                def append(cell: String): Row = Row(cells :+ cell)
+            }
+
+            class Table(private val completeRows: Seq[Row] = Seq.empty,
+                        private val currentRow: Row = Row(Seq.empty)) {
+                // interface
+                def |(cell: String): Table = addCell2CurrentRow(cell)
+                def ||(cell: String): Table = addCell2NewRow(cell)
+                override def toString: String = htmlTable
+
+                // implementation
+                def addCell2CurrentRow(cell: String): Table = {
+                    new Table(completeRows, currentRow.append(cell))
+                }
+                def addCell2NewRow(cell: String): Table = {
+                    new Table(completeRows :+ currentRow, Row().append(cell))
+                }
+                def htmlTable: String = { Table.htmlTable(completeRows :+ currentRow) }
+            }
+
+            object Table {
+                // interface
+                def apply() = new Table
+
+                // implementation
+                def htmlCell(cell: String): String = { "<td>" + cell + "</td>" }
+                def htmlRow(row: Row): String = {
+                    val cells = for {
+                        cell <- row.cells
+                    } yield htmlCell(cell)
+                    "<tr>" + cells.mkString + "</tr>"
+                }
+                def htmlTable(table: Seq[Row]): String = {
+                    val rows = for {
+                        row <- table
+                        if row.cells.nonEmpty
+                    } yield htmlRow(row)
+                    "<table>" + rows.mkString + "</table>"
+                }
+            }
+
+            val res = Table() | "Java" | "Scala" || "Gosling" | "Odersky" || "JVM" | "JVM, .NET"
+            val expected =
+                """
+                  |<table>
+                  |<tr><td>Java</td><td>Scala</td></tr>
+                  |<tr><td>Gosling</td><td>Odersky</td></tr>
+                  |<tr><td>JVM</td><td>JVM, .NET</td></tr>
+                  |</table>
+                """.stripMargin.replaceAll("""\n\s*""", "").trim
+
+            assert(res.toString == expected)
         }
 
-        class Table(private val completeRows: Seq[Row] = Seq.empty,
-                    private val currentRow: Row = Row(Seq.empty)) {
-            // interface
-            def |(cell: String): Table = addCell2CurrentRow(cell)
-            def ||(cell: String): Table = addCell2NewRow(cell)
-            override def toString: String = htmlTable
-
-            // implementation
-            def addCell2CurrentRow(cell: String): Table = {
-                new Table(completeRows, currentRow.append(cell))
-            }
-            def addCell2NewRow(cell: String): Table = {
-                new Table(completeRows :+ currentRow, Row().append(cell))
-            }
-            def htmlTable: String = { Table.htmlTable(completeRows :+ currentRow) }
-        }
-
-        object Table {
-            // interface
-            def apply() = new Table
-
-            // implementation
-            def htmlCell(cell: String): String = { "<td>" + cell + "</td>" }
-            def htmlRow(row: Row): String = {
-                val cells = for {
-                    cell <- row.cells
-                } yield htmlCell(cell)
-                "<tr>" + cells.mkString + "</tr>"
-            }
-            def htmlTable(table: Seq[Row]): String = {
-                val rows = for {
-                    row <- table
-                    if row.cells.nonEmpty
-                } yield htmlRow(row)
-                "<table>" + rows.mkString + "</table>"
-            }
-        }
-
-        val res = Table() | "Java" | "Scala" || "Gosling" | "Odersky" || "JVM" | "JVM, .NET"
-        val expected =
-            """
-              |<table>
-              |<tr><td>Java</td><td>Scala</td></tr>
-              |<tr><td>Gosling</td><td>Odersky</td></tr>
-              |<tr><td>JVM</td><td>JVM, .NET</td></tr>
-              |</table>
-            """.stripMargin.replaceAll("""\n\s*""", "").trim
-
-        assert(res.toString == expected)
     }
 
     // 6. Provide a class ASCIIArt whose objects contain figures such as
-    //    /\_/\
-    //    ( '')
-    //    ( - )
-    //    | | |
-    //    (_|_)
-    //Supply operators for combining two ASCIIArt figures horizontally
-    //    /\_/\     -----
-    //    ( '' )  / Hello \
-    //    ( -  ) <  Scala |
-    //    | |  |  \ Coder /
-    //    (_|__)    -----
+    //        /\_/\
+    //       ( ' ' )
+    //       (  -  )
+    //        | | |
+    //       (__|__)
+    // Supply operators for combining two ASCIIArt figures horizontally
+    //        /\_/\    -----
+    //       ( ' ' )  / Hello \
+    //       (  -  ) <  Scala |
+    //        | | |   \ Coder /
+    //       (__|__)    -----
     //or vertically. Choose operators with appropriate precedence.
     def ex6 = {
-        ???
+
+        class ASCIIArt(private val art: Seq[String] = Seq.empty) {
+            override def toString: String = art.mkString("\n")
+            // alphanumeric operators with same precedence
+            def before(other: ASCIIArt): ASCIIArt = { new ASCIIArt(ASCIIArt.concatLines(this.art, other.art)) }
+            def over(other: ASCIIArt): ASCIIArt = { new ASCIIArt(this.art ++ other.art) }
+        }
+        object ASCIIArt {
+            def apply(art: String = ""): ASCIIArt = {
+                if (art.isEmpty) new ASCIIArt() else new ASCIIArt(art.split("""\n"""))
+            }
+            def concatLines(left: Seq[String], right: Seq[String]): Seq[String] = {
+                val maxlen = left.map(_.length).max
+                val alignedleft = left.map(_.padTo(maxlen, ' '))
+                val emptyleft = " ".padTo(maxlen, ' ')
+                val pairs = alignedleft.zipAll(right, emptyleft, "")
+                pairs.map { case (l, r) => l + r}
+            }
+        }
+
+        val a = ASCIIArt(""" /\_/\
+( ' ' )
+(  -  )
+ | | |
+(__|__)""")
+
+        val b = ASCIIArt("""   -----
+ / Hello \
+<  Scala |
+ \ Coder /
+   -----""")
+
+        println(a before b)
+        println(a over b)
     }
 
     // 7. Implement a class BitSequence that stores a sequence of 64 bits packed in a Long value.
