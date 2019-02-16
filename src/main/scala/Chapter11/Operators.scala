@@ -468,6 +468,18 @@ lowest: assignment operators (op=)
     //      <table><tr><td>Java</td><td>Scala</td></tr><tr><td>Gosling...
     def ex5 = {
 
+        def simple = {
+            class Table {
+                private var rows = ""
+                override def toString: String = "<table>" + rows + closeRow + "</table>"
+                def |(cell: String): Table = { rows += openRow + "<td>" + cell + "</td>"; this }
+                def ||(cell: String): Table = { rows += openRow + "</tr><tr>"; this | cell }
+                private def openRow = if (rows.isEmpty) "<tr>" else ""
+                private def closeRow = if (rows.isEmpty) "" else "</tr>"
+            }
+            object Table { def apply(): Table = new Table() }
+        }
+
         case class Row(cells: Seq[String] = Seq.empty) {
             def append(cell: String): Row = Row(cells :+ cell)
         }
@@ -484,11 +496,11 @@ lowest: assignment operators (op=)
                 new Table(completeRows, currentRow.append(cell))
             }
             def addCell2NewRow(cell: String): Table = {
-                val completerows = completeRows :+ currentRow
-                new Table(completerows, Row().append(cell))
+                new Table(completeRows :+ currentRow, Row().append(cell))
             }
             def htmlTable: String = { Table.htmlTable(completeRows :+ currentRow) }
         }
+
         object Table {
             // interface
             def apply() = new Table
