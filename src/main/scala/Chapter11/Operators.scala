@@ -420,21 +420,37 @@ lowest: assignment operators (op=)
         // Should you also supply * and / operators? Why or why not?
         // $1.25 multiply by $3.33 ? or $4.2 divide by $3.42 ? it's meaningless
 
-        class Money($dollars: Int, $cents: Int) {
-            private val totalCents = Money.totalCents($dollars, $cents)
-            require(totalCents >= 0, "no support for negative amounts")
+        def v1 = {
+            class Money($dollars: Int, $cents: Int) {
+                private val totalCents = Money.totalCents($dollars, $cents)
+                require(totalCents >= 0, "no support for negative amounts")
 
-            val dollars: Int = totalCents / 100
-            val cents: Int = totalCents % 100
+                val dollars: Int = totalCents / 100
+                val cents: Int = totalCents % 100
 
-            def +(other: Money): Money = Money(dollars + other.dollars, cents + other.cents)
-            def -(other: Money): Money = Money(dollars - other.dollars, cents - other.cents)
+                def +(other: Money): Money = Money(dollars + other.dollars, cents + other.cents)
+                def -(other: Money): Money = Money(dollars - other.dollars, cents - other.cents)
+                def ==(other: Money): Boolean = totalCents == other.totalCents
+                def <(other: Money): Boolean = totalCents < other.totalCents
+            }
+            object Money {
+                def apply(dollars: Int, cents: Int): Money = new Money(dollars, cents)
+                def totalCents(dollars: Int, cents: Int): Int = dollars * 100 + cents
+            }
+        }
+
+        class Money(private val totalCents: Int) {
+            val (dollars, cents) = Money.dollarsAndCents(totalCents)
+
+            def +(other: Money): Money = new Money(totalCents + other.totalCents)
+            def -(other: Money): Money = new Money(totalCents - other.totalCents)
             def ==(other: Money): Boolean = totalCents == other.totalCents
             def <(other: Money): Boolean = totalCents < other.totalCents
         }
         object Money {
-            def apply(dollars: Int, cents: Int): Money = new Money(dollars, cents)
+            def apply(dollars: Int, cents: Int): Money = new Money(totalCents(dollars, cents))
             def totalCents(dollars: Int, cents: Int): Int = dollars * 100 + cents
+            def dollarsAndCents(cents: Int): (Int, Int) = (cents / 100, cents % 100)
         }
 
         assert( Money(1, 75) + Money(0, 50) == Money(2, 25) )
