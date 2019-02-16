@@ -444,8 +444,14 @@ lowest: assignment operators (op=)
 
             def +(other: Money): Money = new Money(totalCents + other.totalCents)
             def -(other: Money): Money = new Money(totalCents - other.totalCents)
-            def ==(other: Money): Boolean = totalCents == other.totalCents
             def <(other: Money): Boolean = totalCents < other.totalCents
+
+            // def ==(other: Money): Boolean = totalCents == other.totalCents
+            final override def equals(other: Any): Boolean = other match {
+                case that: Money => this.totalCents == that.totalCents
+                case _ => false
+            }
+            override def hashCode(): Int = totalCents
         }
         object Money {
             def apply(dollars: Int, cents: Int): Money = new Money(totalCents(dollars, cents))
