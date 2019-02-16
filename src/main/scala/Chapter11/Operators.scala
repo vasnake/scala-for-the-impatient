@@ -593,7 +593,37 @@ lowest: assignment operators (op=)
     // 7. Implement a class BitSequence that stores a sequence of 64 bits packed in a Long value.
     // Supply apply and update operators to get and set an individual bit.
     def ex7 = {
-        ???
+        class BitSequence(private var bits: Long = 0) {
+            // interface
+            def apply(bit: Int): Boolean = get(bit)
+            def update(bit: Int, value: Boolean): Unit = set(bit, value)
+            // implementation
+            private def get(bit: Int): Boolean = {
+                require(bit >= 0 && bit < 64, "only 64 bits")
+                (mask(bit) & bits) != 0L
+            }
+            private def set(bit: Int, value: Boolean): Unit = {
+                require(bit >= 0 && bit < 64, "only 64 bits")
+                if (value) bits = bits | mask(bit)
+                else bits = bits & ~mask(bit)
+            }
+            private def mask(bit: Int): Long = 1L << bit
+        }
+
+        val bits = new BitSequence()
+
+        for {
+            i <- 0 until 3
+            j <- 0 to i
+            n <- (i+1) until 3
+        } { assert(!bits(i)); bits(i) = true; assert(bits(i)); assert(bits(j)); assert(!bits(n)) }
+
+        for {
+            i <- 0 until 64
+            j <- 0 to i
+            n <- (i+1) until 64
+        } { assert(bits(i)); bits(i) = false; assert(!bits(i)); assert(!bits(j)); assert(bits(n)) }
+
     }
 
     // 8. Provide a class Matrix. Choose whether you want to implement 2 × 2 matrices,
