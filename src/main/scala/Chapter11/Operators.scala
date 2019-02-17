@@ -597,32 +597,38 @@ lowest: assignment operators (op=)
             // interface
             def apply(bit: Int): Boolean = get(bit)
             def update(bit: Int, value: Boolean): Unit = set(bit, value)
+
             // implementation
             private def get(bit: Int): Boolean = {
-                require(bit >= 0 && bit < 64, "only 64 bits")
+                require(bit >= 0 && bit < 64, "bit must be be between 0 and 63 inclusive")
                 (mask(bit) & bits) != 0L
             }
             private def set(bit: Int, value: Boolean): Unit = {
-                require(bit >= 0 && bit < 64, "only 64 bits")
+                require(bit >= 0 && bit < 64, "bit must be be between 0 and 63 inclusive")
                 if (value) bits = bits | mask(bit)
                 else bits = bits & ~mask(bit)
             }
             private def mask(bit: Int): Long = 1L << bit
         }
 
+        // test
         val bits = new BitSequence()
 
-        for {
-            i <- 0 until 3
-            j <- 0 to i
-            n <- (i+1) until 3
-        } { assert(!bits(i)); bits(i) = true; assert(bits(i)); assert(bits(j)); assert(!bits(n)) }
+        for (i <- 0 until 64) {
+            for (j <- 0 until i) assert(bits(j))
+            for (j <- i until 64) assert(!bits(j))
+            bits(i) = true
+            for (j <- 0 to i) assert(bits(j))
+            for (j <- i+1 until 64) assert(!bits(j))
+        }
 
-        for {
-            i <- 0 until 64
-            j <- 0 to i
-            n <- (i+1) until 64
-        } { assert(bits(i)); bits(i) = false; assert(!bits(i)); assert(!bits(j)); assert(bits(n)) }
+        for (i <- 0 until 64) {
+            for (j <- 0 until i) assert(!bits(j))
+            for (j <- i until 64) assert(bits(j))
+            bits(i) = false
+            for (j <- 0 to i) assert(!bits(j))
+            for (j <- i+1 until 64) assert(bits(j))
+        }
 
     }
 
