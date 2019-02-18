@@ -593,6 +593,7 @@ lowest: assignment operators (op=)
     // 7. Implement a class BitSequence that stores a sequence of 64 bits packed in a Long value.
     // Supply apply and update operators to get and set an individual bit.
     def ex7 = {
+        // bit manipulation in java
         class BitSequence(private var bits: Long = 0) {
             // interface
             def apply(bit: Int): Boolean = get(bit)
@@ -638,7 +639,92 @@ lowest: assignment operators (op=)
     // The latter should also work with scalars, for example, mat * 2.
     // A single element should be accessible as mat(row, col)
     def ex8 = {
-        ???
+        // not effective but funny and generic enough;
+        // Double can be replaced with type parameter
+
+        implicit def int2double(i: Int): Double = i.toDouble
+
+        object Matrix {
+            private case class Row(values: IndexedSeq[Double]) {
+                override def toString: String = values.mkString(" ")
+                private[Matrix] def +(other: Row): Row = {
+                    val newrow = values.zip(other.values).map { case (a, b) => a + b }
+                    Row(newrow)
+                }
+            }
+            def apply(matrix: Seq[Seq[Double]]): Matrix = new Matrix(matrix.map(r =>
+                Row(r.toArray[Double])).toArray[Row])
+        }
+
+        class Matrix(private val m: IndexedSeq[Matrix.Row]) {
+            import Matrix._
+            def nrows: Int = m.length
+            def ncols: Int = m.head.values.length
+
+            require(nrows > 0 && m.forall(row => row.values.length == ncols),
+                "must have some rows and rows must have the same length")
+
+            override def toString: String = m.mkString("\n")
+
+            def apply(row: Int, col: Int): Double = {
+                assert(row >= 0 && row < nrows && col >= 0 && col < ncols)
+                m(row).values(col)
+            }
+
+            def +(other: Matrix): Matrix = {
+                require(nrows == other.nrows && ncols == other.ncols)
+                val newrows = m.zip(other.m).map { case (rowA, rowB) => rowA + rowB }
+                new Matrix(newrows)
+            }
+
+            def *(scalar: Double): Matrix = {
+                val newrows = m.map(row => Row(row.values.map(v => v * scalar)))
+                new Matrix(newrows)
+            }
+
+            def *(other: Matrix): Matrix = {
+                require(ncols == other.nrows)
+                // compute output row
+                def rowDotMatrix(row: Row) = {
+                    // compute one value in row, column n
+                    def rowDotCol(ncol: Int) = row.values.indices.map(nrow =>
+                        row.values(nrow) * other(nrow, ncol)).sum
+                    // produce value for each column
+                    for (ncol <- 0 until other.ncols) yield rowDotCol(ncol)
+                }
+                // for each row in A compute row in C (for A dot B = C)
+                new Matrix(m.map(row => Row(rowDotMatrix(row))))
+            }
+        }
+        // test // TODO: add full-fledged test suite
+        val a = Matrix(Seq(
+            Seq(0, 4, -2),
+            Seq(-4, -3, 0)
+        ))
+        val b = Matrix(Seq(
+            Seq(0, 1),
+            Seq(1, -1),
+            Seq(2, 3)
+        ))
+        val prod = a * b
+        println(s"product: \n${prod}")
+        // product:
+        //0.0 -10.0
+        //-3.0 -1.0
+
+        val aa = Matrix(Seq(
+            Seq(1, 2),
+            Seq(3, 4)
+        ))
+        val bb = Matrix(Seq(
+            Seq(5, 6),
+            Seq(7, 8)
+        ))
+        val sum = aa + bb
+        println(s"sum: \n${sum}")
+        // sum:
+        //6.0 8.0
+        //10.0 12.0
     }
 
     // 9. Define an object PathComponents with an unapply operation class that extracts the
