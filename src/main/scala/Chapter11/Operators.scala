@@ -647,10 +647,7 @@ lowest: assignment operators (op=)
         object Matrix {
             private case class Row(values: IndexedSeq[Double]) {
                 override def toString: String = values.mkString(" ")
-                private[Matrix] def +(other: Row): Row = {
-                    val newrow = values.zip(other.values).map { case (a, b) => a + b }
-                    Row(newrow)
-                }
+                def +(other: Row): Row = Row(values.zip(other.values).map { case (a, b) => a + b })
             }
             def apply(matrix: Seq[Seq[Double]]): Matrix = new Matrix(matrix.map(r =>
                 Row(r.toArray[Double])).toArray[Row])
@@ -696,6 +693,7 @@ lowest: assignment operators (op=)
                 new Matrix(m.map(row => Row(rowDotMatrix(row))))
             }
         }
+
         // test // TODO: add full-fledged test suite
         val a = Matrix(Seq(
             Seq(0, 4, -2),
@@ -731,7 +729,36 @@ lowest: assignment operators (op=)
     // directory path and file name from an java.nio.file.Path.
     // For example, the file /home/cay/readme.txt has directory path /home/cay and file name readme.txt
     def ex9 = {
-        ???
+        import java.nio.file.{Path, FileSystems}
+        import scala.util.{Try, Success, Failure}
+
+        object PathComponents {
+            def unapply(path: Path): Option[(String, String)] = {
+                val dirpath = Option(path.getParent)
+                val filename = Option(path.getFileName)
+
+                dirpath.flatMap(d => filename.map(f => (d.toString, f.toString)))
+            }
+        }
+
+        // test
+        val PathComponents(dirpath, filename) = FileSystems.getDefault.getPath("/home/cay/readme.txt")
+        assert(dirpath == "/home/cay" && filename == "readme.txt")
+
+        // catch failures
+        FileSystems.getDefault.getPath("readme.txt") match {
+            case PathComponents(dirpath, filename) => println(s"dir: '${dirpath}', file: '${filename}' ")
+            case _ => println("oops, wrong dir/file pair")
+        }
+
+        Try {
+            val PathComponents(dirpath, filename) = FileSystems.getDefault.getPath("readme.txt")
+            (dirpath, filename)
+        } match {
+            case Success((dirpath, filename)) => println(s"dir: '${dirpath}', file: '${filename}' ")
+            case Failure(err) => println(s"error: ${err.getMessage}")
+        }
+
     }
 
     // 10. Modify the PathComponents object of the preceding exercise to instead define an
