@@ -791,7 +791,30 @@ lowest: assignment operators (op=)
     // For example, sysProps.java.home should select the property with key "java.home".
     // Use a helper class, also extending Dynamic, that contains partially completed paths.
     def ex11 = {
-        ???
+        // TODO: implement updateDynamic, applyDynamicNamed, e.g:
+        // sysProps.username = "Fred"
+        // sysProps.add(username="Fred", password="secret")
+
+        import scala.language.dynamics
+
+        class DynamicProperty(val props: java.util.Properties, val name: String) extends Dynamic {
+            override def toString: String = Option(props.getProperty(name)).getOrElse("")
+            def selectDynamic(name: String): DynamicProperty = new DynamicProperty(props, s"${this.name}.$name")
+        }
+
+        class DynamicProps(val props: java.util.Properties) extends Dynamic {
+            import scala.collection.JavaConverters._
+            for ((k,v) <- props.asScala) println(s" '${k}' -> '${v}' ")
+
+            def selectDynamic(name: String): DynamicProperty = new DynamicProperty(props, name)
+        }
+
+        // test
+        val sysProps = new DynamicProps(System.getProperties)
+        val home = sysProps.java.home
+        println(s"java.home='${home.toString}'")
+        assert(home.toString == sysProps.props.getProperty("java.home"))
+        assert(sysProps.java.io.tmpdir.toString == sysProps.props.getProperty("java.io.tmpdir"))
     }
 
     // 12. Define a class XMLElement that models an XML element with a name, attributes, and child
