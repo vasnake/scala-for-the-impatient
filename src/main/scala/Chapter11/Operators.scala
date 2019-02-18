@@ -766,7 +766,24 @@ lowest: assignment operators (op=)
     // For example, for the file /home/cay/readme.txt, you should produce a sequence of three segments:
     // home, cay, and readme.txt
     def ex10 = {
-        ???
+        import java.nio.file.{Path, FileSystems}
+        import scala.collection.JavaConverters._
+
+        object PathComponents {
+            def unapplySeq(path: Path): Option[Seq[String]] = {
+                val res = path.iterator.asScala.map(p => p.toString)
+                Some(res.toList)
+            }
+        }
+
+        // test
+        FileSystems.getDefault.getPath("/home/cay/readme.txt") match {
+            case PathComponents(one, two, file) => println(s"three components: ${one}, $two, $file")
+            case _ => println("oops, can't find match")
+        }
+
+        val PathComponents(root, _*) = FileSystems.getDefault.getPath("/home/cay/readme.txt")
+        println(s"""root: $root""")
     }
 
     // 11. Improve the dynamic property selector in Section 11.11, “Dynamic Invocation,” on page 150
