@@ -822,7 +822,43 @@ lowest: assignment operators (op=)
     // rootElement.html.body.ul(id="42").li
     // which should return all li elements inside ul with id attribute 42 inside body inside html
     def ex12 = {
-        ???
+        // simple, no fancy stuff, only to implement dynamic features
+
+        import scala.language.dynamics
+        case class Attribute(name: String, value: String)
+
+        case class XMLElementSeq(list: Seq[XMLElement] = Seq.empty)
+            extends Dynamic with Iterable[XMLElement]{
+            override def iterator: Iterator[XMLElement] = list.iterator
+
+            def selectDynamic(name: String): XMLElementSeq = ???
+            def applyDynamicNamed(name: String)(args: (String, String)*): XMLElementSeq = ???
+        }
+
+        class XMLElement(val name: String,
+                         val attributes: Seq[Attribute] = Seq.empty,
+                         val children: Seq[XMLElement] = Seq.empty)
+        extends Dynamic {
+
+            def selectDynamic(name: String): XMLElementSeq = ???
+        }
+
+        // test
+        val root = {
+            val uls = Seq(
+                new XMLElement("ul", Seq(Attribute("id", "42")), Seq(new XMLElement("li", Seq(Attribute("id", "37"))))),
+                new XMLElement("ul", Seq(Attribute("id", "43")), Seq(new XMLElement("li", Seq(Attribute("id", "73")))))
+            )
+            val body = new XMLElement("body", children = uls)
+            val html = new XMLElement("html", children = Seq(body))
+            new XMLElement("root", children = Seq(html))
+        }
+
+        val res = root.html.body.ul(id="42").li.toList
+        assert(res.length == 1 &&
+            res.head.name == "li" &&
+            res.head.attributes.head.name == "id" &&
+            res.head.attributes.head.value == "37")
     }
 
     // 13. Provide an XMLBuilder class for dynamically building XML elements, as
