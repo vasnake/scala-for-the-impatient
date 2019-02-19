@@ -894,6 +894,36 @@ lowest: assignment operators (op=)
     // where the method name becomes the element name and the named arguments become the attributes.
     // Come up with a convenient way of building nested elements.
     def ex13 = {
-        ???
+        import scala.language.dynamics
+
+        case class Attribute(name: String, value: String) {
+            override def toString: String = s"Attribute: name: $name, value: $value"
+        }
+
+        case class XMLElement(name: String,
+                              attributes: Seq[Attribute] = Seq.empty,
+                              children: Seq[XMLElement] = Seq.empty) {
+            override def toString: String = s"""XMLElement: name: $name, attributes: ${attributes.mkString(",")};
+                children: ${children.mkString("\n\t")} """.trim
+
+            // or using this.applyDynamicNamed: call builder and append to children
+            // or using builder.applyDynamicNamed unnamed arguments to pass children to elem
+            def append(child: XMLElement): XMLElement = this.copy(children = children :+ child)
+        }
+
+        class XMLBuilder extends Dynamic {
+            def applyDynamicNamed(name: String)(args: (String, String)*): XMLElement = {
+                XMLElement(name, args.toList.map {case(k,v) => Attribute(k, v)})
+            }
+        }
+
+        // TODO: add test suite
+        // test
+        val bldr = new XMLBuilder
+        val elem = bldr.ul(id="42", style="list-style: lower-alpha;")
+            .append(bldr.li(id="37"))
+            .append(bldr.li(id="73"))
+        println(s"ul + 2 li: ${elem}")
+        assert(elem.name == "ul" && elem.children.length == 2 && elem.attributes.length == 2)
     }
 }
