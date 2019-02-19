@@ -825,24 +825,49 @@ lowest: assignment operators (op=)
         // simple, no fancy stuff, only to implement dynamic features
 
         import scala.language.dynamics
-        case class Attribute(name: String, value: String)
+
+        case class Attribute(name: String, value: String) {
+            override def toString: String = s"Attribute: name: ${name}, value: $value"
+        }
 
         case class XMLElementSeq(list: Seq[XMLElement] = Seq.empty)
             extends Dynamic with Iterable[XMLElement]{
             override def iterator: Iterator[XMLElement] = list.iterator
+            override def toString(): String = "XMLElementSeq: " + list.mkString("\n")
 
-            def selectDynamic(name: String): XMLElementSeq = ???
-            def applyDynamicNamed(name: String)(args: (String, String)*): XMLElementSeq = ???
+            def selectDynamic(name: String): XMLElementSeq = {
+                val found = list.flatMap(_.children.filter(el =>
+                    el.name.toLowerCase == name.toLowerCase))
+                XMLElementSeq(found)
+            }
+
+            def applyDynamicNamed(name: String)(args: (String, String)*): XMLElementSeq = {
+                val found = list.flatMap(_.children.filter(el =>
+                    el.name.toLowerCase == name.toLowerCase &&
+                        el.filterAttribs(args.toList).nonEmpty ))
+                XMLElementSeq(found)
+            }
         }
 
         class XMLElement(val name: String,
                          val attributes: Seq[Attribute] = Seq.empty,
                          val children: Seq[XMLElement] = Seq.empty)
         extends Dynamic {
+            override def toString: String =
+                s"""XMLElement: name: $name, attributes: ${attributes.mkString(",")};
+                   children: ${children.mkString("\n\t")} """.trim
 
-            def selectDynamic(name: String): XMLElementSeq = ???
+            def selectDynamic(name: String): XMLElementSeq =
+                XMLElementSeq(children.filter(_.name.toLowerCase == name.toLowerCase))
+
+            def filterAttribs(kvs: Seq[(String, String)]): Seq[Attribute] = {
+                attributes.filter(a => kvs.exists { case (k, v) =>
+                    a.name.toLowerCase == k.toLowerCase && a.value.toLowerCase == v.toLowerCase
+                })
+            }
         }
 
+        // TODO: add test suite
         // test
         val root = {
             val uls = Seq(
@@ -859,6 +884,9 @@ lowest: assignment operators (op=)
             res.head.name == "li" &&
             res.head.attributes.head.name == "id" &&
             res.head.attributes.head.value == "37")
+
+        println(s"root: ${root}")
+        println(s"found li: ${res}")
     }
 
     // 13. Provide an XMLBuilder class for dynamically building XML elements, as
