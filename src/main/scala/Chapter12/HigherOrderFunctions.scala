@@ -417,14 +417,23 @@ object HigherOrderFunctions_Exercises {
 
     // 7. It’s easy to get a sequence of pairs, for example:
     //      val pairs = (1 to 10) zip (11 to 20)
-    // Now, suppose you want to do something with such a sequence—say, add up the values. But you can’t do
+    // Now, suppose you want to do something with such a sequence — say,
+    // add up the values. But you can’t do
     //      pairs.map(_ + _)
     // The function _ + _ takes two Int parameters, not an (Int, Int) pair. Write a function
     // adjustToPair that receives a function of type (Int, Int) => Int and returns the
     // equivalent function that operates on a pair. For example, adjustToPair(_ * _)((6, 7)) is 42.
     // Then use this function in conjunction with map to compute the sums of the elements in pairs.
     def ex7 = {
-        ???
+        def adjustToPair(fun: (Int, Int) => Int)(pair: (Int, Int)): Int =
+            fun(pair._1, pair._2)
+
+        // test
+        assert( adjustToPair(_ * _)((6, 7)) == 42 )
+        val pairs = (1 to 10) zip (11 to 20)
+        val res = pairs.map(adjustToPair(_ + _))
+        println(res)
+        assert( res.toList == Seq(12, 14, 16, 18, 20, 22, 24, 26, 28, 30) )
     }
 
     // 8. In Section 12.8, “Currying,” on page 164, you saw the corresponds method used with two
