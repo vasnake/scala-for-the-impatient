@@ -389,11 +389,17 @@ object HigherOrderFunctions_Exercises {
         data foreach { case (x, res) => assert(factorial(x) == res) }
     }
 
-    // 5. Write a function largest(fun: (Int) => Int, inputs: Seq[Int]) that yields
-    // the largest value of a function within a given sequence of inputs. For example,
-    // largest(x => 10 * x - x * x, 1 to 10) should return 25. Don’t use a loop or recursion.
+    // 5. Write a function
+    // largest(fun: (Int) => Int, inputs: Seq[Int])
+    // that yields the largest value of a function within a given sequence of inputs. For example,
+    // largest(x => 10 * x - x * x, 1 to 10) should return 25.
+    // Don’t use a loop or recursion.
     def ex5 = {
-        ???
+        def largest(fun: (Int) => Int, inputs: Seq[Int]): Int =
+            inputs.map(fun).reduce((a, b) => if (a < b) b else a)
+
+        // test
+        assert(largest(x => 10*x - x*x, 1 to 10) == 25)
     }
 
     // 6. Modify the previous function to return the input at which the output is largest. For example,
