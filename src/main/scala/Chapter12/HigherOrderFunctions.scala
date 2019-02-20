@@ -337,6 +337,8 @@ object HigherOrderFunctions_Exercises {
         def values(fun: (Int) => Int, low: Int, high: Int): Seq[(Int, Int)] = {
             (low to high).map((inp) => (inp, fun(inp)))
         }
+
+        // test
         val res = values(x => x*x, -5, 5)
         println(res)
         assert(res == Seq(
@@ -347,7 +349,13 @@ object HigherOrderFunctions_Exercises {
 
     // 2. How do you get the largest element of an array with reduceLeft?
     def ex2 = {
-        ???
+        def largest(seq: Seq[Int]): Int =
+            seq reduceLeft { (a, b) => if (a > b) a else b }
+
+        // test
+        val res = largest( Seq(1,2,3,4,5,6,5,4,3,2,1) )
+        println(res)
+        assert(res == 6)
     }
 
     // 3. Implement the factorial function using to and reduceLeft, without a loop or recursion.
