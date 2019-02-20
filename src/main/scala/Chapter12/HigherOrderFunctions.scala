@@ -445,10 +445,28 @@ object HigherOrderFunctions_Exercises {
         assert( a.corresponds(b)(_.length == _) )
     }
 
-    // 9. Implement corresponds without currying. Then try the call from the preceding exercise.
+    // 9. Implement 'corresponds' without currying.
+    // Then try the call from the preceding exercise.
     // What problem do you encounter?
     def ex9 = {
-        ???
+        // problem with type inference
+
+        import scala.collection.GenSeq
+        def corresponds[A, B](a: GenSeq[A], b: GenSeq[B], p: (A,B) => Boolean): Boolean = {
+            val i = a.iterator
+            val j = b.iterator
+            while (i.hasNext && j.hasNext)
+                if (!p(i.next(), j.next()))
+                    return false
+
+            !i.hasNext && !j.hasNext
+        }
+
+        val a: Array[String] = "Mary had a little lamb".split(" ")
+        val b: Array[Int] = Array(4, 3, 1, 6, 4)
+        // assert( corresponds(a, b, _.length == _) )
+        assert( corresponds(a, b, (_: String).length == (_: Int)) )
+        assert( corresponds(a, b, (a: String, b: Int) => a.length == b ) )
     }
 
     // 10. Implement an unless control abstraction that works just like if, but with an inverted
