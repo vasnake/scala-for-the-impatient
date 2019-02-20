@@ -469,9 +469,28 @@ object HigherOrderFunctions_Exercises {
         assert( corresponds(a, b, (a: String, b: Int) => a.length == b ) )
     }
 
-    // 10. Implement an unless control abstraction that works just like if, but with an inverted
-    // condition. Does the first parameter need to be a call-by-name parameter? Do you need currying?
+    // 10. Implement an 'unless' control abstraction that works just like 'if',
+    // but with an inverted condition.
+    // Does the first parameter need to be a call-by-name parameter? Do you need currying?
     def ex10 = {
-        ???
+        // Does the first parameter need to be a call-by-name parameter?
+        // no, nothing changes if condition is call-by-value
+
+        // Do you need currying?
+        // yes, it's much prettier to express code block in second pair of brackets
+
+        // def unless(condition: => Boolean)(fun: => Unit): Unit =
+        def unless(condition: Boolean)(fun: => Unit): Unit =
+            if (!condition) fun
+
+        // test
+        val s = "Hi"; var res = ' '
+
+        unless (s.length <= 1) {
+            res = s(1)
+            println(res)
+        }
+
+        assert(res == 'i')
     }
 }
