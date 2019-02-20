@@ -327,12 +327,22 @@ object HigherOrderFunctions {
 
 object HigherOrderFunctions_Exercises {
 
-    // 1. Write a function values(fun: (Int) => Int, low: Int, high: Int) that
-    // yields a collection of function inputs and outputs in a given range. For example,
+    // 1. Write a function
+    //      values(fun: (Int) => Int, low: Int, high: Int)
+    // that yields a collection of function inputs and outputs in a given range.
+    // For example,
     // values(x => x * x, -5, 5) should produce a collection of pairs
     // (-5, 25), (-4, 16), (-3, 9), . . . , (5, 25).
     def ex1 = {
-        ???
+        def values(fun: (Int) => Int, low: Int, high: Int): Seq[(Int, Int)] = {
+            (low to high).map((inp) => (inp, fun(inp)))
+        }
+        val res = values(x => x*x, -5, 5)
+        println(res)
+        assert(res == Seq(
+            (-5, 25), (-4, 16), (-3, 9), (-2, 4), (-1, 1), (0, 0),
+            (1, 1), (2, 4), (3, 9), (4, 16), (5, 25)
+        ))
     }
 
     // 2. How do you get the largest element of an array with reduceLeft?
