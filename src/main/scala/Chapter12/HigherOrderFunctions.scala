@@ -373,11 +373,20 @@ object HigherOrderFunctions_Exercises {
         assert(factorial(3) == 6)
     }
 
-    // 4. The previous implementation needed a special case when n < 1. Show how you can avoid this
-    // with foldLeft. (Look at the Scaladoc for foldLeft. It’s like reduceLeft, except that
+    // 4. The previous implementation needed a special case when n < 1.
+    // Show how you can avoid this with foldLeft.
+    // (Look at the Scaladoc for foldLeft. It’s like reduceLeft, except that
     // the first value in the chain of combined values is supplied in the call.)
     def ex4 = {
-        ???
+        def factorial(x: Int): Int = {
+            require(x >= 0, "factorial of negative is unknown to me")
+            // (1 /: (1 to x))(_ * _)
+            (1 to x foldLeft 1)(_ * _)
+        }
+
+        // test
+        val data = Seq((0, 1), (1, 1), (2, 2), (3, 6))
+        data foreach { case (x, res) => assert(factorial(x) == res) }
     }
 
     // 5. Write a function largest(fun: (Int) => Int, inputs: Seq[Int]) that yields
