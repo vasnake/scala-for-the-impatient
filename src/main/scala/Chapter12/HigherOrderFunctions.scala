@@ -436,11 +436,13 @@ object HigherOrderFunctions_Exercises {
         assert( res.toList == Seq(12, 14, 16, 18, 20, 22, 24, 26, 28, 30) )
     }
 
-    // 8. In Section 12.8, “Currying,” on page 164, you saw the corresponds method used with two
+    // 8. In Section 12.8, “Currying,” on page 164, you saw the 'corresponds' method used with two
     // arrays of strings. Make a call to corresponds that checks whether the elements in an array
     // of strings have the lengths given in an array of integers.
     def ex8 = {
-        ???
+        val a: Array[String] = "Mary had a little lamb".split(" ")
+        val b: Array[Int] = Array(4, 3, 1, 6, 4)
+        assert( a.corresponds(b)(_.length == _) )
     }
 
     // 9. Implement corresponds without currying. Then try the call from the preceding exercise.
