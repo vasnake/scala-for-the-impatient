@@ -358,9 +358,19 @@ object HigherOrderFunctions_Exercises {
         assert(res == 6)
     }
 
-    // 3. Implement the factorial function using to and reduceLeft, without a loop or recursion.
+    // 3. Implement the factorial function using 'to' and 'reduceLeft', without a loop or recursion
     def ex3 = {
-        ???
+        def factorial(x: Int): Int = {
+            require(x >= 0, "factorial of negative is unknown to me")
+            if (x > 0) (1 to x).reduceLeft(_ * _)
+            else 1
+        }
+
+        // test
+        assert(factorial(0) == 1)
+        assert(factorial(1) == 1)
+        assert(factorial(2) == 2)
+        assert(factorial(3) == 6)
     }
 
     // 4. The previous implementation needed a special case when n < 1. Show how you can avoid this
