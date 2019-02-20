@@ -402,10 +402,17 @@ object HigherOrderFunctions_Exercises {
         assert(largest(x => 10*x - x*x, 1 to 10) == 25)
     }
 
-    // 6. Modify the previous function to return the input at which the output is largest. For example,
-    // largestAt(x => 10 * x - x * x, 1 to 10) should return 5. Don’t use a loop or recursion.
+    // 6. Modify the previous function to return the input at which the output is largest.
+    // For example,
+    // largestAt(x => 10 * x - x * x, 1 to 10)
+    // should return 5. Don’t use a loop or recursion.
     def ex6 = {
-        ???
+        // not very effective if 'fun' is heavy
+        def largest(fun: (Int) => Int, inputs: Seq[Int]): Int =
+            inputs.reduce((a, b) => if (fun(a) < fun(b)) b else a)
+
+        // test
+        assert(largest(x => 10*x - x*x, 1 to 10) == 5)
     }
 
     // 7. It’s easy to get a sequence of pairs, for example:
