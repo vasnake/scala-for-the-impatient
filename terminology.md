@@ -63,3 +63,17 @@ Implicit Conversion
 Case Class
 
 Strongly Typed Language
+
+Eta-expansion
+: converts an expression of method type to an equivalent expression of function type
+https://alvinalexander.com/scala/fp-book/how-to-use-scala-methods-like-functions
+
+Closure
+
+Java 8 Lambda Expressions
+
+Java SAM Interface
+: Single Abstract Method Interface, functional interface; pass Scala function literal to Java code
+
+Control Abstractions
+: call by name notation for `() => Unit`
