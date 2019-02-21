@@ -473,8 +473,9 @@ object HigherOrderFunctions_Exercises {
     // but with an inverted condition.
     // Does the first parameter need to be a call-by-name parameter? Do you need currying?
     def ex10 = {
+
         // Does the first parameter need to be a call-by-name parameter?
-        // no, nothing changes if condition is call-by-value
+        // no, nothing changes if 'condition' is call-by-value
 
         // Do you need currying?
         // yes, it's much prettier to express code block in second pair of brackets

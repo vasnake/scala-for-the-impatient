@@ -20,3 +20,4 @@ https://www.google.ru/search?q=scala+for+the+impatient+2nd+edition+cay+horstmann
 10. [Traits](/src/main/scala/Chapter10/Traits.scala)
 11. [Operators](/src/main/scala/Chapter11/Operators.scala)
 12. [Higher-Order Functions](/src/main/scala/Chapter12/HigherOrderFunctions.scala)
+13. [Collections](/src/main/scala/Chapter13/Collections.scala)
