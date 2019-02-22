@@ -530,7 +530,22 @@ object Collections_Exercises {
 
     //2. Repeat the preceding exercise, using an immutable map of characters to lists.
     def ex2 = {
-        ???
+        def charsToIndexes(str: String): Map[Char, List[Int]] = {
+            // group by char => map char->seq
+            val pairsmap = str.zipWithIndex.groupBy { case (char, idx) => char }
+            // extract result
+            pairsmap.map { case (char, seq) => char -> seq.map(_._2).toList }
+        }
+
+        // test
+        val str = "Mississippi"
+        val map = charsToIndexes(str)
+        println(map)
+        assert(map('M') == List(0))
+        assert(map('i') == List(1,4,7,10))
+        assert(map('s') == List(2,3,5,6))
+        assert(map('p') == List(8,9))
+
     }
 
     //3. Write a function that removes every second element from a ListBuffer. Try it two ways.
