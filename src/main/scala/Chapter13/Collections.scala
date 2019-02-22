@@ -1,5 +1,7 @@
 package Chapter13
 
+import org.scalameter
+
 object Collections {
 // topics:
     // the main collections traits
@@ -603,6 +605,7 @@ object Collections_Exercises {
         assert(lst == (0 to 10).to[mutable.ListBuffer])
 
         def performanceTest(): Unit = {
+            // https://stackoverflow.com/questions/9160001/how-to-profile-methods-in-scala
             case class Result[T](result: T, elapsedNs: Long)
             def time[R](block: => R): Result[R] = {
                 val t0 = System.nanoTime()
@@ -626,23 +629,61 @@ object Collections_Exercises {
 
             println(s"first way (remove bad): ${first.elapsedNs / 1000000} ms")
             println(s"second way (copy good): ${second.elapsedNs / 1000000} ms")
+            // first way (remove bad): 7296 ms
+            // second way (copy good): 11953 ms
+
+            // second is slower because for each copied element list creates a new Cons object;
+            // on first way list just switch references.
+        }
+
+        def performanceTest2(): Unit = {
+            // http://scalameter.github.io/home/gettingstarted/0.7/inline/index.html
+            import org.scalameter._
+
+            val timeBench = config(
+                Key.exec.minWarmupRuns -> 5,
+                Key.exec.maxWarmupRuns -> 20,
+                Key.exec.benchRuns -> 15,
+                Key.verbose -> true
+            ).withWarmer(new Warmer.Default)
+
+            val memBench = timeBench.withMeasurer(new Measurer.MemoryFootprint)
+
+            val lst = (0 to 30000).to[mutable.ListBuffer]
+
+            val firstTime = timeBench measure { removeEverySecond(lst, first = true) }
+            val secondTime = timeBench measure { removeEverySecond(lst, first = false) }
+
+            val firstMem = memBench measure { removeEverySecond(lst, first = true) }
+            val secondMem = memBench measure { removeEverySecond(lst, first = false) }
+
+            println(Console.YELLOW)
+            println(s"first way (remove bad from-end-to-start): $firstTime, $firstMem")
+            println(s"second way (copy good from start-to-end): $secondTime, $secondMem")
+            println(Console.RESET)
+            // first way (remove bad from-end-to-start): 467.3844768 ms, 599.8 kB
+            // second way (copy good from start-to-end): 849.0186980666668 ms, 358.05 kB
         }
 
         performanceTest()
-        // first way (remove bad): 7296 ms
-        // second way (copy good): 11953 ms
-
-        // second is slower because for each copied element list creates a new Cons object;
-        // on first way list just switch references.
+        performanceTest2()
     }
 
-    //4. Write a function that receives a collection of strings and a map from strings to integers. Return
-    //a collection of integers that are values of the map corresponding to one of the strings in the
-    //collection. For example, given Array("Tom", "Fred", "Harry") and Map("Tom"
-    //-> 3, "Dick" -> 4, "Harry" -> 5), return Array(3, 5). Hint: Use flatMap
-    //to combine the Option values returned by get.
+    // 4. Write a function that receives a collection of strings and a map from strings to integers.
+    // Return a collection of integers that are values of the map corresponding to
+    // one of the strings in the collection.
+    // For example, given Array("Tom", "Fred", "Harry") and
+    // Map("Tom" -> 3, "Dick" -> 4, "Harry" -> 5),
+    // return Array(3, 5).
+    // Hint: Use flatMap to combine the Option values returned by get.
     def ex4 = {
-        ???
+        def str2int(strs: Iterable[String], map: Map[String, Int]): Iterable[Int] =
+            strs.flatMap(map.get)
+
+        // test
+        val res = str2int(Array("Tom", "Fred", "Harry"), Map("Tom" -> 3, "Dick" -> 4, "Harry" -> 5))
+        println(res.toList)
+        assert(res == Array(3, 5).toIterable)
     }
 
     //5. Implement a function that works just like mkString, using reduceLeft.
