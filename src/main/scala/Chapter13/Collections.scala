@@ -531,10 +531,11 @@ object Collections_Exercises {
     //2. Repeat the preceding exercise, using an immutable map of characters to lists.
     def ex2 = {
         def charsToIndexes(str: String): Map[Char, List[Int]] = {
-            // group by char => map char->seq
+            // group by char, get map char=>(char,idx)
             val pairsmap = str.zipWithIndex.groupBy { case (char, idx) => char }
             // extract result
-            pairsmap.map { case (char, seq) => char -> seq.map(_._2).toList }
+            pairsmap.map { case (char, pairs) =>
+                char -> pairs.map{ case (_, idx) => idx}.toList }
         }
 
         // test
@@ -548,11 +549,91 @@ object Collections_Exercises {
 
     }
 
-    //3. Write a function that removes every second element from a ListBuffer. Try it two ways.
-    //Call remove(i) for all even i starting at the end of the list. Copy every second element to a
-    //new list. Compare the performance.
+    //3. Write a function that removes every second element from a ListBuffer.
+    // Try it two ways.
+    // Call remove(i) for all even i starting at the end of the list.
+    // Copy every second element to a new list.
+    // Compare the performance.
     def ex3 = {
-        ???
+        import scala.collection.mutable
+
+        def removeEverySecond(lst: mutable.ListBuffer[Int], first: Boolean): mutable.ListBuffer[Int] = {
+
+            def firstway = {
+                println("way 1")
+                val res = lst map identity
+                for (i <- res.indices.reverse if i % 2 != 0) res.remove(i)
+                res
+            }
+
+            def secondway = {
+                println("way 2")
+                // fastest method
+                // lst.zipWithIndex.withFilter { case (x, idx) => idx % 2 == 0 }.map(_._1)
+                // first way (remove bad): 7263 ms
+                // second way (copy good): 10 ms
+
+                // lst.zipWithIndex.flatMap { case (x, idx) => if (idx % 2 == 0) Some(x) else None }
+                // first way (remove bad): 7256 ms
+                // second way (copy good): 45 ms
+
+                // slowest method
+                val res = mutable.ListBuffer.empty[Int]
+                res.sizeHint(1 + lst.length / 2)
+                for (i <- lst.indices if i % 2 == 0) res += lst(i)
+                res
+                // first way (remove bad): 7296 ms
+                // second way (copy good): 11953 ms
+            }
+
+            if (first) firstway
+            else secondway
+        }
+
+        // test
+        val lst = (0 to 10).to[mutable.ListBuffer]
+        val expected = Seq(0, 2, 4, 6, 8, 10).to[mutable.ListBuffer]
+
+        Seq(true, false) foreach { way =>
+            val res = removeEverySecond(lst, way)
+            println(res)
+            assert(res == expected)
+        }
+
+        assert(lst == (0 to 10).to[mutable.ListBuffer])
+
+        def performanceTest(): Unit = {
+            case class Result[T](result: T, elapsedNs: Long)
+            def time[R](block: => R): Result[R] = {
+                val t0 = System.nanoTime()
+                val result = block
+                val t1 = System.nanoTime()
+                Result(result, t1 - t0)
+            }
+
+            val lstsize = 50000
+            val count = 5
+
+            val lst = (0 to lstsize).to[mutable.ListBuffer]
+
+            val first = time {
+                (0 to count) foreach (_ => removeEverySecond(lst, first = true))
+            }
+
+            val second = time {
+                (0 to count) foreach (_ => removeEverySecond(lst, first = false))
+            }
+
+            println(s"first way (remove bad): ${first.elapsedNs / 1000000} ms")
+            println(s"second way (copy good): ${second.elapsedNs / 1000000} ms")
+        }
+
+        performanceTest()
+        // first way (remove bad): 7296 ms
+        // second way (copy good): 11953 ms
+
+        // second is slower because for each copied element list creates a new Cons object;
+        // on first way list just switch references.
     }
 
     //4. Write a function that receives a collection of strings and a map from strings to integers. Return
