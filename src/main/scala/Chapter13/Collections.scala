@@ -432,12 +432,67 @@ object Collections {
 
     // interoperability with java collections
     def interoperabilityWithJavaCollections = {
-        ???
+        import scala.collection.mutable
+
+        // https://www.scala-lang.org/api/current/scala/collection/JavaConverters$.html
+
+        // import scala.collection.JavaConversions // deprecated
+        import scala.collection.JavaConverters._
+
+        // use 'asScala'
+        val props: mutable.Map[String, String] = System.getProperties.asScala
+
+        // or, import converters you needed only
+        import scala.collection.JavaConverters.propertiesAsScalaMap
+
+        // n.b. conversions yield wrappers, no transformation processes involved
+
     }
 
     // parallel collections
     def parallelCollections = {
-        ???
+        // concurrent programs
+
+        // parallel collections use a global fork-join pool,
+        // well suited for processor-bound programs.
+        // for IO tasks or some other blocking/waiting you should choose a different
+        // execution context
+
+        // n.b. to run this code in REPL you will need a crutch (I'm using a def foo = ...; foo)
+        // https://github.com/scala/scala-parallel-collections/issues/34
+        // https://stackoverflow.com/questions/15176199/scala-parallel-collection-in-object-initializer-causes-a-program-to-hang/15176433#15176433
+        // https://github.com/scala/bug/issues/8119
+
+        // split collection to chunks, process chunks in parallel, combine chunks back to single collection
+        val largecoll = (1 to 10000000).toArray
+        val largecollPar = largecoll.par // wrapper for array, other coll. types may need copying
+        // computes concurrently
+        println(largecollPar.sum)
+        println(largecollPar.count(_ % 2 == 0))
+
+        // parallelize a 'for loop'
+        for (i <- (0 until 1000).par) print(s" $i")
+        // n.b. numbers are printed
+        // out of order: first in, first printed
+
+        // but, in 'for loop' constructing a new collection, results are
+        // assembled in order
+        assert( (for (i <- (0 until 10000000).par) yield i) == (0 until 10000000) )
+
+        // in parallel computations do NOT mutate shared variables
+        var count = 0; for (i <- (1 to 1000000).par) { if (i % 2 == 0) count += 1 }
+
+        // 'seq' method:
+        // method 'par' return ParSeq, ParSet, ParMap objects
+        // these are NOT subtypes of Seq, Set, Map and can't be passed to not par methods.
+        // so, you need to convert it back
+        val res = largecollPar.seq
+
+        // not all methods can be parallelized:
+        // operator must be associative: (a op b) op c == a op (b op c)
+        // parallel: fold, reduce, aggregate
+        val str = (' ' to 'z').foldLeft("")(_ :+ _)
+        str.par.aggregate(Set.empty[Char])(_ + _, _ ++ _)
     }
 }
 
