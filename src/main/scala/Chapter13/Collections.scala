@@ -686,9 +686,14 @@ object Collections_Exercises {
         assert(res == Array(3, 5).toIterable)
     }
 
-    //5. Implement a function that works just like mkString, using reduceLeft.
+    // 5. Implement a function that works just like mkString, using reduceLeft.
     def ex5 = {
-        ???
+        def mkString(lst: Iterable[String], start: String = "", sep: String = "", end: String = ""): String =
+            start + lst.reduceLeft(_ + sep + _) + end
+
+        // test
+        val lst = Seq("a", "b", "c")
+        assert(lst.mkString("[", ",", "]") == mkString(lst, "[", ",", "]"))
     }
 
     //6. Given a list of integers lst, what is (lst :\ List[Int]())(_ :: _)?
