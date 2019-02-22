@@ -498,12 +498,35 @@ object Collections {
 
 object Collections_Exercises {
 
-    // 1. Write a function that, given a string, produces a map of the indexes of all characters. For
-    //example, indexes("Mississippi") should return a map associating 'M' with the set
-    //{0}, 'i' with the set {1, 4, 7, 10}, and so on. Use a mutable map of characters to
-    //mutable sets. How can you ensure that the set is sorted?
+    // 1. Write a function that, given a string, produces a map of the indexes of all characters.
+    // For example, indexes("Mississippi") should return a map associating
+    // 'M' with the set {0},
+    // 'i' with the set {1, 4, 7, 10}, and so on.
+    // Use a mutable map of characters to mutable sets.
+    // How can you ensure that the set is sorted?
     def ex1 = {
-        ???
+        // SortedSet
+        import scala.collection.mutable
+
+        def charsToIndexes(str: String): Map[Char, mutable.SortedSet[Int]] = {
+            val map = mutable.Map.empty[Char, mutable.SortedSet[Int]]
+
+            str.zipWithIndex.foreach { case (char, idx) => {
+                val set = map.getOrElse(char, mutable.SortedSet.empty[Int])
+                map += (char -> (set += idx))
+            }}
+
+            map.toMap
+        }
+
+        // test
+        val str = "Mississippi"
+        val map = charsToIndexes(str)
+        println(map)
+        assert(map('M') == Set(0))
+        assert(map('i') == Set(1,4,7,10))
+        assert(map('s') == Set(2,3,5,6))
+        assert(map('p') == Set(8,9))
     }
 
     //2. Repeat the preceding exercise, using an immutable map of characters to lists.
