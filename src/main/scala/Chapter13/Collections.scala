@@ -508,15 +508,14 @@ object Collections_Exercises {
         // SortedSet
         import scala.collection.mutable
 
-        def charsToIndexes(str: String): Map[Char, mutable.SortedSet[Int]] = {
-            val map = mutable.Map.empty[Char, mutable.SortedSet[Int]]
+        def charsToIndexes(str: String) = {
+            val map = mutable.Map.empty[Char, mutable.SortedSet[Int]].withDefault(_ => mutable.SortedSet.empty)
 
-            str.zipWithIndex.foreach { case (char, idx) => {
-                val set = map.getOrElse(char, mutable.SortedSet.empty[Int])
-                map += (char -> (set += idx))
-            }}
+            str.zipWithIndex.foreach { case (char, idx) =>
+                map += (char -> (map(char) += idx))
+            }
 
-            map.toMap
+            map
         }
 
         // test
