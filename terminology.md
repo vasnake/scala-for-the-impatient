@@ -77,3 +77,15 @@ Java SAM Interface
 
 Control Abstractions
 : call by name notation for `() => Unit`
+
+Uniform Creation Principle
+
+Uniform Return Type Principle
+
+Streams
+
+Lazy Views
+
+Fork-Join Pool (execution context)
+
+Partial Functions
