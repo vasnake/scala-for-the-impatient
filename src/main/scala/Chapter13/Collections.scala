@@ -760,17 +760,27 @@ object Collections_Exercises {
         assert(res.last.toList == expected.last.toList)
     }
 
-    //9. The Scala compiler transforms a for/yield expression
-    //Click here to view code image
-    //for (i <- 1 to 10; j <- 1 to i) yield i * j
-    //to invocations of flatMap and map, like this:
-    //Click here to view code image
-    //(1 to 10).flatMap(i => (1 to i).map(j => i * j))
-    //Explain the use of flatMap. Hint: What is (1 to i).map(j => i * j) when i is 1,
-    //2, 3?
-    //What happens when there are three generators in the for/yield expression?
+    // 9. The Scala compiler transforms a for/yield expression
+    //      for (i <- 1 to 10; j <- 1 to i) yield i * j
+    // to invocations of flatMap and map, like this:
+    //      (1 to 10).flatMap(i => (1 to i).map(j => i * j))
+    // Explain the use of flatMap.
+    // Hint: What is (1 to i).map(j => i * j) when i is 1, 2, 3?
+    // What happens when there are three generators in the for/yield expression?
     def ex9 = {
-        ???
+        // second generator makes collections, we don't want 10 collections,
+        // we want unwrapped/flattened values.
+
+        // for three generators we need two flatMap
+        val res = for (i <- 1 to 3; j <- 1 to i; k <- 1 to j) yield s"i: $i, j: $j, k: $k"
+        res foreach println
+
+        assert(res.mkString ==
+            (1 to 3).flatMap(i =>
+                (1 to i).flatMap(j =>
+                    (1 to j).map(k =>
+                        s"i: $i, j: $j, k: $k"))).mkString
+        )
     }
 
     //10. The method java.util.TimeZone.getAvailableIDs yields time zones such as
