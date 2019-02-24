@@ -783,11 +783,18 @@ object Collections_Exercises {
         )
     }
 
-    //10. The method java.util.TimeZone.getAvailableIDs yields time zones such as
-    //Africa/Cairo and Asia/Chungking. Which continent has the most time zones? Hint:
-    //groupBy.
+    // 10. The method
+    // java.util.TimeZone.getAvailableIDs
+    // yields time zones such as Africa/Cairo and Asia/Chungking.
+    // Which continent has the most time zones?
+    // Hint: groupBy.
     def ex10 = {
-        ???
+        import java.util.TimeZone
+        val continentZonesMap = TimeZone.getAvailableIDs.groupBy(
+            _.split("/").headOption.getOrElse("unknown"))
+        val res = continentZonesMap.maxBy(_._2.length)
+        // America
+        println(res._1 + " : " + res._2.toList)
     }
 
     //11. Harry Hacker reads a file into a string and wants to use a parallel collection to update the letter
