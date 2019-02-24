@@ -696,11 +696,25 @@ object Collections_Exercises {
         assert(lst.mkString("[", ",", "]") == mkString(lst, "[", ",", "]"))
     }
 
-    //6. Given a list of integers lst, what is (lst :\ List[Int]())(_ :: _)?
-    //(List[Int]() /: lst)(_ :+ _)? How can you modify one of them to reverse the
-    //list?
+    // 6. Given a list of integers lst, what is
+    // (lst :\ List[Int]())(_ :: _) ?
+    // (List[Int]() /: lst)(_ :+ _) ?
+    // How can you modify one of them to reverse the list?
     def ex6 = {
-        ???
+        val lst = List(1, 2, 3)
+        def emptyList = List.empty[Int]
+
+        // apply 'cons' to lst elements, right to left, building copy of lst
+        val foldRightCons = (lst :\ emptyList)(_ :: _)
+        assert(foldRightCons == lst)
+
+        // apply 'append' to lst elements, left to right, building copy of lst
+        val foldLeftAppend = (emptyList /: lst)(_ :+ _)
+        assert(foldRightCons == lst)
+
+        // to revert lst: apply foldLeft with cons or foldRight with append
+        assert(lst.reverse == (emptyList /: lst)((a, b) => b :: a) )
+        assert(lst.reverse == (lst :\ emptyList)((a, b) => b :+ a) )
     }
 
     //7. In Section 13.10, “Zipping,” on page 187, the expression (prices zip quantities)
