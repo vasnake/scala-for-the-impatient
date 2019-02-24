@@ -791,21 +791,53 @@ object Collections_Exercises {
     def ex10 = {
         import java.util.TimeZone
         val continentZonesMap = TimeZone.getAvailableIDs.groupBy(
-            _.split("/").headOption.getOrElse("unknown"))
+            //_.split("/").headOption.getOrElse("unknown")
+            _.takeWhile(_ != '/')
+        )
+
         val res = continentZonesMap.maxBy(_._2.length)
         // America
         println(res._1 + " : " + res._2.toList)
     }
 
-    //11. Harry Hacker reads a file into a string and wants to use a parallel collection to update the letter
-    //frequencies concurrently on portions of the string. He uses the following code:
-    //Click here to view code image
-    //val frequencies = new scala.collection.mutable.HashMap[Char, Int]
-    //for (c <- str.par) frequencies(c) = frequencies.getOrElse(c, 0) + 1
-    //Why is this a terrible idea? How can he really parallelize the computation? (Hint: Use
-    //aggregate.)
+    // 11. Harry Hacker reads a file into a string and wants to use a parallel collection
+    // to update the letter frequencies concurrently on portions of the string.
+    // He uses the following code:
+    //      val frequencies = new scala.collection.mutable.HashMap[Char, Int]
+    //      for (c <- str.par) frequencies(c) = frequencies.getOrElse(c, 0) + 1
+    // Why is this a terrible idea?
+    // How can he really parallelize the computation? (Hint: Use aggregate.)
     def ex11 = {
-        ???
+        // Why is this a terrible idea?
+        // mutating a shared value/state in concurrent environment: always a bad idea.
+
+        // we need to combine partial results: immutable maps [Char, Int]
+        def frequencesConcurrent(str: String): Map[Char, Int] = {
+            // HashMap has 'merged' method
+            import scala.collection.immutable.HashMap
+            type FMap = HashMap[Char, Int]
+            val zero = new FMap
+
+            val op: (FMap, Char) => FMap = { case (map, char) =>
+                map + Tuple2(char, 1 + map.getOrElse(char, 0))
+            }
+
+            val combine: (FMap, FMap) => FMap = { case (a, b) =>
+                a.merged(b) { case ((c, f1), (_, f2)) => (c, f1 + f2) }
+                //(a /: b)((map, rec) => map + (rec._1 -> (rec._2 + map.getOrElse(rec._1, 0))))
+            }
+
+            str.par.aggregate(zero)(op, combine)
+        }
+
+        // test
+        val res = frequencesConcurrent("Mississippi")
+        assert(res == Map(
+            'M' -> 1,
+            'i' -> 4,
+            's' -> 4,
+            'p' -> 2
+        ))
     }
 
 }
