@@ -717,7 +717,7 @@ object Collections_Exercises {
         assert(lst.reverse == (lst :\ emptyList)((x, xs) => xs :+ x) )
     }
 
-    //7. In Section 13.10, “Zipping,” on page 187, the expression
+    // 7. In Section 13.10, “Zipping,” on page 187, the expression
     // (prices zip quantities) map { p => p._1 * p._2 }
     // is a bit inelegant.
     // We can’t do
@@ -734,12 +734,30 @@ object Collections_Exercises {
         assert(res == List(50.0, 40.0, 9.95))
     }
 
-    //8. Write a function that turns an array of Double values into a two-dimensional array. Pass the
-    //number of columns as a parameter. For example, with Array(1, 2, 3, 4, 5, 6) and
-    //three columns, return Array(Array(1, 2, 3), Array(4, 5, 6)). Use the
-    //grouped method.
+    // 8. Write a function that turns an array of Double values into a two-dimensional array.
+    // Pass the number of columns as a parameter.
+    // For example, with
+    // Array(1, 2, 3, 4, 5, 6) and three columns,
+    // return Array(Array(1, 2, 3), Array(4, 5, 6)).
+    // Use the grouped method.
     def ex8 = {
-        ???
+        implicit def int2double(i: Int): Double = i.toDouble
+
+        def splitToRows(arr: Array[Double], ncols: Int): Array[Array[Double]] =
+            arr.grouped(ncols).toArray
+
+
+        // test
+        val data: Array[Double] = Array(1, 2, 3, 4, 5, 6)
+        val expected: Array[Array[Double]] = Array(
+            Array(1, 2, 3),
+            Array(4, 5, 6)
+        )
+        val res = splitToRows(data, 3)
+
+        assert(res.length == 2)
+        assert(res.head.toList == expected.head.toList)
+        assert(res.last.toList == expected.last.toList)
     }
 
     //9. The Scala compiler transforms a for/yield expression
