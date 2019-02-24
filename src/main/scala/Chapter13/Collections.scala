@@ -713,18 +713,25 @@ object Collections_Exercises {
         assert(foldRightCons == lst)
 
         // to revert lst: apply foldLeft with cons or foldRight with append
-        assert(lst.reverse == (emptyList /: lst)((a, b) => b :: a) )
-        assert(lst.reverse == (lst :\ emptyList)((a, b) => b :+ a) )
+        assert(lst.reverse == (emptyList /: lst)((xs, x) => x :: xs ) )
+        assert(lst.reverse == (lst :\ emptyList)((x, xs) => xs :+ x) )
     }
 
-    //7. In Section 13.10, “Zipping,” on page 187, the expression (prices zip quantities)
-    //map { p => p._1 * p._2 } is a bit inelegant. We can’t do (prices zip
-    //quantities) map { _ * _ } because _ * _ is a function with two arguments, and
-    //we need a function with one argument that is a tuple. The tupled method of the Function
-    //object changes a function with two arguments to one that takes a tuple. Apply tupled to the
-    //multiplication function so you can map it over the list of pairs.
+    //7. In Section 13.10, “Zipping,” on page 187, the expression
+    // (prices zip quantities) map { p => p._1 * p._2 }
+    // is a bit inelegant.
+    // We can’t do
+    // (prices zip quantities) map { _ * _ }
+    // because _ * _ is a function with two arguments, and we need a function with
+    // one argument that is a tuple.
+    // The tupled method of the Function object changes a function with two arguments
+    // to one that takes a tuple.
+    // Apply tupled to the multiplication function so you can map it over the list of pairs.
     def ex7 = {
-        ???
+        val prices = Seq(5d, 20d, 9.95)
+        val quantities = Seq(10, 2, 1)
+        val res = (prices zip quantities) map Function.tupled(_ * _)
+        assert(res == List(50.0, 40.0, 9.95))
     }
 
     //8. Write a function that turns an array of Double values into a two-dimensional array. Pass the
