@@ -89,3 +89,5 @@ Lazy Views
 Fork-Join Pool (execution context)
 
 Partial Functions
+
+Destructuring
