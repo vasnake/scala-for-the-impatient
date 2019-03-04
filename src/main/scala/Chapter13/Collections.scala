@@ -143,7 +143,7 @@ object Collections {
 
         // mutable list: ListBuffer, linked list with ref. to the last node.
         // with java LinkedList you can remove item after every second call to next;
-        // no such operator in ListBuffer, better generate a new list
+        // no such operator in ListBuffer, better generate a new list ? not really ? see exercises
 
         // deprecated LinkedList, DoubleLinkedList
     }
@@ -823,6 +823,7 @@ object Collections_Exercises {
             }
 
             val combine: (FMap, FMap) => FMap = { case (a, b) =>
+                // println(s"combine a,b: a: ${a}; b: ${b}")
                 a.merged(b) { case ((c, f1), (_, f2)) => (c, f1 + f2) }
                 //(a /: b)((map, rec) => map + (rec._1 -> (rec._2 + map.getOrElse(rec._1, 0))))
             }
