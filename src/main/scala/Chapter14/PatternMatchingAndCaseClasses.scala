@@ -189,7 +189,23 @@ object PatternMatchingAndCaseClasses {
 
     // patterns in variable declarations
     def patternsInVariableDeclarations = {
-        ???
+        val (x, y) = (1, 2)
+        // useful for functions that return a pair
+        val (q, r) = BigInt(10) /% 3
+
+        // works for any patters with variable names
+        val arr: Array[Int] = ???
+        val Array(first, second, rest @ _*) = arr
+
+        // val p(x1, ..., xn) = e
+        // is the same as
+        // val $result = e match { case p(x1, ...) => (x1, ...)
+        // val x1 = $result._1; ...
+
+        // this definition holds even w/o free variables
+        val 2 = x
+        // x match { case 2 => () }
+        // effectively: if (2 != x) throw new MatchError
     }
 
     // patterns in for-expressions
