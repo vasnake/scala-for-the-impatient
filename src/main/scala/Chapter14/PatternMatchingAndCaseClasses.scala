@@ -578,14 +578,27 @@ object PatternMatchingAndCaseClasses_Exercises {
         assert( List(1,2,3) == swap(Array(2,1,3)).toList )
     }
 
-// 4. Add a case class 'Multiple' that is a subclass of the 'Item' class.
-// For example,
-// Multiple(10, Article("Blackwell Toaster", 29.95))
-// describes ten toasters. Of course, you should be able to handle any items,
-// such as bundles or multiples, in the second argument.
-// Extend the price function to handle this new case.
+    // 4. Add a case class 'Multiple' that is a subclass of the 'Item' class.
+    // For example,
+    // Multiple(10, Article("Blackwell Toaster", 29.95))
+    // describes ten toasters. Of course, you should be able to handle any items,
+    // such as bundles or multiples, in the second argument.
+    // Extend the price function to handle this new case.
     def ex4 = {
-        ???
+
+        sealed abstract class Item
+        case class Article(descr: String, price: Double) extends Item
+        case class Bundle(descr: String, discount: Double, items: Item*) extends Item
+        case class Multiple(quantity: Int, item: Item) extends Item
+
+        def price(itm: Item): Double = itm match {
+            case Article(_, p) => p
+            case Bundle(_, disc, items @ _*) => items.map(price).sum - disc
+            case Multiple(q, item) => q * price(item)
+        }
+
+        // test
+        assert(price(Multiple(10, Article("Blackwell Toaster", 29.95))) == 299.5)
     }
 
 // 5. One can use lists to model trees that store values only in the leaves.
