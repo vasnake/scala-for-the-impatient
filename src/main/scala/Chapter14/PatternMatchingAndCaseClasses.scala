@@ -601,19 +601,44 @@ object PatternMatchingAndCaseClasses_Exercises {
         assert(price(Multiple(10, Article("Blackwell Toaster", 29.95))) == 299.5)
     }
 
-// 5. One can use lists to model trees that store values only in the leaves.
-// For example, the list ((3 8) 2 (5)) describes the tree
-//          •
-//        / |  \
-//       •  2   •
-//      /\      |
-//     3 8      5
-// However, some of the list elements are numbers and others are lists.
-// In Scala, you cannot have heterogeneous lists, so you have to use a List[Any].
-// Write a leafSum function to compute the sum of all elements in the leaves,
-// using pattern matching to differentiate between numbers and lists.
+    // 5. One can use lists to model trees that store values only in the leaves.
+    // For example, the list ((3 8) 2 (5)) describes the tree
+    //          •
+    //        / |  \
+    //       •  2   •
+    //      /\      |
+    //     3 8      5
+    // However, some of the list elements are numbers and others are lists.
+    // In Scala, you cannot have heterogeneous lists, so you have to use a List[Any].
+    // Write a leafSum function to compute the sum of all elements in the leaves,
+    // using pattern matching to differentiate between numbers and lists.
     def ex5 = {
-        ???
+        def leafSum(lst: List[Any]): Int = lst match {
+            case Nil    => 0
+            case h :: t => h match {
+                case a: Int         => leafSum(t) + a
+                case b: List[Any]   => leafSum(b) + leafSum(t)
+                case _              => leafSum(t)
+            }
+        }
+
+        def leafSum2(lst: List[_]): Int = lst.map( {
+            case a: Int => a
+            case b: List[_] => leafSum2(b)
+            case _ => 0
+        } ).sum
+
+        def leafSum3(lst: Seq[_]): Int = lst match {
+            case Seq(x: Int, rest @ _*)     => x + leafSum3(rest)
+            case Seq(xs: Seq[_], rest @ _*) => leafSum3(xs) + leafSum3(rest)
+            case _                          => 0
+        }
+
+        // test
+        val lst = List( List(3, 8), 2, List(5) )
+        val res = leafSum(lst); println(s"result: $res")
+        assert(res == 18 && res == leafSum2(lst) && res == leafSum3(lst))
+        assert(leafSum(List(42)) + leafSum2(List(42)) + leafSum3(List(42)) == 126)
     }
 
 // 6. A better way of modeling such trees is with case classes.
