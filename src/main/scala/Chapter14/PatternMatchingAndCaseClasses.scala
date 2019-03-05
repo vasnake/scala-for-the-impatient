@@ -561,10 +561,21 @@ object PatternMatchingAndCaseClasses_Exercises {
         assert((1, 2) == swap((2, 1)))
     }
 
-// 3. Using pattern matching, write a function 'swap' that swaps the first two elements of an array
-// provided its length is at least two.
+    // 3. Using pattern matching, write a function 'swap' that swaps the first two elements of an array
+    // provided its length is at least two.
     def ex3 = {
-        ???
+        import scala.reflect.ClassTag
+
+        def swap[T: ClassTag](arr: Array[T]): Array[T] = arr match {
+            case Array(a, b) => Array(b, a)
+            // immutable, slow
+            // case Array(a, b, rest @ _*) => Array(b, a) ++ rest
+            // mutable, fast
+            case Array(a, b, _*) => arr(0) = b; arr(1) = a; arr
+        }
+
+        // test
+        assert( List(1,2,3) == swap(Array(2,1,3)).toList )
     }
 
 // 4. Add a case class 'Multiple' that is a subclass of the 'Item' class.
