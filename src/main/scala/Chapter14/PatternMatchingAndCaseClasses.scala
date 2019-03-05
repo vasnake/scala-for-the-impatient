@@ -447,19 +447,111 @@ object PatternMatchingAndCaseClasses {
 
 object PatternMatchingAndCaseClasses_Exercises {
 
-// 1. Your Java Development Kit distribution has the source code for much of the JDK in the
-// src.zip file.
-// Unzip and search for case labels (regular expression case [^:]+:).
-// Then look for comments starting with // and containing [Ff]alls? thr
-// to catch comments such as // Falls through
-// or // just fall thru
-// Assuming the JDK programmers follow the Java code convention, which requires such a comment,
-// what percentage of cases falls through?
-    def ex1 = {
-        ???
+    // 1. Your Java Development Kit distribution has the source code for much of the JDK in the src.zip file.
+    // Unzip and search for case labels (regular expression case [^:]+:).
+    // Then look for comments starting with // and containing [Ff]alls? thr
+    // to catch comments such as // Falls through
+    // or // just fall thru
+    // Assuming the JDK programmers follow the Java code convention, which requires such a comment,
+    // what percentage of cases falls through?
+    def ex1(startFrom: String = "/tmp") = {
+        import scala.util.matching.Regex
+
+        // case class CaseLabels(count: Int = 0) extends AnyVal
+        // case class FallsThrough(count: Int = 0) extends AnyVal
+        // value class may not be a local class
+        case class CaseLabels(count: Int = 0)
+        case class FallsThrough(count: Int = 0)
+
+        case class Counts(labels: CaseLabels = CaseLabels(), falls: FallsThrough = FallsThrough()) {
+            def add(other: Counts): Counts = Counts(
+                CaseLabels(other.labels.count + labels.count),
+                FallsThrough(other.falls.count + falls.count)
+            )
+        }
+
+        def exist(re: Regex, line: String): Boolean = (re findFirstIn line).fold(false)(_ => true)
+
+        def lineProcessing(labels: Regex, falls: Regex, line: String): Counts = Counts(
+            CaseLabels( if (exist(labels, line)) 1 else 0 ),
+            FallsThrough( if (exist(falls, line)) 1 else 0 )
+        )
+
+        def textProcessing(lines: Iterator[String]): Counts = {
+            val caseLabelsRe = """case [^:]+:""".r
+            val fallsThroughRe = """ //.*[Ff]alls? thr""".r
+
+            val cntlist = for {
+                line <- lines
+            } yield lineProcessing(caseLabelsRe, fallsThroughRe, line)
+
+            (Counts() /: cntlist)(_ add _)
+        }
+
+        def fileLines(path: String): Iterator[String] = {
+            scala.io.Source.fromFile(path).getLines
+        }
+
+        def files(root: String = "/tmp"): Iterable[String] = {
+            import java.nio.{file => jnf}
+            import java.io.{File, IOException}
+            import rx.lang.scala.Observable
+            import scala.language.implicitConversions
+
+            def listFiles(dir: jnf.Path) = Observable[jnf.Path](subscriber => {
+
+                val visitor = new jnf.SimpleFileVisitor[jnf.Path] {
+                    override def visitFile(file: jnf.Path, attrs: jnf.attribute.BasicFileAttributes) = {
+                        if (subscriber.isUnsubscribed) jnf.FileVisitResult.TERMINATE
+                        else {
+                            subscriber.onNext(file)
+                            jnf.FileVisitResult.CONTINUE
+                        }
+                    }
+                    override def visitFileFailed(file: jnf.Path, exc: IOException) = {
+                        println(s"visitFileFailed: $exc")
+                        //subscriber.onError(exc) // exactly once
+                        jnf.FileVisitResult.CONTINUE
+                    }
+                    override def postVisitDirectory(dir: jnf.Path, exc: IOException) = {
+                        if (exc != null) println(s"postVisitDirectory: $exc")
+                        jnf.FileVisitResult.CONTINUE
+                    }
+                }
+
+                jnf.Files.walkFileTree(dir, visitor)
+                subscriber.onCompleted()
+            }) // .onErrorResumeNext(_ => Observable.empty)
+
+            val startDir = new File(root).toPath
+            val files = listFiles(startDir)
+            val srcfiles = files.filter(p => p.toString.endsWith(".java"))
+            files.length.subscribe(c => println(s"total files check: $c"))
+            srcfiles.length.subscribe(c => println(s"java files check: $c"))
+            // debug
+            srcfiles.subscribe(p => println(p))
+
+            // result: escape async world // not really good decision
+            srcfiles.map(p => p.toAbsolutePath.toString).toBlocking.toIterable
+        }
+
+        // TODO: all pipeline should be reactive (try Akka Streams)
+        // add unit tests for text processing stages
+
+        // do grep and count
+        val res = files(startFrom)
+            .map(path => fileLines(path))
+            .map(lines => textProcessing(lines))
+            .fold(Counts())(_ add _)
+        // scala> f"'$res16%8.3f'" // float width.precision example
+        // res26: String = ' 101.000'
+        println(f"counts: $res; falls thru ${100d * res.falls.count / (1 + res.labels.count)}%4.2f")
+        // java files check: 7711
+        // counts: Counts(CaseLabels(10099),FallsThrough(102)); falls thru 1.01
     }
 
-// 2. Using pattern matching, write a function 'swap' that receives a pair of integers and returns the
+
+    // 2. Using pattern matching, write a function 'swap' that receives a pair of integers and returns the
 // pair with the components swapped.
     def ex2 = {
         ???
