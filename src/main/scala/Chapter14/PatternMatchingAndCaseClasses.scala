@@ -150,7 +150,7 @@ object PatternMatchingAndCaseClasses {
         }
 
         // tuples notation for tuples
-        val pair = (???, ???)
+        val pair: (Int, Int) = (???, ???)
         pair match {
             case (0, _) => ???
             case (y, 0) => ???
