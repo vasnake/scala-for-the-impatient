@@ -543,18 +543,22 @@ object PatternMatchingAndCaseClasses_Exercises {
             .map(path => fileLines(path))
             .map(lines => textProcessing(lines))
             .fold(Counts())(_ add _)
+
         // scala> f"'$res16%8.3f'" // float width.precision example
         // res26: String = ' 101.000'
-        println(f"counts: $res; falls thru ${100d * res.falls.count / (1 + res.labels.count)}%4.2f")
+        println(f"counts: $res; falls thru ${100d * res.falls.count / (1 + res.labels.count)}%4.2f%%")
         // java files check: 7711
         // counts: Counts(CaseLabels(10099),FallsThrough(102)); falls thru 1.01
     }
 
 
     // 2. Using pattern matching, write a function 'swap' that receives a pair of integers and returns the
-// pair with the components swapped.
+    // pair with the components swapped.
     def ex2 = {
-        ???
+        def swap(pair: (Int, Int)) = pair match { case (a, b) => (b, a) }
+
+        // test
+        assert((1, 2) == swap((2, 1)))
     }
 
 // 3. Using pattern matching, write a function 'swap' that swaps the first two elements of an array
