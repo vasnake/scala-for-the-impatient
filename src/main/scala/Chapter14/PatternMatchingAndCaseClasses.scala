@@ -301,32 +301,146 @@ object PatternMatchingAndCaseClasses {
 
     // matching nested structures
     def matchingNestedStructures = {
-        ???
+        // with case classes it's easy: match nested structures
+        // example: bundle of items
+        sealed abstract class Item
+        case class Article(descr: String, price: Double) extends Item
+        case class Bundle(descr: String, discount: Double, items: Item*) extends Item
+
+        val itm: Item = ???
+        itm match {
+            case Bundle(_, _, Article(descr, _), _*) => ??? // binds descr to the description of the first article
+            case Bundle(_, _, art @ Article(_, _), rest @ _*) => ??? // binds first article and the rest of the bundle
+        }
+
+        // app: compute price
+        def price(itm: Item): Double = itm match {
+            case Article(_, p) => p
+            case Bundle(_, disc, items @ _*) => items.map(price).sum - disc
+        }
     }
 
     // are case classes evil?
     def areCaseClassesEvil = {
-        ???
+        // compute price example: not good from OO poin of view.
+        // 'price' should be a method of the sup. and be redefined in bundle
+
+        // if you don't have to add another operations to class hierarchy, it's true.
+
+        // see 'expression problem'
+        // if you add classes and have a fixed set of operators: use polymorphism
+        // if you add operators and have a fixed set of classes: use pattern matching
+
+        // case classes and pattern matching is good for fixed set of classes: sealed sup
+        // example: List
+        // abstract class List
+        // case object Nil extends List
+        // case class ::(head, tail) extends List
+
+        // case classes are quite convenient:
+        // more concise code
+        // easier to read
+        // toString, equals, hashCode, copy for free
+
+        // some people call them 'value classes', which is wrong: value class creates no objects on instantiation
+
+        // n.b. if, god forbid, you have 'var' in case class, derive hashCode from immutable fields only;
+
+        // don't extend case class from case class: toString, equals, hashCode, copy will not be generated,
+        // only leaves of a tree should be case classes
+
     }
 
     // sealed classes
     def sealedClasses = {
-        ???
+        // compiler could check that you exhausted all alternatives in match expression
+        // to make it possible, declare sup as 'sealed'
+
+        sealed trait Amount
+        case class Dollar(value: Double) extends Amount
+        case class Currency(value: Double, unit: String) extends Amount
+
+        // all subclasses of a sealed must be defined in the same file
     }
 
     // simulating enumerations
     def simulatingEnumerations = {
-        ???
+        // you may prefer Enumeration class
+
+        // example
+        sealed trait TrafficLightColor
+        case object Red extends TrafficLightColor
+        case object Yellow extends TrafficLightColor
+        case object Green extends TrafficLightColor
+
+        val color: TrafficLightColor = ???
+        color match {
+            case Red => ???
+            case _ => ???
+        }
     }
 
     // the option type
     def theOptionType = {
-        ???
+        // monadic Option type with
+        // case class None
+        // case class Some
+
+        // don't use "" or null, use Option
+        // e.g. with maps
+        val score = Map("A" -> 3).get("B")
+        score match {
+            case Some(sc) => ???
+            case None => ???
+        }
+        // or with map.getOrElse
+
+        // option may be considered as a collection
+        for (sc <- score) println(s"$sc") // print only if have some value
+        // can use map, filter, flatMap, foreach, ...
+        score.map(_ + 1)
+        score.filter(_ > 5)
+        score.foreach(println)
     }
 
     // partial functions
     def partialFunctions = {
-        ???
+        // a set of case clauses enclosed in braces: partial function
+        // may not be defined on all inputs
+
+        // class PartialFunction[A, B]
+        // two methods: apply, isDefinedAt
+        val f: PartialFunction[Char, Int] = { case '+' => 1; case '-' => -1 }
+
+        f('-') == f.apply('-')
+        f.isDefinedAt(' ') // false
+        f('0') // MatchError
+
+        // method 'collect' of the traversable accept a partial function
+        "1 - 3 + 4" collect { case '+' => 1; case '-' => -1 }
+
+        // an exhaustive set of cases define a Function1, not a PartialFunction
+        "1 - 3 + 4" map { case '+' => 1; case '-' => -1; case _ => 0 }
+
+        // Seq is a partial function idx => T
+        // Map is a partial function k => v
+        // you can pass a map to 'collect'
+        " " collect Map(' ' -> 42)
+
+        // 'lift' method
+        // turns a PartialFunction[T, R] into Function1[T, Option[R]]
+        val g = f.lift
+        g('0') == None
+        g('+') == Some(1)
+
+        // example: use map in Regex.replaceSomeIn
+        import scala.util.matching.Regex
+        val msg = "At {1}, there was {2} on {3}"
+        val map = Map("{1}" -> "planet 7", "{2}" -> "12:30 pm", "{3}" -> "a disturbance of the force")
+        val pattern = """\{([0-9]+)\}""".r // {number}
+        // def mf(map: Map[String, String])(rm: Regex.Match): Option[String] = map.lift(rm.matched)
+        // val res = pattern.replaceSomeIn(msg, mf(map))
+        val res = pattern.replaceSomeIn(msg, m => map.lift(m.matched))
     }
 
 }
