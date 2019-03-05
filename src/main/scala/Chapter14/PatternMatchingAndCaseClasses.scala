@@ -641,14 +641,26 @@ object PatternMatchingAndCaseClasses_Exercises {
         assert(leafSum(List(42)) + leafSum2(List(42)) + leafSum3(List(42)) == 126)
     }
 
-// 6. A better way of modeling such trees is with case classes.
-// Let’s start with binary trees.
-//  sealed abstract class BinaryTree
-//  case class Leaf(value: Int) extends BinaryTree
-//  case class Node(left: BinaryTree, right: BinaryTree) extends BinaryTree
-// Write a function to compute the sum of all elements in the leaves.
+    // 6. A better way of modeling such trees is with case classes.
+    // Let’s start with binary trees.
+    //  sealed abstract class BinaryTree
+    //  case class Leaf(value: Int) extends BinaryTree
+    //  case class Node(left: BinaryTree, right: BinaryTree) extends BinaryTree
+    // Write a function to compute the sum of all elements in the leaves.
     def ex6 = {
-        ???
+        sealed abstract class BinaryTree
+        case class Leaf(value: Int) extends BinaryTree
+        case class Node(left: BinaryTree, right: BinaryTree) extends BinaryTree
+
+        def leafSum(tree: BinaryTree): Int = tree match {
+            case Leaf(x) => x
+            case Node(a, b) => leafSum(a) + leafSum(b)
+        }
+
+        // test
+        val tree = Node(Leaf(1), Node(Node(Leaf(2), Leaf(3)), Node(Leaf(4), Leaf(5))))
+        val res = leafSum(tree)
+        assert(res == 15)
     }
 
 // 7. Extend the tree in the preceding exercise so that
