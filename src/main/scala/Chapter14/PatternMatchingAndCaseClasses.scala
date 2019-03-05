@@ -197,6 +197,7 @@ object PatternMatchingAndCaseClasses {
         val arr: Array[Int] = ???
         val Array(first, second, rest @ _*) = arr
 
+        // it works like this:
         // val p(x1, ..., xn) = e
         // is the same as
         // val $result = e match { case p(x1, ...) => (x1, ...)
@@ -210,22 +211,92 @@ object PatternMatchingAndCaseClasses {
 
     // patterns in for-expressions
     def patternsInForExpressions = {
-        ???
+        import scala.collection.JavaConverters.propertiesAsScalaMapConverter
+
+        // for each iteration, the variables are bound
+
+        // traverse a map
+        for ((k, v) <- System.getProperties.asScala) println(s"$k -> $v")
+
+        // in a 'for' expression match failures are silently ignored
+        for ((k, "") <- System.getProperties.asScala) println(s"no value for $k")
+        // skip all non-empty
+
+        // or, you can use a guard
+        for ((k, v) <- System.getProperties.asScala if v == "") println(s"no value for $k")
     }
 
     // case classes
     def caseClasses = {
-        ???
+        // special kind of classes, optimized for pattern matching:
+        // constructor parameters become a 'val'
+        // methods generated: toString, equals, hashCode, copy
+        // companion object constructed with 'apply', 'unapply'
+
+        sealed abstract class Amount // sealed: hinted compiler about exhaustiveness match partial function
+        case class Dollar(value: Double) extends Amount
+        case class Currency(value: Double, unit: String) extends Amount
+        // use case objects for singletons
+        case object Nothing extends Amount
+
+        val amt: Amount = ???
+        amt match {
+            case Dollar(v) => ???
+            case Currency(_, u) => ???
+            case Nothing => ??? // no parenthesis for object
+        }
     }
 
     // the copy method and named parameters
     def theCopyMethodAndNamedParameters = {
-        ???
+        // 'copy' makes a new object with the same values, allowing to redefine only selected values
+
+        sealed abstract class Amount
+        case class Dollar(value: Double) extends Amount
+        case class Currency(value: Double, unit: String) extends Amount
+        case object Nothing extends Amount
+
+        val amt = Currency(29.95, "EUR")
+        val price = amt.copy(unit = "CHF") // use named parameters to modify properties
     }
 
     // infix notations in case clauses
     def infixNotationsInCaseClauses = {
-        ???
+        // if 'unapply' yields a pair, you can use infix notation in pattern
+        // usable for DSL construction
+
+        sealed abstract class Amount
+        case class Dollar(value: Double) extends Amount
+        case class Currency(value: Double, unit: String) extends Amount
+        case object Nothing extends Amount
+
+        val amt: Amount = ???
+        amt match {
+            case amount Currency "EUR" => ??? // same as: case Currency(amount, "EUR")
+        }
+
+        // the feature is ment for matching sequences: case class ::(head, tail) extends List
+        val lst: List[Int] = ???
+        lst match { case h :: t => ??? } // same as: case ::(h, t) // calls ::.unapply(lst)
+
+        // later you will encounter case class ~ // for parser combinators
+        // res match { case p ~ q => ??? } // same as: case ~(p, q)
+
+        // easier to read when more than one
+        // res match { case p ~ q ~ r => ??? } // vs: case ~(~(p, q), r)
+
+        // colon ':' on the end means right-to-left associativity
+        // case a :: b :: c // means case ::(a, ::(b, c))
+
+        // example : unapply return a pair
+        case object +: {
+            def unapply[T](arg: List[T]) = if (arg.isEmpty) None else Some( (arg.head, arg.tail) )
+        }
+
+        1 +: 7 +: Nil match {
+            case a +: b +: rest => ???
+        }
+
     }
 
     // matching nested structures
