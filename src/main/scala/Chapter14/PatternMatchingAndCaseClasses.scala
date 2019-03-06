@@ -663,12 +663,24 @@ object PatternMatchingAndCaseClasses_Exercises {
         assert(res == 15)
     }
 
-// 7. Extend the tree in the preceding exercise so that
-// each node can have an arbitrary number of children, and reimplement the leafSum function.
-// The tree in Exercise 5 should be expressible as
-//  Node(Node(Leaf(3), Leaf(8)), Leaf(2), Node(Leaf(5)))
+    // 7. Extend the tree in the preceding exercise so that
+    // each node can have an arbitrary number of children, and reimplement the leafSum function.
+    // The tree in Exercise 5 should be expressible as
+    //  Node(Node(Leaf(3), Leaf(8)), Leaf(2), Node(Leaf(5)))
     def ex7 = {
-        ???
+        sealed abstract class BinaryTree
+        case class Leaf(value: Int) extends BinaryTree
+        case class Node(children: BinaryTree*) extends BinaryTree
+
+        def leafSum(tree: BinaryTree): Int = tree match {
+            case Leaf(x) => x
+            case Node(xs @ _*) => xs.map(leafSum).sum
+        }
+
+        // test
+        val tree = Node( Node(Leaf(3), Leaf(8)), Leaf(2), Node(Leaf(5)) )
+        val res = leafSum(tree)
+        assert(res == 18)
     }
 
 // 8. Extend the tree in the preceding exercise so that each nonleaf node stores an operator in
