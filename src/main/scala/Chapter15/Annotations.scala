@@ -1,17 +1,14 @@
 package Chapter15
 
 import java.io.IOException
-
 import javax.persistence._
 import javax.inject._
-
 import scala.beans._
 import scala.annotation.meta._
 import scala.annotation._
+import scala.annotation.unchecked._
 import org.checkerframework.checker.i18n.qual._
 import org.junit._
-
-import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.mutable
 
 
@@ -62,7 +59,7 @@ object Annotations {
         @Entity class Credentials
         @Test def testFunc() = {}
         @BeanProperty var username = ""
-        def doStuff(@NotNull msg: String) = {}
+        // def doStuff(@NotNull msg: String) = {}
 
         // multiple annotations, order doesn't matter
         @BeanProperty @Id var usernamE = ""
@@ -74,7 +71,8 @@ object Annotations {
         (Map(1->2).get(3): @unchecked) match { case a => println(a) }
 
         // type parameters
-        class Container[@specialized T] { ??? }
+        // class Container[@specialized T] { ??? }
+        // commented because of: compiler [error]   EmptyScope.enter
 
         // type (after type: method returns a localized string)
         def country: String @Localized = ???
@@ -112,7 +110,7 @@ object Annotations {
 
         // field definitions in scala can give rise to multiple features in java
         // e.g.
-        class Credentials(@NotNull @BeanProperty var username: String)
+        // class Credentials(@NotNull @BeanProperty var username: String)
         // there are six items that can be annotation targets:
         // constructor parameter,
         // private field,
@@ -207,7 +205,7 @@ object Annotations {
 
         // jump table for switch / match
         (res: @switch) match {
-            case true => "true"'
+            case true => "true"
             case false => "false"
             case _ => "?"
         }
@@ -256,10 +254,10 @@ object Annotations {
         // in order to generate overloaded versions like
         def allDifferent(x: Int, y: Int, z: Int) = ???
         // use @specialized anno
-        def allDifferent[@specialized T](x: T, y: T, z: T) = ???
+        def allDiffereNt[@specialized T](x: T, y: T, z: T) = ???
 
         // with restriction to subset of types
-        def allDifferent[@specialized(Long, Double) T](x: T, y: T, z: T) = ???
+        def allDifferenT[@specialized(Long, Double) T](x: T, y: T, z: T) = ???
         // any subset of Unit, Boolean, Byte, Short, Char, Int, Long, Float, Double
     }
 
