@@ -744,9 +744,11 @@ object PatternMatchingAndCaseClasses_Exercises {
     // Then h(2) is Some(1), and h(1) and h(0) are None.
     def ex10 = {
         import scala.math.sqrt
-        implicit def intToDouble(i: Int): Double = i.toDouble
 
-        def compose(g: Double => Option[Double], f: Double => Option[Double])(x: Double): Option[Double] = {
+        def compose(
+                       g: Double => Option[Double],
+                       f: Double => Option[Double]
+                   )(x: Double): Option[Double] = {
             // f(x).flatMap(g)
             for (y <- f(x); z <- g(y)) yield z
         }
