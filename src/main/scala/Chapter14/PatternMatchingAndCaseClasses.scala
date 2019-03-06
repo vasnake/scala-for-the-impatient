@@ -733,16 +733,31 @@ object PatternMatchingAndCaseClasses_Exercises {
         assert(sum(lst.toList) == 0)
     }
 
-// 10. Write a function that composes two functions of type Double => Option[Double]
-// yielding another function of the same type.
-// The composition should yield None if either function does.
-// For example,
-//  def f(x: Double) = if (x != 1) Some(1 / (x - 1)) else None
-//  def g(x: Double) = if (x >= 0) Some(sqrt(x)) else None
-//  val h = compose(g, f) // h(x) should be g(f(x))
-// Then h(2) is Some(1), and h(1) and h(0) are None.
+    // 10. Write a function that composes two functions of type
+    // Double => Option[Double]
+    // yielding another function of the same type.
+    // The composition should yield None if either function does.
+    // For example,
+    //  def f(x: Double) = if (x != 1) Some(1 / (x - 1)) else None
+    //  def g(x: Double) = if (x >= 0) Some(sqrt(x)) else None
+    //  val h = compose(g, f) // h(x) should be g(f(x))
+    // Then h(2) is Some(1), and h(1) and h(0) are None.
     def ex10 = {
-        ???
+        import scala.math.sqrt
+        implicit def intToDouble(i: Int): Double = i.toDouble
+
+        def compose(g: Double => Option[Double], f: Double => Option[Double])(x: Double): Option[Double] = {
+            // f(x).flatMap(g)
+            for (y <- f(x); z <- g(y)) yield z
+        }
+
+        def f(x: Double): Option[Double] = if (x != 1) Some(1 / (x - 1)) else None
+        def g(x: Double): Option[Double] = if (x >= 0) Some(sqrt(x)) else None
+        val h: Double => Option[Double] = compose(g, f) // h(x) should be g(f(x))
+
+        // test
+        assert(h(2).contains(1))
+        assert(h(1).isEmpty && h(0).isEmpty)
     }
 
 }
