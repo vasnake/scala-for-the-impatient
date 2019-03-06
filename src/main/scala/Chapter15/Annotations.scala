@@ -1,13 +1,17 @@
 package Chapter15
 
 import java.io.IOException
+
 import javax.persistence._
 import javax.inject._
+
 import scala.beans._
 import scala.annotation.meta._
 import scala.annotation._
 import org.checkerframework.checker.i18n.qual._
 import org.junit._
+
+import scala.collection.mutable
 
 
 object Annotations {
@@ -135,12 +139,109 @@ object Annotations {
 
     // annotations for java features
     def annotationsForJavaFeatures = {
-        ???
+        // for interoperating with java
+
+        // java modifiers
+        @volatile var done = false // volatile field
+
+        @transient var recent = new mutable.HashMap[String, String] // not serialized
+
+        @strictfp def calc(x: Double) = ??? // IEEE floating-point calculations, slower and less precise
+        // but more portable
+
+        @native def win32RegKeys(root: Int, path: String): Array[String] = ??? // implemented in C/C++
+
+        // marker interfaces
+        // @cloneable class Employee    // Cloneable
+        // @remote ...                  // java.rmi.Remote
+
+        @SerialVersionUID(42L) class Employee extends Serializable
+
+        // checked exceptions
+        // if you call scala method from java you have to track exceptions
+        // java compiler needs to know
+        class Book {
+            @throws(classOf[IOException]) def read(filename: String) = { ??? }
+        }
+
+        // variable arguments
+        // again, if you call scala method from java
+        @varargs def process(args: String*) = ??? // w/o anno it will be translated to args: Seq[String]
+        // will generate 'void process(String... args)' bridge
+
+        // java beans
+        // @BeanProperty var foo = "" // getFoo, setFoo
+        // @BoleanBeanProperty ...      // isFoo
+        // @BeanDescription, @BeanDisplayName, @BeanInfo, @BeanInfoSkip
     }
 
     // annotations for optimizations
     def annotationsForOptimizations = {
-        ???
+
+        // tail recursion
+        def sum_notailrec(xs: Seq[Int]): BigInt = if (xs.isEmpty) 0 else xs.head + sum_notailrec(xs.tail)
+        def sum_tailrec(xs: Seq[Int], acc: BigInt): BigInt = if (xs.isEmpty) acc else sum_tailrec(xs.tail, acc + xs.head)
+        // to force the compiler add @tailrec anno
+        //e.g.
+        class Util {
+            // @tailrec // generate an error in compile time: method can be overridden
+            def sum(xs: Seq[Int], acc: BigInt): BigInt =
+                if (xs.isEmpty) acc else sum(xs.tail, acc + xs.head)
+        }
+
+        // more general mechanism: trampolining
+        // run a loop calling functions, each function returns the next function to be called
+        // e.g. mutually recursive functions
+        import scala.util.control.TailCalls._
+        def evenLength(xs: Seq[Int]): TailRec[Boolean] =
+            if (xs.isEmpty) done(true) else tailcall(oddLength(xs.tail))
+        def oddLength(xs: Seq[Int]): TailRec[Boolean] =
+            if (xs.isEmpty) done(false) else tailcall(evenLength(xs.tail))
+        val res = evenLength(1 to 1000000).result
+
+        // jump table generation and inlining
+        // jump table for switch / match
+        (res: @switch) match {
+            case true => "true"'
+            case false => "false"
+            case _ => "?"
+        }
+
+        // inlining: for scala compiler, not jvm
+        // @inline, @noinline
+
+        // eliding methods
+        // @elidable methods can be removed in production using compiler flags
+        @elidable(500) def dump(props: String): Unit = { ??? }
+        // will be replaced with Unit aka () if compiled with
+        // scalac -Xelide-below 501 ...
+
+        // constants from
+        // import scala.annotation.elidable._
+        //  final val ALL     = Int.MinValue  // Level.ALL.intValue()   //  final val MINIMUM = ALL
+        //  final val FINEST  = 300           // Level.FINEST.intValue()
+        //  final val FINER   = 400           // Level.FINER.intValue()
+        //  final val FINE    = 500           // Level.FINE.intValue()
+        //  final val CONFIG  = 700           // Level.CONFIG.intValue()
+        //  final val INFO    = 800           // Level.INFO.intValue()
+        //  final val WARNING = 900           // Level.WARNING.intValue()
+        // by default methods below 1000 are elided
+        //  final val SEVERE  = 1000          // Level.SEVERE.intValue()
+        //  final val ASSERTION = 2000    // we should make this more granular
+        //  final val OFF     = Int.MaxValue  // Level.OFF.intValue()   //  final val MAXIMUM = OFF
+
+        // ALL and OFF are confusing
+        // @elide(ALL) means that it always elided
+        // @elided(OFF) means it never elided
+        // but don't use these names in -Xelide-below
+        // use MINIMUM, MAXIMUM
+
+        // elidable assert
+        assert(res) // to disable assertions compile with -Xelide-below MAXIMUM
+
+        // don't elide non-Unit methods, you'll get ClassCastException
+
+        // specialization for primitive types
     }
 
     // annotations for errors and warnings
