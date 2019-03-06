@@ -11,6 +11,7 @@ import scala.annotation._
 import org.checkerframework.checker.i18n.qual._
 import org.junit._
 
+import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.mutable
 
 
@@ -142,22 +143,21 @@ object Annotations {
         // for interoperating with java
 
         // java modifiers
+
         @volatile var done = false // volatile field
-
         @transient var recent = new mutable.HashMap[String, String] // not serialized
-
-        @strictfp def calc(x: Double) = ??? // IEEE floating-point calculations, slower and less precise
-        // but more portable
-
+        @strictfp def calc(x: Double) = ??? // IEEE floating-point calculations, slower and less precise but more portable
         @native def win32RegKeys(root: Int, path: String): Array[String] = ??? // implemented in C/C++
 
         // marker interfaces
+
         // @cloneable class Employee    // Cloneable
         // @remote ...                  // java.rmi.Remote
 
         @SerialVersionUID(42L) class Employee extends Serializable
 
         // checked exceptions
+
         // if you call scala method from java you have to track exceptions
         // java compiler needs to know
         class Book {
@@ -165,11 +165,13 @@ object Annotations {
         }
 
         // variable arguments
+
         // again, if you call scala method from java
         @varargs def process(args: String*) = ??? // w/o anno it will be translated to args: Seq[String]
         // will generate 'void process(String... args)' bridge
 
         // java beans
+
         // @BeanProperty var foo = "" // getFoo, setFoo
         // @BoleanBeanProperty ...      // isFoo
         // @BeanDescription, @BeanDisplayName, @BeanInfo, @BeanInfoSkip
@@ -179,6 +181,7 @@ object Annotations {
     def annotationsForOptimizations = {
 
         // tail recursion
+
         def sum_notailrec(xs: Seq[Int]): BigInt = if (xs.isEmpty) 0 else xs.head + sum_notailrec(xs.tail)
         def sum_tailrec(xs: Seq[Int], acc: BigInt): BigInt = if (xs.isEmpty) acc else sum_tailrec(xs.tail, acc + xs.head)
         // to force the compiler add @tailrec anno
@@ -190,6 +193,7 @@ object Annotations {
         }
 
         // more general mechanism: trampolining
+
         // run a loop calling functions, each function returns the next function to be called
         // e.g. mutually recursive functions
         import scala.util.control.TailCalls._
@@ -200,6 +204,7 @@ object Annotations {
         val res = evenLength(1 to 1000000).result
 
         // jump table generation and inlining
+
         // jump table for switch / match
         (res: @switch) match {
             case true => "true"'
@@ -208,6 +213,7 @@ object Annotations {
         }
 
         // inlining: for scala compiler, not jvm
+
         // @inline, @noinline
 
         // eliding methods
@@ -242,11 +248,45 @@ object Annotations {
         // don't elide non-Unit methods, you'll get ClassCastException
 
         // specialization for primitive types
+
+        // avoiding wrap/unwrap primitive type values
+        // e.g.
+        def allDifferent_wrap[T](x: T, y: T, z: T) = x != y && x != z && y != z
+        allDifferent_wrap(3, 4, 5) // integers are wrapped into java.lang.Integer
+        // in order to generate overloaded versions like
+        def allDifferent(x: Int, y: Int, z: Int) = ???
+        // use @specialized anno
+        def allDifferent[@specialized T](x: T, y: T, z: T) = ???
+
+        // with restriction to subset of types
+        def allDifferent[@specialized(Long, Double) T](x: T, y: T, z: T) = ???
+        // any subset of Unit, Boolean, Byte, Short, Char, Int, Long, Float, Double
     }
 
     // annotations for errors and warnings
     def annotationsForErrorsAndWarnings = {
-        ???
+        // @deprecated
+        @deprecated(message="use factorial(n: BigInt) instead", since="1.0.1")
+        def factorial(n: Int): Int = ???
+
+        // @deprecatedName (argument is a symbol: name of some item in a program)
+        def draw(@deprecatedName('sz) size: Int) = ???
+
+        // @deprecatedInheritance
+        // @deprecatedOverriding
+
+        // @implicitNotFound, @implicitAmbiguous
+        // see chapter 21
+
+        // @unchecked suppresses a warning that a match is not exhaustive
+        (List(): @unchecked) match { case h :: t => ??? }
+
+        // @uncheckedVariance suppresses a variance error message
+        // e.g. it make sense for java.util.Comparator to be contravariant
+        // Comparator[Student] can be used when Comparator[Person] is required
+        // but java generics have no variance
+        // can fix with @uncheckedVariance
+        trait Comparator[-T] extends java.util.Comparator[T @uncheckedVariance]
     }
 
 }
