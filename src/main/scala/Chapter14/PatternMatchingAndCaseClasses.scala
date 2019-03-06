@@ -703,10 +703,8 @@ object PatternMatchingAndCaseClasses_Exercises {
             case Leaf(x) => x
             case Node('+', xs @ _*) => xs.map(eval).sum
             case Node('*', xs @ _*) => xs.map(eval).product
-            case Node('-', xs @ _*) => {
-                val lst = if (xs.length > 1) xs else Leaf(0) +: xs
-                lst.map(eval).reduceLeft(_ - _)
-            }
+            case Node('-', one)     => -eval(one)
+            case Node('-', xs @ _*) => xs.map(eval).reduceLeft(_ - _)
             case Node(op, _) => throw new IllegalArgumentException(s"unknown operation: $op")
         }
 
@@ -723,10 +721,16 @@ object PatternMatchingAndCaseClasses_Exercises {
         assert(res == 13)
     }
 
-// 9. Write a function that computes the sum of the non-None values in a List[Option[Int]]
-// Don’t use a match statement.
+    // 9. Write a function that computes the sum of the non-None values in a List[Option[Int]]
+    // Don’t use a match statement.
     def ex9 = {
-        ???
+        def sum(lst: List[Option[Int]]): Int = (for (Some(x) <- lst) yield x).sum
+
+        //test
+        val lst = Seq(
+            Some(1), None, Some(3), None, Some(-4)
+        )
+        assert(sum(lst.toList) == 0)
     }
 
 // 10. Write a function that composes two functions of type Double => Option[Double]
