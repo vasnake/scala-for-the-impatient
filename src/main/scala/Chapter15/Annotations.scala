@@ -1,8 +1,11 @@
 package Chapter15
 
-import scala.beans._
+import java.io.IOException
 import javax.persistence._
 import javax.inject._
+import scala.beans._
+import scala.annotation.meta._
+import scala.annotation._
 import org.checkerframework.checker.i18n.qual._
 import org.junit._
 
@@ -74,12 +77,60 @@ object Annotations {
 
     // annotations arguments
     def annotationsArguments = {
-        ???
+        // annotation can have named arguments
+        @Test(timeout=100, expected=classOf[IOException]) def func() = { ??? }
+
+        // if the arg.name is 'value', name can be omitted
+        @Named("creds") var credentials = "" // value="creds"
+
+        // if no arguments, the parentheses can be omitted
+        @Entity class Credentials
+
+        // most annotation arguments have defaults, see @Test
+
+        // arguments of scala annotations can be of arbitrary types
+        // see @deprecatedName('oldname)
+
+        // java anno arg. types:
+        // numeric literals; strings; class literals; java enum; other anno; arrays of above
     }
 
     // annotation implementations
     def annotationImplementations = {
-        ???
+        // anno extends the Annotation trait
+        class unchecked extends annotation.Annotation
+
+        // a type anno must extend the TypeAnnotation
+        class Localized extends StaticAnnotation with TypeConstraint
+
+        // for a new java anno you have to write a java class
+
+        // field definitions in scala can give rise to multiple features in java
+        // e.g.
+        class Credentials(@NotNull @BeanProperty var username: String)
+        // there are six items that can be annotation targets:
+        // constructor parameter,
+        // private field,
+        // accessor method,
+        // mutator method,
+        // bean accessor,
+        // bean mutator
+
+        // by default, constructor parameter anno are only applied to the parameter itself,
+        // and field anno applyed to the field
+
+        // meta-annotations:
+        // @param, @field, @getter, @setter, @beanGetter, @beanSetter
+        // cause an anno to be attached elsewhere
+        // e.g. @deprecated is defined as
+        @getter @setter @beanGetter @beanSetter
+        class deprecated(message: String="", since: String="") extends annotation.StaticAnnotation
+
+        // or, you can apply these in an ad-hoc fashion
+        @Entity class CredentialS {
+            @(Id @beanGetter) @BeanProperty var id = 0
+        }
+        // @Id is applied to the java getId method
     }
 
     // annotations for java features
