@@ -496,7 +496,31 @@ object Annotations_Exercises {
     // 8. Add the 'allDifferent' method to an object, compile and look at the bytecode.
     // What methods did the @specialized annotation generate?
     def ex8 = {
-        ???
+
+        class NotSpecialized {
+            def allDifferent[T](x: T, y: T, z: T) = x != y && x != z && y != z
+        }
+        // scala> :javap -cp NotSpecialized
+        //public class $line2.$read$$iw$$iw$NotSpecialized {
+        //  public <T> boolean allDifferent(T, T, T);
+        //  public $line2.$read$$iw$$iw$NotSpecialized();
+
+        class Specialized {
+            def allDifferent[@specialized T](x: T, y: T, z: T) = x != y && x != z && y != z
+        }
+        // scala> :javap -cp Specialized
+        //public class $line3.$read$$iw$$iw$Specialized {
+        //  public <T> boolean allDifferent(T, T, T);
+        //  public boolean allDifferent$mZc$sp(boolean, boolean, boolean);
+        //  public boolean allDifferent$mBc$sp(byte, byte, byte);
+        //  public boolean allDifferent$mCc$sp(char, char, char);
+        //  public boolean allDifferent$mDc$sp(double, double, double);
+        //  public boolean allDifferent$mFc$sp(float, float, float);
+        //  public boolean allDifferent$mIc$sp(int, int, int);
+        //  public boolean allDifferent$mJc$sp(long, long, long);
+        //  public boolean allDifferent$mSc$sp(short, short, short);
+        //  public boolean allDifferent$mVc$sp(scala.runtime.BoxedUnit, scala.runtime.BoxedUnit, scala.runtime.BoxedUnit);
+        //  public $line3.$read$$iw$$iw$Specialized();
     }
 
     // 9. The Range.foreach method is annotated as @specialized(Unit).
