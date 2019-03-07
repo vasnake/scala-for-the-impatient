@@ -359,7 +359,17 @@ object Annotations_Exercises {
     // 3. Which annotations from the Scala library use one of the meta-annotations
     // @param, @field, @getter, @setter, @beanGetter, or @beanSetter?
     def ex3 = {
-        ???
+        import scala.annotation.meta
+
+        @compileTimeOnly(message="under meta") def cto = ???
+        @implicitAmbiguous(msg="under meta") def ia = ???
+        @deprecated def dep = ???
+        @deprecatedInheritance def dih = ???
+        @deprecatedName def dn = ???
+        @deprecatedOverriding def dor = ???
+
+        // may be other, see https://www.scala-lang.org/api/current/scala/annotation/Annotation.html
+        // in 'known subclasses' section
     }
 
     // 4. Write a Scala method 'sum' with variable integer arguments that returns the sum of its
