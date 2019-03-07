@@ -1,14 +1,17 @@
 package Chapter15
 
 import java.io.IOException
+
 import javax.persistence._
 import javax.inject._
+
 import scala.beans._
 import scala.annotation.meta._
 import scala.annotation._
 import scala.annotation.unchecked._
 import org.checkerframework.checker.i18n.qual._
 import org.junit._
+
 import scala.collection.mutable
 
 
@@ -375,7 +378,10 @@ object Annotations_Exercises {
     // 4. Write a Scala method 'sum' with variable integer arguments that returns the sum of its
     // arguments. Call it from Java.
     def ex4 = {
-        ???
+        new Ex4
+    }
+    class Ex4 {
+        @varargs def sum(xs: Int*): Int = xs.sum
     }
 
     // 5. Write a Scala method that returns a string containing all lines of a file.
