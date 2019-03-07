@@ -594,7 +594,26 @@ object Annotations_Exercises {
     // Compile without assertions. What happens?
     // Use javap to check what happened to the assertion call.
     def ex10 = {
-        ???
+        def factorial(x: Int): Int = {
+            assert(x >= 0, "factorial of negative is unknown to me") // will be replaced with ()
+            if (x > 0) (1 to x).product
+            else 1
+        }
+
+        factorial(-1)
+
+        // scalac -Xelide-below 1000
+        // sbt> console
+        // scala> Chapter15.Annotations_Exercises.ex10
+        //java.lang.AssertionError: assertion failed: factorial of negative is unknown to m
+
+        // scalac -Xelide-below 2001
+        // sbt> set scalacOptions in ThisBuild := Seq("-Xelide-below", "2001")
+        // sbt:scala-for-the-impatient> show scalacOptions
+        // sbt> console
+        // scala> Chapter15.Annotations_Exercises.ex10
+        //res0: Int = 1
+        // no assertion exception
     }
 
 }
