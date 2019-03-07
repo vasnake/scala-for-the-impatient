@@ -529,7 +529,64 @@ object Annotations_Exercises {
     // and consider the @specialized annotations on Function1.
     // Click on the Function1.scala link in Scaladoc to see them.
     def ex9 = {
-        ???
+        // because 'foreach' apply Function1[T, Unit]
+        // and Function1 specialized itself, so
+        // for primitive types 'foreach' will call specialized function: primitive => Unit
+
+        // scala> :javap -cp scala.collection.immutable.Range
+        //Compiled from "Range.scala"
+        //public class scala.collection.immutable.Range extends scala.collection.AbstractSeq<java.lang.Object> implements scala.collection.immutable.IndexedSeq<java.lang.Object>, scala.collection.CustomParallelizable<java.lang.Object, scala.collection.parallel.immutable.ParRange>, scala.Serializable {
+        //  public static final long serialVersionUID;
+        //
+        //  public final <U> void foreach(scala.Function1<java.lang.Object, U>);
+        //    Code:
+        //       0: aload_0
+        //       1: invokevirtual #172                // Method isEmpty:()Z
+        //       4: ifne          42
+        //       7: aload_0
+        //       8: invokevirtual #148                // Method start:()I
+        //      11: istore_2
+        //      12: aload_1
+        //      13: iload_2
+        //      14: invokestatic  #253                // Method scala/runtime/BoxesRunTime.boxToInteger:(I)Ljava/lang/Integer;
+        //      17: invokeinterface #306,  2          // InterfaceMethod scala/Function1.apply:(Ljava/lang/Object;)Ljava/lang/Object;
+        //      22: pop
+        //      23: iload_2
+        //      24: aload_0
+        //      25: invokevirtual #189                // Method scala$collection$immutable$Range$$lastElement:()I
+        //      28: if_icmpne     32
+        //      31: return
+        //      32: iload_2
+        //      33: aload_0
+        //      34: invokevirtual #154                // Method step:()I
+        //      37: iadd
+        //      38: istore_2
+        //      39: goto          12
+        //      42: return
+        //
+        //  public final void foreach$mVc$sp(scala.Function1<java.lang.Object, scala.runtime.BoxedUnit>);
+        //    Code:
+        //       0: aload_0
+        //       1: invokevirtual #172                // Method isEmpty:()Z
+        //       4: ifne          38
+        //       7: aload_0
+        //       8: invokevirtual #148                // Method start:()I
+        //      11: istore_2
+        //      12: aload_1
+        //      13: iload_2
+        //      14: invokeinterface #436,  2          // InterfaceMethod scala/Function1.apply$mcVI$sp:(I)V
+        //      19: iload_2
+        //      20: aload_0
+        //      21: invokevirtual #189                // Method scala$collection$immutable$Range$$lastElement:()I
+        //      24: if_icmpne     28
+        //      27: return
+        //      28: iload_2
+        //      29: aload_0
+        //      30: invokevirtual #154                // Method step:()I
+        //      33: iadd
+        //      34: istore_2
+        //      35: goto          12
+        //      38: return
     }
 
     // 10. Add assert(n >= 0) to a factorial method.
