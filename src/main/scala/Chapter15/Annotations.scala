@@ -387,7 +387,13 @@ object Annotations_Exercises {
     // 5. Write a Scala method that returns a string containing all lines of a file.
     // Call it from Java.
     def ex5 = {
-        ???
+        new Ex5
+    }
+    class Ex5 {
+        @throws(classOf[java.io.FileNotFoundException])
+        def textFromFile(path: String): String = {
+            scala.io.Source.fromFile(path).mkString
+        }
     }
 
     // 6. Write a Scala object with a volatile Boolean field.
