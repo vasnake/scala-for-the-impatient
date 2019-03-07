@@ -295,7 +295,27 @@ object Annotations_Exercises {
     // with and without each of its arguments.
     // Run the tests with JUnit.
     def ex1 = {
-        ???
+
+        @Test(timeout=1042, expected=classOf[IllegalArgumentException])
+        def test1() = {
+            ???
+        }
+
+        @Test(expected=classOf[IllegalArgumentException])
+        def test2() = {
+            ???
+        }
+
+        @Test(timeout=1042)
+        def test3() = {
+            ???
+        }
+
+        @Test
+        def test4() = {
+            ???
+        }
+
     }
 
     // 2. Make an example class that shows every possible position of an annotation.
