@@ -13,6 +13,7 @@ import org.checkerframework.checker.i18n.qual._
 import org.junit._
 
 import scala.collection.mutable
+import scala.concurrent.Future
 
 
 object Annotations {
@@ -390,7 +391,7 @@ object Annotations_Exercises {
         new Ex5
     }
     class Ex5 {
-        @throws(classOf[java.io.FileNotFoundException])
+        @throws(classOf[java.io.IOException])
         def textFromFile(path: String): String = {
             scala.io.Source.fromFile(path).mkString
         }
@@ -402,7 +403,56 @@ object Annotations_Exercises {
     // If so, it prints a message and exits. If not, it sleeps for a short time and tries again.
     // What happens if the variable is not volatile?
     def ex6 = {
-        ???
+        // volatile keyword is used to mark a Java variable as "being stored in main memory".
+        // More precisely that means, that every read of a volatile variable will be read from the
+        // computer's main memory, and not from the CPU cache, and that every write to a
+        // volatile variable will be written to main memory, and not just to the CPU cache
+
+        @volatile var flag = false
+        // Here, the volatile serves as a hint to the compiler to be a bit more careful with optimizations
+        // no cached values:
+        // scala> Chapter15.Annotations_Exercises.ex6
+        // after 1 second:
+        //thread1: flag is set, bye
+        //thread2: flag is set, positive; bye
+
+        //var flag = false
+        // exactly the same on my workstation,
+        // because in this scenario no race condition or deadlocks or other shit happens.
+        // a biggest effect here could be only if compiler/jvm decided to cache our 'flag'.
+        // another case if read happens in the same time as write,
+        // or a tick later. In this case we have to wait another cycle before next read.
+
+        def javaThread() = {
+            new Thread {
+                override def run(): Unit = {
+                    Thread.sleep(999)
+                    flag = true
+                    println("thread1: flag is set, bye")
+                }
+            }.start()
+        }
+
+        def scalaFuture() = {
+            import scala.concurrent.ExecutionContext.Implicits.global
+            Future {
+                Thread.sleep(998)
+                flag = true
+                println("future1: flag is set, bye")
+            }
+        }
+
+        javaThread()
+        scalaFuture()
+
+        for (ms <- 1 to 50; if !flag) { // total_ms = triangle_number = n * (n + 1) / 2
+            Thread.sleep(ms)
+            if (flag) println("thread2: flag is set, positive; bye")
+        }
+
+        // http://tutorials.jenkov.com/java-concurrency/volatile.html
+        // https://alvinalexander.com/scala/how-to-create-java-thread-runnable-in-scala
+        // https://alvinalexander.com/scala/differences-java-thread-vs-scala-future
     }
 
     // 7. Give an example to show that the tail recursion optimization is not valid when a method can be
