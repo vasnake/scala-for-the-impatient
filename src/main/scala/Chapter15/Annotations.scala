@@ -52,6 +52,7 @@ object Annotations {
         // fields
         // local variables
         // parameters
+        // primary constructor
         // expressions
         // type parameters
         // types
@@ -321,7 +322,38 @@ object Annotations_Exercises {
     // 2. Make an example class that shows every possible position of an annotation.
     // Use @deprecated as your sample annotation.
     def ex2 = {
-        ???
+        // classes
+        // methods
+        // fields
+        // local variables
+        // parameters
+        // primary constructor
+        // expressions
+        // type parameters
+        // types
+
+        @deprecated // class
+        class Deprecated @deprecated() // primary constructors
+        (@deprecated task: String) { // parameters
+
+            @deprecated // fields
+            val id: Int = (task.split(" "): @deprecated // expressions
+                ) match {
+                case Array(a, b) => 1
+                case _  => 0
+            }
+
+            @deprecated // methods
+            def check: Boolean = {
+                @deprecated // local variables
+                val localid = id + 1
+                localid == 2
+            }
+
+            def typeparameters[@deprecated D](d: D): Unit = println(d)
+
+            def types: Deprecated @deprecated = this
+        }
     }
 
     // 3. Which annotations from the Scala library use one of the meta-annotations
