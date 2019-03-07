@@ -416,7 +416,7 @@ object Annotations_Exercises {
         //thread1: flag is set, bye
         //thread2: flag is set, positive; bye
 
-        //var flag = false
+        // var flag = false
         // exactly the same on my workstation,
         // because in this scenario no race condition or deadlocks or other shit happens.
         // a biggest effect here could be only if compiler/jvm decided to cache our 'flag'.
@@ -426,6 +426,7 @@ object Annotations_Exercises {
         def javaThread() = {
             new Thread {
                 override def run(): Unit = {
+                    println("thread1: going to sleep ...")
                     Thread.sleep(999)
                     flag = true
                     println("thread1: flag is set, bye")
@@ -436,6 +437,7 @@ object Annotations_Exercises {
         def scalaFuture() = {
             import scala.concurrent.ExecutionContext.Implicits.global
             Future {
+                println("future1: going to sleep ...")
                 Thread.sleep(998)
                 flag = true
                 println("future1: flag is set, bye")
@@ -445,7 +447,8 @@ object Annotations_Exercises {
         javaThread()
         scalaFuture()
 
-        for (ms <- 1 to 50; if !flag) { // total_ms = triangle_number = n * (n + 1) / 2
+        for (ms <- 50 to 1 by -1; if !flag) { // total_ms = triangle_number = n * (n + 1) / 2
+            println(s"thread2: will sleep $ms millis")
             Thread.sleep(ms)
             if (flag) println("thread2: flag is set, positive; bye")
         }
@@ -458,7 +461,36 @@ object Annotations_Exercises {
     // 7. Give an example to show that the tail recursion optimization is not valid when a method can be
     // overridden.
     def ex7 = {
-        ???
+
+        class Demo1 {
+            // @tailrec // compiler error
+            def func(xs: List[Int], acc: Int = 0): Int = xs match {
+                case Nil => { println(s"tailrec func done: $acc"); acc }
+                case h :: t => func(t, h + acc)
+            }
+
+            @tailrec // can't override, will be a loop
+            final def loopfunc(xs: List[Int], acc: Int = 0): Int = xs match {
+                case Nil => { println(s"loopfunc func done: $acc"); acc }
+                case h :: t => loopfunc(t, h + acc)
+            }
+        }
+
+        class Demo2 extends Demo1 {
+            override def func(xs: List[Int], acc: Int = 0): Int = xs match {
+                case Nil => { println(s"recursive func done"); 0 }
+                case h :: t => h + func(t)
+            }
+        }
+
+        def getObj(version: Int): Demo1 = version match {
+            case 1 => new Demo1
+            case 2 => new Demo2
+            case _ => throw new IllegalArgumentException(s"unknown version: ${version}")
+        }
+
+        val d: Demo1 = getObj(1 + scala.util.Random.nextInt(2))
+        d.func(List(1, 2, 3)) // tailrec or not tailrec? who knows?
     }
 
     // 8. Add the 'allDifferent' method to an object, compile and look at the bytecode.
