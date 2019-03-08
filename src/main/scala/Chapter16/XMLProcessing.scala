@@ -1,6 +1,8 @@
 package Chapter16
 
 import scala.xml._
+import scala.xml.transform._
+import scala.xml.XML
 
 object XMLProcessing {
 // topics:
@@ -215,22 +217,98 @@ object XMLProcessing {
 
     // pattern matching
     def patternMatching = {
-        ???
+        val node = <img></img>
+        node match {
+            case <img/> => "image" // ok, with any attributes and no child elems
+            case _ => "unknown node"
+        }
+
+        //single child
+        <img><li>foo</li></img> match {
+            case <img>{_}</img> => "one child" // ok
+        }
+
+        // any number of child items
+        <li>an <em>important</em> item</li> match {
+            case <li>{_*}</li> => "many children"
+        }
+
+        // with bound variables
+        <li>an important item</li> match {
+            case <li>{child}</li> => child.mkString(",") // String = an important item
+        }
+
+        // text node
+        <li>an important item</li> match {
+            case <li>{Text(item)}</li> => item.mkString(",") // String = a,n, ,i,m,p,o,r,t,a,n,t, ,i,t,e,m
+        }
+
+        // node sequence
+        <li>an <em>important</em> item</li> match {
+            case <li>{children @_*}</li> => children.mkString(",") // String = an ,<em>important</em>, item
+            // Seq[Node]
+        }
+
+        // patterns can't have attributes
+        // use a guard
+        <li alt="TODO">an important item</li> match {
+            case n @ <li>{_*}</li> if n.attributes("alt").text == "TODO" => "todo"
+        }
+
     }
 
     // modifying elements and attributes
     def modifyingElementsAndAttributes = {
-        ???
+        // nodes are immutable, use 'copy'
+
+        val list = <ul><li>Fred</li><li>Wilma</li></ul>
+        list.copy(label="ol") // scala.xml.Elem = <ol><li>Fred</li><li>Wilma</li></ol>
+        // children are shared
+
+        // add a child
+        list.copy(child = list.child ++ <li>Bob</li>) // <ul><li>Fred</li><li>Wilma</li><li>Bob</li></ul>
+
+        // add or change an attribute
+        list % Attribute(null, // namespace
+            "alt", "hamster",
+            Null // list of metadata
+        ) // scala.xml.Elem = <ul alt="hamster"><li>Fred</li><li>Wilma</li></ul>
+
+        // more than one attrib
+        list % Attribute(null,
+            "alt", "hamster",
+            Attribute(null, "src", "hamster.jpg", Null)
+        ) // scala.xml.Elem = <ul src="hamster.jpg" alt="hamster"><li>Fred</li><li>Wilma</li></ul>
+
+        // adding attrib with the same key replaces the existing one
     }
 
     // transforming XML
     def transformingXML = {
-        ???
+        // rewrite descendants?
+        // RuleTransformer, RewriteRule
+        import scala.xml.transform._
+
+        // change all ul to ol
+        val root = <body><p><ul><li>foo</li></ul></p></body>
+        val rule1 = new RewriteRule {
+            override def transform(n: Node): Seq[Node] = n match {
+                case e @ <ul>{_*}</ul> => e.asInstanceOf[Elem].copy(label = "ol")
+                case _ => n
+            }
+        }
+        val transformed = new RuleTransformer(rule1).transform(root)
+        // Seq[scala.xml.Node] = <body><p><ol><li>foo</li></ol></p></body>
+
+        // you can supply any numbers of rules
     }
 
     // loading and saving
     def loadingAndSaving = {
-        ???
+        import scala.xml.XML
+
+        val root = XML.loadFile("/tmp/test.xhtml")
+        // org.xml.sax.SAXParseException: The element type "meta" must be terminated by the matching end-tag "</meta>"
     }
 
     // namespaces
