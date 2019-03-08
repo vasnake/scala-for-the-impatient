@@ -424,7 +424,14 @@ object XMLProcessing_Exercises {
     // <fred/>(0)(0)
     // Why?
     def ex1 = {
-        ???
+        import scala.xml._
+
+        <fred/>(0) // scala.xml.Node = <fred/>
+        <fred/>(0)(0) // scala.xml.Node = <fred/>
+        assert("<fred/>" == <fred/>(0).toString)
+        assert("<fred/>" == <fred/>(0)(0).toString)
+
+        // Node is always a sequence on nodes, by design
     }
 
     // 2. What is the result of
