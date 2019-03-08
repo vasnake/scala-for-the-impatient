@@ -1,5 +1,6 @@
 package Chapter16
 
+import scala.util.Try
 import scala.xml._
 import scala.xml.transform._
 import scala.xml.XML
@@ -459,7 +460,11 @@ object XMLProcessing_Exercises {
     //  <li>{"Fred"}</li> match { case <li>{Text(t)}</li> => t }
     // Why do they act differently?
     def ex3 = {
-        ???
+        val one = <li>Fred</li> match { case <li>{Text(t)}</li> => t } // "Fred"
+        val two = Try { <li>{"Fred"}</li> match { case <li>{Text(t)}</li> => t } } // Failure MatchError
+        // block wrapped in Atom
+        val three = <li>{"Fred"}</li> match { case <li>{a: Atom[_]}</li> => a.data }
+        (one, two, three)
     }
 
     // 4. Read an XHTML file and print all 'img' elements that don’t have an 'alt' attribute.
