@@ -418,13 +418,13 @@ object XMLProcessing {
 }
 
 object XMLProcessing_Exercises {
+    import scala.xml._
 
     // 1. What is
     // <fred/>(0)
     // <fred/>(0)(0)
     // Why?
     def ex1 = {
-        import scala.xml._
 
         <fred/>(0) // scala.xml.Node = <fred/>
         <fred/>(0)(0) // scala.xml.Node = <fred/>
@@ -443,7 +443,14 @@ object XMLProcessing_Exercises {
     //  </ul>
     //How do you fix it?
     def ex2 = {
-        ???
+        // error.
+        // escape with { and }
+        <ul>
+            <li>Opening bracket: [</li>
+            <li>Closing bracket: ]</li>
+            <li>Opening brace: {{</li>
+            <li>Closing brace: }}</li>
+        </ul>
     }
 
     // 3. Contrast
