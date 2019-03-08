@@ -127,17 +127,90 @@ object XMLProcessing {
 
     // expressions in attributes
     def expressionsInAttributes = {
-        ???
+        def getURL() = "some url"
+        <img src={getURL()}/> // scala.xml.Elem = <img src="some url"/>
+
+        // braces inside quoted strings are not evaluated
+        <img src="{getURL()}"/> // scala.xml.Elem = <img src="{getURL()}"/>
+
+        // block can yield a node seq
+        <a id={new Atom(42)}/> // scala.xml.Elem = <a id="42"/>
+        // or
+        val image: Elem = <img alt="San Jos&eacute; State University Logo" src="logo.jpg"/>
+        <a id={image.attributes("alt")}/> // scala.xml.Elem = <a id="San Jos&eacute; State University Logo"/>
+
+        // null attribute will be omitted
+        <img alt={if (getURL == "some url") null else getURL}/> // scala.xml.Elem = <img/>
+        // Option
+        <img alt={if (getURL == "some url") None else Some(Text(getURL))}/> // scala.xml.Elem = <img/>
+
+        // block should yield: String, Seq[Node], Option[Seq[Node]]
+        // n.b. block inside element wrapped in Atom
     }
 
     // uncommon node types
     def uncommonNodeTypes = {
-        ???
+        // javascript?
+
+        val js = <script><![CDATA[if (temp < 0) alert("cold")]]></script>
+        // not really
+        // node with a text child
+        // js: scala.xml.Elem = <script><![CDATA[if (temp < 0) alert("cold")]]></script>
+        //scala> js.child //res36: Seq[scala.xml.Node] = ArrayBuffer(<![CDATA[if (temp < 0) alert("cold")]]>)
+
+        // add a PCData node
+        val code = """ if (temp < 0) alert("cold") """
+        val js2 = <script>{PCData(code)}</script>
+
+        // arbitrary text in an Unparsed node
+        // val n1 = <xml:unparsed><&></xml:unparsed> // scala.xml.Unparsed = <&>
+        // val n2 = Unparsed("<&>") // scala.xml.Unparsed = <&>
+
+        // you can group a node seq
+        val g1 = <xml:group><li>item1</li><li>item2</li></xml:group> // g1: scala.xml.Group = <li>item1</li><li>item2</li>
+        val g2 = Group(Seq(
+            <li>item1</li>,
+            <li>item2</li>
+        )) // g2: scala.xml.Group = <li>item1</li><li>item2</li>
+
+        // group nodes are 'ungrouped' when you iterate over them:
+        val items = <li>item1</li><li>item2</li> // scala.xml.NodeBuffer = ArrayBuffer(<li>item1</li>, <li>item2</li>)
+        // two elements
+        for (n <- <xml:group>{items}</xml:group>) yield n // scala.xml.NodeSeq = NodeSeq(<li>item1</li>, <li>item2</li>)
+        // one element
+        for (n <- <ol>{items}</ol>) yield n // scala.xml.NodeSeq = NodeSeq(<ol><li>item1</li><li>item2</li></ol>)
+
     }
 
     // XPath-like expressions
     def XPathLikeExpressions = {
-        ???
+        // NodeSeq provides operators like XPath '/' and '//'
+        // only '\' and '\\'
+        // \ direct descendants
+        // \\ descendants of any depth
+
+        val list = <dl><dt>Java</dt><dd>Gosling</dd><dt>Scala</dt><dd>Odersky</dd></dl> // scala.xml.Elem = <dl><dt>Java</dt><dd>Gosling</dd><dt>Scala</dt><dd>Odersky</dd></dl>
+        val language = list \ "dt" //scala.xml.NodeSeq = NodeSeq(<dt>Java</dt>, <dt>Scala</dt>)
+
+        // a wildcard for any element (ul or ol)
+        val doc: scala.xml.Elem = <html><body><ul><li alt="oof">foo</li></ul><ol><li alt="rab">bar</li></ol></body></html>
+        doc \ "body" \ "_" \ "li" // scala.xml.NodeSeq = NodeSeq(<li>foo</li>, <li>bar</li>)
+
+        // \\ any depth
+        doc \\ "li" // scala.xml.NodeSeq = NodeSeq(<li>foo</li>, <li>bar</li>)
+
+        // attributes (no wildcard for attribs)
+        doc \\ "@alt" // scala.xml.NodeSeq = NodeSeq(oof, rab)
+
+        // unlike xpath, you can't use '\' to extract attribs from multiple nodes
+        doc \\ "li" \\ "@alt" // should work
+        // scala.xml.NodeSeq = NodeSeq(oof, rab)
+
+        // as a sequence, use traversing
+        for (n <- doc \\ "li") print(s"'${n}'") // '<li alt="oof">foo</li>''<li alt="rab">bar</li>'
+
+        // text will concatenate
+        (doc \\ "@alt").text // String = oofrab
     }
 
     // pattern matching
