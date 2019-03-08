@@ -1,5 +1,7 @@
 package Chapter16
 
+import scala.xml._
+
 object XMLProcessing {
 // topics:
     // XML literals
@@ -30,22 +32,97 @@ object XMLProcessing {
 
     // XML literals
     def XMLLiterals = {
-        ???
+        val doc: scala.xml.Elem = <html><head><title>Fred's Memoirs</title></head><body></body></html>
+        // or sequence of nodes
+        val items: scala.xml.NodeSeq = <li>Fred</li><li>Wilma</li>
+
+        // problem with xml literals
+        val (x, y) = (1, 2)
+        x < y // ok
+        // x <y // error
     }
 
     // XML nodes
     def XMLNodes = {
-        ???
+        // Seq[Node] <- NodeSeq <- Node
+        // NodeSeq <- Document
+        // Node <- Elem
+        // Node <- SpecialNode ... Atom, EntityRef, ProcInstr, Comment
+        // Atom <- Text, PCData, Unparced
+
+        val elem: Elem = <a href="http://www">The <em>Scala</em> language</a>
+        elem.label // String = a
+        elem.child // Seq[scala.xml.Node] = ArrayBuffer(The , <em>Scala</em>,  language)
+        // no info about parent
+
+        // NodeSeq supports xpath-like operators; any Seq operators
+        for (n <- elem.child) print(s"'$n'") // 'The ''<em>Scala</em>'' language'
+
+        // Node extends NodeSeq, a single node is a seq of length 1;
+        // it actually creates as many problems as it solves, not really good design
+
+        // also classes for comments
+        val comments: Comment = <!-- ... -->
+        // entity references
+        val eref: EntityRef = EntityRef("eacute;") // <li>&eacute;</li>.child(0)
+        // process instructions
+        val procinstr: ProcInstr = ProcInstr(proctext = "foo", target = "bar") // scala.xml.ProcInstr = <?bar foo?>
+
+        // NodeBuffer extends ArrayBuffer[Node] for building node seq
+        val items = new NodeBuffer
+        items += <li>Fred</li>
+        items += <li>Wilma</li>
+        val nodes: NodeSeq = items
+        // n.b. node seq are supposed to be immutable, don't mutate buffer
     }
 
     // element attributes
     def elementAttributes = {
-        ???
+        // attributes: MetaData, like a Map
+        val elem: Elem = <a href="http://www">The <em>Scala</em> language</a>
+        val url = elem.attributes("href") // Seq[scala.xml.Node] = http://www
+
+        // attribute might contain entity references
+        // there is no way to know what &eacute; means
+        // in xhtml it means &#233; but in another doctype -- who knows?
+        val image: Elem = <img alt="San Jos&eacute; State University Logo" src="logo.jpg"/>
+        val alt = image.attributes("alt") // Seq[scala.xml.Node] = ArrayBuffer(San Jos, &eacute;,  State University Logo)
+        // you can use character references: &#233;
+
+        // you can call text method
+        image.attributes("alt").text // res12: String = San Jos&eacute; State University Logo
+        elem.attributes("href").text //res13: String = http://www
+
+        // null if no such attrib
+        image.attributes("href") //res15: Seq[scala.xml.Node] = null
+        // use get
+        image.attributes.get("href") //res17: Option[Seq[scala.xml.Node]] = None
+        image.attributes.get("href").getOrElse(Text(""))
+
+        // iterate over all attribs
+        for (a <- elem.attributes) print(s"'${a.key} -> ${a.value}'") // 'href -> http://www'
+
+        // or call asAttrMap
+        image.attributes.asAttrMap // Map[String,String] = Map(alt -> San Jos&eacute; State University Logo, src -> logo.jpg)
     }
 
     // embedded expressions
     def embeddedExpressions = {
-        ???
+        // scala code inside xml literals
+        val items = Seq("foo", "bar")
+        <ul><li>{items(0)}</li><li>{items(1)}</li></ul> // scala.xml.Elem = <ul><li>foo</li><li>bar</li></ul>
+        // node seq added to xml; other elems turned into an Atom[T]; atom.data retrieve the value
+        // atom.data.toString is called on save xml
+
+        // embedded strings turned into Atom[String], not Text: beware using pattern matching
+        // one way to fix that:
+        <li>{Text("foo")}</li> // scala.xml.Elem = <li>foo</li>
+
+        // nested scala code can contain xml literals
+        <ul>{for (i <- items) yield <li>{i}</li>}</ul> // scala.xml.Elem = <ul><li>foo</li><li>bar</li></ul>
+
+        // escape brace using double braces
+        <h1>The Natural Numbers {{1, 2, 3, ...}}</h1> // scala.xml.Elem = <h1>The Natural Numbers {1, 2, 3, ...}</h1>
     }
 
     // expressions in attributes
