@@ -129,7 +129,11 @@ object XMLProcessing {
 
     // expressions in attributes
     def expressionsInAttributes = {
+        // prep
+        val elem: Elem = <a href="http://www">The <em>Scala</em> language</a>
+        // val url = elem.attributes("href") // Seq[scala.xml.Node] = http://www
         def getURL() = "some url"
+
         <img src={getURL()}/> // scala.xml.Elem = <img src="some url"/>
 
         // braces inside quoted strings are not evaluated
@@ -138,8 +142,8 @@ object XMLProcessing {
         // block can yield a node seq
         <a id={new Atom(42)}/> // scala.xml.Elem = <a id="42"/>
         // or
-        val image: Elem = <img alt="San Jos&eacute; State University Logo" src="logo.jpg"/>
-        <a id={image.attributes("alt")}/> // scala.xml.Elem = <a id="San Jos&eacute; State University Logo"/>
+        // val image = <img alt="San Jos&eacute; State University Logo" src="logo.jpg"/>
+        <a id={elem.attributes("href")}/> // scala.xml.Elem = <a id="San Jos&eacute; State University Logo"/>
 
         // null attribute will be omitted
         <img alt={if (getURL == "some url") null else getURL}/> // scala.xml.Elem = <img/>
