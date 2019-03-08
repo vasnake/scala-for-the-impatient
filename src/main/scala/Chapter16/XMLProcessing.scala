@@ -306,9 +306,69 @@ object XMLProcessing {
     // loading and saving
     def loadingAndSaving = {
         import scala.xml.XML
+        import scala.xml.dtd._
+        import scala.xml.parsing._
 
         val root = XML.loadFile("/tmp/test.xhtml")
         // org.xml.sax.SAXParseException: The element type "meta" must be terminated by the matching end-tag "</meta>"
+        // java.net.ConnectException: Connection timed out (Connection timed out)
+
+        // load from java.io.InputStream, java.io.Reader, URL, ...
+        import java.io._
+        import java.net._
+        val root2 = XML.load(new FileInputStream("/tmp/test.xhtml"))
+        val root3 = XML.load(new InputStreamReader(new FileInputStream("/tmp/test.xhtml")))
+        val root4 = XML.load(new URL("http://horstmann.com/index.html"))
+
+        // SAX parser does not read DTSs from a local catalog
+        // to use a local catalog you need the CatalogResolver class
+        // but, XML object has no API for installing an entity resolver
+        // back door:
+        import com.sun.org.apache.xml.internal.resolver.tools._
+        val res = new CatalogResolver()
+        val doc = new scala.xml.factory.XMLLoader[Elem] {
+            override def adapter: FactoryAdapter = new parsing.NoBindingFactoryAdapter() {
+                override def resolveEntity(publicId: String, systemId: String): InputSource = {
+                    res.resolveEntity(publicId, systemId)
+                }
+            }
+        }
+        doc.load(new URL("http://horstmann.com/index.html"))
+
+        // another (good) parser: preserves comments, CDATA, ...
+        import scala.xml.parsing.ConstructingParser
+        // by default doesn't resolve entities, converts them into useless comments
+        val noEntParser = ConstructingParser.fromFile(new java.io.File("/tmp/test.xhtml"), preserveWS = true)
+        // of course, you can add entities:
+        noEntParser.ent ++= List("nbsp" -> ParsedEntityDecl("nbsp", IntDef("\u00A0")))
+        val noEntDocum: Document = noEntParser.document
+        // better (for xhtml):
+        val parser = new scala.xml.parsing.XhtmlParser(scala.io.Source.fromFile("/tmp/test.xhtml"))
+        val docum: Document = parser.initialize.document
+        // nodes
+        val root5: Node = docum.docElem
+        docum.dtd // scala.xml.dtd.DTD = DTD [ PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" ]
+
+        // save XML
+        XML.save("/tmp/test.xml", root5, enc = "UTF-8",
+            doctype = DocType(
+                "html",
+                PublicID("-//W3C//DTD XHTML 1.0 Strict//EN", "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"),
+                Nil
+            )
+        )
+
+        // or
+        val writer: java.io.Writer = ???
+        XML.write(writer, root5, "UTF-8", false, null)
+
+        // self-closing tags
+        // val text = xml.Utility.toXML(root5, minimizeTags = true)
+        val text = xml.Utility.serialize(root5, minimizeTags = MinimizeMode.Always)
+
+        // pretty print
+        val printer = new PrettyPrinter(width=100, step=2)
+        val str = printer.formatNodes(root5)
     }
 
     // namespaces
