@@ -358,7 +358,7 @@ object XMLProcessing {
             )
         )
 
-        // or
+        // or using java.io.Writer
         val writer: java.io.Writer = ???
         XML.write(writer, root5, "UTF-8", false, null)
 
@@ -373,7 +373,42 @@ object XMLProcessing {
 
     // namespaces
     def namespaces = {
-        ???
+        // xml namespace (xmlns) is a URI, e.g. http://www.w3.org/1999/xhtml
+        <html xmlns="http://www.w3.org/1999/xhtml"></html>
+
+        // a descendant can introduce its own ns
+        val svg = <svg xmlns="http://www.w3.org/2000/svg"></svg>
+
+        // each Elem has a 'scope'
+        val svgscope: NamespaceBinding = svg.scope
+        svgscope.uri // http://...
+
+        // for mixing elements from multiple namespaces use prefix
+        <html xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:svg="http://www.w3.org/2000/svg">
+            <svg:svg></svg:svg>
+        </html>
+        // and a prefix is
+        svg.prefix
+
+        // namespaces a chained
+        svgscope.parent.parent
+
+        def namespaces(node: Node) = {
+            def namespaces(scope: NamespaceBinding): List[(String, String)] =
+                if (scope == null) Nil
+                else namespaces(scope.parent) :+ ((scope.prefix, scope.uri))
+
+            namespaces(node.scope)
+        }
+
+        // attribute namespace
+        val attrs = Attribute(null, "", "", Null)
+        attrs.prefixedKey
+
+        // to produce
+        val scope: NamespaceBinding = ???
+        val elem = Elem(null, "body", Null, TopScope, Elem("svg", "svg", attrs, scope))
     }
 
 }
