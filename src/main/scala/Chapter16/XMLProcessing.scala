@@ -4,6 +4,7 @@ import scala.util.Try
 import scala.xml._
 import scala.xml.transform._
 import scala.xml.XML
+import scala.xml.dtd.DocType
 
 object XMLProcessing {
 // topics:
@@ -574,7 +575,17 @@ object XMLProcessing_Exercises {
     // preceding exercise, and saves the result.
     // Be sure to preserve the DTD and any CDATA sections.
     def ex10 = {
-        ???
+        import scala.xml.dtd._
+
+        def loadXml(url: String = "http://horstmann.com/unblog/index.html"): Document = {
+            val parser = new scala.xml.parsing.XhtmlParser(scala.io.Source.fromURL(url))
+            parser.initialize.document
+        }
+
+        val doc = loadXml()
+        val transformed: Node = ex9(doc.docElem).head
+        XML.save("/tmp/ex10.xhtml", transformed, enc="UTF-8",
+            doctype=DocType(transformed.label, doc.dtd.externalID, doc.dtd.decls))
     }
 
 }
