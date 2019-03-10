@@ -470,24 +470,28 @@ object XMLProcessing_Exercises {
     }
 
     // 4. Read an XHTML file and print all 'img' elements that don’t have an 'alt' attribute.
-    def ex4(url: String = "http://horstmann.com/unblog/index.html") = {
-        val parser = new scala.xml.parsing.XhtmlParser(scala.io.Source.fromURL(url))
-        val docum: Document = parser.initialize.document
-        val rootNode = docum.docElem
+    def ex4 = {
+        val rootNode = loadXml()
 
-        val allImages = rootNode \\ "img"
-        assert(allImages.length > 0)
-        val noAltImages = allImages.filter(n => n.attribute("alt").isEmpty)
+        val allImages = rootNode \\ "img"; assert(allImages.length > 0)
+        val noAltImages = allImages.filter(_.attribute("alt").isEmpty)
 
         noAltImages foreach println
+    }
 
-        rootNode
+    def loadXml(url: String = "http://horstmann.com/unblog/index.html"): Node = {
+        val parser = new scala.xml.parsing.XhtmlParser(scala.io.Source.fromURL(url))
+        val docum: Document = parser.initialize.document
+        docum.docElem
     }
 
     // 5. Print the names of all images in an XHTML file.
     // That is, print all 'src' attribute values inside 'img' elements.
     def ex5 = {
-        ???
+        val root = loadXml()
+        val names = root \\ "img" \\ "@src"
+
+        names foreach println
     }
 
     // 6. Read an XHTML file and print a table of all hyperlinks in the file, together with their URLs.
