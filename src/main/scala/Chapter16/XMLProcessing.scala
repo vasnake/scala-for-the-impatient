@@ -472,7 +472,6 @@ object XMLProcessing_Exercises {
     // 4. Read an XHTML file and print all 'img' elements that don’t have an 'alt' attribute.
     def ex4 = {
         val rootNode = loadXml()
-
         val allImages = rootNode \\ "img"; assert(allImages.length > 0)
         val noAltImages = allImages.filter(_.attribute("alt").isEmpty)
 
@@ -497,7 +496,13 @@ object XMLProcessing_Exercises {
     // 6. Read an XHTML file and print a table of all hyperlinks in the file, together with their URLs.
     // That is, print the 'child' text and the 'href' attribute of each a element.
     def ex6 = {
-        ???
+        val root = loadXml()
+
+        root \\ "a" foreach { h =>
+            val text = h.child.text.padTo(50, ' ').take(50)
+            val href = h.attribute("href").fold("#")(_.text)
+            println(s"${text.replace('\n', ' ')} : $href")
+        }
     }
 
     // 7. Write a function that has a parameter of type Map[String, String] and returns a 'dl'
