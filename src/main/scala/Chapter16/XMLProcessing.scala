@@ -514,7 +514,22 @@ object XMLProcessing_Exercises {
     //      <dt>B</dt> <dd>2</dd>
     //  </dl>
     def ex7 = {
-        ???
+        def func(map: Map[String, String]): NodeSeq = {
+            <dl>{for ((k,v) <- map) yield <dt>{k}</dt><dd>{v}</dd>}</dl>
+        }
+
+        // test
+        val res = func(Map("A" -> "1", "B" -> "2"))
+        println(s"'${res.toString}'")
+
+        assert(res.toString ==
+            """
+              |      <dl>
+              |          <dt>A</dt><dd>1</dd>
+              |          <dt>B</dt><dd>2</dd>
+              |      </dl>
+            """.stripMargin.trim
+                .split("\n").map(_.trim).filterNot(_.isEmpty).mkString)
     }
 
     // 8. Write a function that takes a 'dl' element and turns it into a Map[String, String].
