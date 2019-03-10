@@ -25,7 +25,7 @@ object XMLProcessing {
 
     //NodeSeq type '<like>this</like>
     // scala code inside xml literals
-    // node.child: yilds child nodes
+    // node.child: yields child nodes
     // node attributes yields metadata object
     // '\' and '\\' carry out xpath-like matches
     // match node with xml literals in 'case' clauses
@@ -554,8 +554,20 @@ object XMLProcessing_Exercises {
     // 9. Transform an XHTML document by adding an
     // alt="TODO"
     // attribute to all 'img' elements without an alt attribute, preserving everything else.
-    def ex9 = {
-        ???
+    def ex9(root: Node = loadXml()) = {
+        def rewriteImage(node: Elem): Elem = {
+            if ((node \ "@alt").isEmpty) node % Attribute("", "alt", "TODO", Null)
+            else node
+        }
+
+        val rule = new RewriteRule {
+            override def transform(n: Node): Seq[Node] = n match {
+                case e @ <img>{_*}</img> => rewriteImage(e.asInstanceOf[Elem])
+                case _ => n
+            }
+        }
+
+        new RuleTransformer(rule).transform(root)
     }
 
     // 10. Write a function that reads an XHTML document, carries out the transformation of the
