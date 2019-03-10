@@ -347,9 +347,11 @@ object XMLProcessing {
         // of course, you can add entities:
         noEntParser.ent ++= List("nbsp" -> ParsedEntityDecl("nbsp", IntDef("\u00A0")))
         val noEntDocum: Document = noEntParser.document
+
         // better (for xhtml):
         val parser = new scala.xml.parsing.XhtmlParser(scala.io.Source.fromFile("/tmp/test.xhtml"))
         val docum: Document = parser.initialize.document
+
         // nodes
         val root5: Node = docum.docElem
         docum.dtd // scala.xml.dtd.DTD = DTD [ PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" ]
@@ -468,8 +470,18 @@ object XMLProcessing_Exercises {
     }
 
     // 4. Read an XHTML file and print all 'img' elements that don’t have an 'alt' attribute.
-    def ex4 = {
-        ???
+    def ex4(url: String = "http://horstmann.com/unblog/index.html") = {
+        val parser = new scala.xml.parsing.XhtmlParser(scala.io.Source.fromURL(url))
+        val docum: Document = parser.initialize.document
+        val rootNode = docum.docElem
+
+        val allImages = rootNode \\ "img"
+        assert(allImages.length > 0)
+        val noAltImages = allImages.filter(n => n.attribute("alt").isEmpty)
+
+        noAltImages foreach println
+
+        rootNode
     }
 
     // 5. Print the names of all images in an XHTML file.
