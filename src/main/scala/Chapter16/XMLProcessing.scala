@@ -530,13 +530,25 @@ object XMLProcessing_Exercises {
               |      </dl>
             """.stripMargin.trim
                 .split("\n").map(_.trim).filterNot(_.isEmpty).mkString)
+
+        res
     }
 
     // 8. Write a function that takes a 'dl' element and turns it into a Map[String, String].
     // This function should be the inverse of the function in the preceding exercise,
     // provided all 'dt' children are distinct.
     def ex8 = {
-        ???
+        def func(dl: NodeSeq): Map[String, String] = {
+            val keys = dl \ "dt" map {_.text}
+            val vals = dl \ "dd" map {_.text}
+            keys.zip(vals).toMap
+        }
+
+        // test
+        val dl = ex7
+        val res = func(dl)
+        println(res)
+        assert(Map("A" -> "1", "B" -> "2") == res)
     }
 
     // 9. Transform an XHTML document by adding an
