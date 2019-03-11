@@ -22,6 +22,7 @@ object Futures {
     // fork-join pool for cpu-bound tasks
 
     import java.time._
+    import scala.util._
     import scala.concurrent._
     import scala.concurrent.duration._
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -58,7 +59,7 @@ object Futures {
         //res3: scala.concurrent.Future[Int] = Future(Success(42))
 
         // failure as a result
-        val f2: Future[Int] = Future { if (LocalTime.now.getHour > 15) sys.error("too late"); 42 }
+        val f2: Future[Int] = Future { if (LocalTime.now.getHour > 5) sys.error("too late"); 42 }
         // f2: scala.concurrent.Future[Int] = Future(<not completed>)
         //scala> f2
         //res7: scala.concurrent.Future[Int] = Future(Failure(java.lang.RuntimeException: too late))
@@ -70,12 +71,62 @@ object Futures {
 
     // waiting for results
     def waitingForResults = {
-        ???
+        // check using 'isCompleted';
+
+        // make a blocking call // better not
+        val f = Future { Thread.sleep(1.second.toMillis); 42 }
+        val res: Int = Await.result(f, 2.second) // blocks for 1 sec. and yield the result
+        // or throw an error: java.util.concurrent.TimeoutException
+
+        // if task throws an exception, it is rethrown in Await.result
+        val f2: Future[Int] = Future { if (LocalTime.now.getHour > 5) sys.error("too late"); 42 }
+        val res2: Int = Await.result(f2, 1.second) // java.lang.RuntimeException: too late
+
+        // to avoid rethrown exception use 'ready'
+        val res3: Future[Int] = Await.ready(f2, 1.second) // block, wait and return f2
+        // scala> val res3 = Await.ready(f2, 1.second)
+        //res3: f2.type = Future(Failure(java.lang.RuntimeException: too late))
+        //
+        //scala> val res3 = Await.ready(f, 1.second)
+        //res3: f.type = Future(Success(42))
+
+        res3.value // Option[scala.util.Try[Int]] = Some(Success(42))
+
+        // Future class also has 'result' and 'ready': thread blocking methods, don't use them
+
+        // not all exceptions are stored in the result, jvm errors and InterruptedException are allowed to propagate
+
     }
 
     // the Try class
     def theTryClass = {
-        ???
+        // monadic error wrapper, case classes Success[T], Failure[E <: Throwable]
+        val res: Try[Int] = ???
+        res match {
+            case Success(v) => println(s"result $v")
+            case Failure(ex) => println(s"error: ${ex.getMessage}")
+        }
+
+        res.isSuccess // Boolean
+        res.isFailure
+
+        // failed Try[T] into Try[Throwable]
+        val fail: Try[Throwable] = res.failed
+
+        // get value from try
+        fail.get.getMessage
+
+        // try to option
+        res.toOption.getOrElse(-1)
+
+        // construct try
+        val res2: Try[Int] = Try("".toInt)
+
+        val res3 = Try {
+            val inp = scala.io.StdIn.readLine("enter a number:")
+            inp.trim.toInt
+        }
+
     }
 
     // callbacks
