@@ -1,7 +1,5 @@
 package Chapter17
 
-import java.sql.SQLException
-
 object Futures {
 // topics:
     // running tasks in the future
@@ -28,6 +26,7 @@ object Futures {
     import scala.concurrent._
     import scala.concurrent.duration._
     import scala.concurrent.ExecutionContext.Implicits.global
+    import java.util.concurrent.Executors
 
     // running tasks in the future
     def runningTasksInTheFuture = {
@@ -208,7 +207,7 @@ object Futures {
         def getData(str: String): Int = { Thread.sleep(Random.nextInt(1000)); Random.nextInt(42 + str.length) }
 
         // examples
-        val f1 = Future { getData("srv1") } recover { case e: SQLException => getData("srv3") }
+        val f1 = Future { getData("srv1") } recover { case e: java.sql.SQLException => getData("srv3") }
         val f2 = Future { getData("srv2") } fallbackTo f1
 
         (for (n1 <- f1; n2 <- f2) yield n1 + n2).foreach(x => println(s"result: $x"))
@@ -258,12 +257,62 @@ object Futures {
 
     // promises
     def promises = {
-        ???
+        // future is read-only, value is set implicitly when task finished;
+        // promise allows to set future value once;
+        // check java 8 CompletableFuture
+
+        def workHard(str: String): Int = ???
+
+        // future style
+        def f_computeAnswer(a: String): Future[Int] = Future {
+            workHard(a)
+        }
+
+        // promise style
+        def p_computeAnswer(a: String): Future[Int] = {
+            // uses two different futures for result
+            val p = Promise[Int]() //; val p2 = Promise[String]()
+            Future { // working future
+                p.success(workHard(a)) // complete promise future
+                // can do other stuff here, e.g. fulfill another promise
+                // p2.success(???)
+            }
+            p.future // promise future, unrelated to working future
+        }
+        // no difference for consumer;
+        // producer has more flexibility
+
+        // it is possible to have multiple tasks to fulfill a single promise
+        def whoFirst(a: String): Future[Int] = {
+            val p = Promise[Int]()
+            Future { p.trySuccess(workHard(a)) } // might want to call p.isCompleted periodically
+            Future { p.trySuccess(42) }
+            p.future
+        }
+
     }
 
     // execution contexts
     def executionContexts = {
-        ???
+        // default global fork-join pool, good enough for cpu-bound tasks;
+        // not good for many i/o bound tasks, these could do a lot of blocking;
+
+        // you can notify the execution context about a block
+        def pullStuffFromNetwork(i: Int): Int = ???
+        val f: Future[Int] = Future {
+            val n = Random.nextInt(42)
+            blocking { pullStuffFromNetwork(n) }
+        }
+        // exec.context may then increase the number of threads
+
+        // better off using a different thread pool
+
+        // cached pool works well for i/o workloads
+        val pool = Executors.newCachedThreadPool() // see more in Executors class
+        // pass as implicit to Future
+        implicit val ec = ExecutionContext.fromExecutor(pool)
+        // or explicitly
+        val iof: Future[Int] = Future.apply(pullStuffFromNetwork(42))(ec)
     }
 
 }
