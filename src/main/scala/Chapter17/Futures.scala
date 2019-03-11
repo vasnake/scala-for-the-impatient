@@ -16,14 +16,56 @@ object Futures {
     // and combine the results when they become available
 
     // Future { concurrent block }
-    // you can use callbacks, but chaining them is a pain in the ass
-    // use map/flatMap,for-expr to compose futures
+    // you can use callbacks, but chaining them is a pain in the ass (callback hell)
+    // use map/flatMap, for-expr to compose futures
     // a promise has a future whose value can be set (once)
     // fork-join pool for cpu-bound tasks
 
+    import java.time._
+    import scala.concurrent._
+    import scala.concurrent.duration._
+    import scala.concurrent.ExecutionContext.Implicits.global
+
     // running tasks in the future
     def runningTasksInTheFuture = {
-        ???
+        // future: an object that give you a result/failure eventually.
+        // java.util.concurrent.Future interface: much more limited;
+        // java CompletionStage interface more like scala future
+
+        // execute a block of code in the future
+        Future {
+            // run on some thread from the pool defined in ExecutionContext
+            // default ex.context: fork-join pool from import scala.concurrent.ExecutionContext.Implicits.global
+            Thread.sleep(1.second.toMillis)
+            println(s"this is the future at ${LocalTime.now}")
+        }
+        println(s"this is the present at ${LocalTime.now}")
+        // this is the present at 15:01:39.659
+        // this is the future at 15:01:40.684
+
+        // in a real program use a custom exec.context
+        // cpu bound vs i/o bound
+
+        // concurrent execution for multiple futures
+        Future { for (i <- 1 to 10) {print("A"); Thread.sleep(100)} }
+        Future { for (i <- 1 to 10) {print("B"); Thread.sleep(100)} }
+        // BABABABABABABABABA
+
+        // future can have a result
+        val f: Future[Int] = Future { Thread.sleep(1000); 42 }
+        f // res2: scala.concurrent.Future[Int] = Future(<not completed>)
+        //scala> f
+        //res3: scala.concurrent.Future[Int] = Future(Success(42))
+
+        // failure as a result
+        val f2: Future[Int] = Future { if (LocalTime.now.getHour > 15) sys.error("too late"); 42 }
+        // f2: scala.concurrent.Future[Int] = Future(<not completed>)
+        //scala> f2
+        //res7: scala.concurrent.Future[Int] = Future(Failure(java.lang.RuntimeException: too late))
+
+        // stay away from side effects/shared mutable state, even threadsafe ones.
+        // have each future compute a value and then combine them
+
     }
 
     // waiting for results
@@ -43,7 +85,7 @@ object Futures {
 
     // composing future tasks
     def composingFutureTasks = {
-        ???
+        // https://github.com/scala/scala-async
     }
 
     // other future transformations
