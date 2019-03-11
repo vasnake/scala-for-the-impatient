@@ -1,5 +1,7 @@
 package Chapter17
 
+import java.sql.SQLException
+
 object Futures {
 // topics:
     // running tasks in the future
@@ -127,26 +129,131 @@ object Futures {
             inp.trim.toInt
         }
 
+        // compose try
+        def readInt(prompt: String) = Try(scala.io.StdIn.readLine(prompt).toInt)
+        val t: Try[Int] = for (x <- readInt("X"); y <- readInt("Y")) yield x + y
+
     }
 
     // callbacks
     def callbacks = {
-        ???
+        // onComplete callback, avoid blocking
+        def doStuff(x: Try[Int]): Unit = x match {
+            case Success(res) => ???
+            case Failure(ex) => ???
+        }
+        Future { 42 }.onComplete(doStuff)
+        // onSuccess, onFailure: deprecated
+
+        // callback hell: computations composition on callbacks
+        // compose futures: much better
     }
 
     // composing future tasks
     def composingFutureTasks = {
-        // https://github.com/scala/scala-async
+        // n.b. async/await: https://github.com/scala/scala-async
+        // uses scala macros
+
+        // e.g. combine results from two web services
+        // using callbacks // don't do that!
+        def getData(str: String): Int = { Thread.sleep(Random.nextInt(1000)); Random.nextInt }
+        val f1 = Future { getData("srv1") }
+        val f2 = Future { getData("srv2") }
+        f1 onComplete {
+            case Success(n1) => f2 onComplete { // attach second callback after getting first result
+                case Success(n2) => println(s"result: ${n1 + n2}")
+                case Failure(ex) => ???
+            }
+            case Failure(ex) => ???
+        }
+
+        // think of a future as a collection with (hopefully, eventually) one element
+        val combined = f1.map(n1 => n1 + getData("srv2")) // not concurrently
+        val combined2: Future[Future[Int]] = f1.map(n1 => f2.map(n2 => n1 + n2)) // not good
+        val combined3: Future[Int] = f1.flatMap(n1 => f2.map(n2 => n1 + n2)) // good enough
+
+        // for-expr
+        val combined4: Future[Int] = for (n1 <- f1; n2 <- f2) yield n1 + n2
+        // with guard: NoSuchElement if guard fails
+        val combined5: Future[Int] = for (n1 <- f1; n2 <- f2 if n1 != n2) yield n1 + n2
+        // if one of the tasks fails, entire pipeline fails and exception is captured
+
+        // a future starts when it is created; to delay the creation use functions
+        def fut1 = Future { getData("srv1") } // or val
+        def fut2(a: Int) = Future { getData(s"srv$a") } // def, no val!
+        // evaluate fut2 only after fut1 is completed
+        for (x <- fut1; y <- fut2(x)) yield x + y
+
     }
 
     // other future transformations
     def otherFutureTransformations = {
-        ???
+        // map/flatMap are the most fundamental
+
+        // https://www.scala-lang.org/api/current/scala/concurrent/Future.html
+        // collect
+        // foreach // side-effects, convenient for harvesting
+        // andThen
+        // filter
+
+        // recover // turn exception into a successful result
+        // recoverWith
+        // fallbackTo // cannot inspect the reason for the failure
+
+        // failed // turns failed Future into a successful Future[Throwable]
+        // transform
+        // transformWith
+        // zip, zipWith // result is a pair or exception
+
+        def getData(str: String): Int = { Thread.sleep(Random.nextInt(1000)); Random.nextInt(42 + str.length) }
+
+        // examples
+        val f1 = Future { getData("srv1") } recover { case e: SQLException => getData("srv3") }
+        val f2 = Future { getData("srv2") } fallbackTo f1
+
+        (for (n1 <- f1; n2 <- f2) yield n1 + n2).foreach(x => println(s"result: $x"))
+        for (ex <- f1.failed) println(s"error: ${ex.getMessage}")
+
+        val pair: Future[(Int, Int)] = f1.zip(f2)
+        val fres: Future[Int] = f1.zipWith(f2)(_ + _)
+
     }
 
     // methods in the Future Object
     def methodsInTheFutureObject = {
-        ???
+        // Future companion object : useful methods for working with collections of futures
+        // https://www.scala-lang.org/api/current/scala/concurrent/Future$.html
+
+        val parts: List[Int] = (1 to 10).toList
+        def doStuff(x: Int): Future[Int] = Future { Thread.sleep(Random.nextInt(x)); Random.nextInt(x) }
+        // collections of futures
+        val futures: List[Future[Int]] = parts.map(doStuff)
+
+        // sequence: collection of results
+        val results: Future[Seq[Int]] = Future.sequence(futures)
+        // if any of the futures fail, pipeline fail
+
+        // traverse combines map and sequence
+        val results2: Future[Seq[Int]] = Future.traverse(parts)(doStuff)
+
+        // reduce, fold
+        val fsum: Future[Int] = Future.reduceLeft(futures)(_ + _)
+
+        // firstCompletedOf: result from any part, first to compute
+        val firstRes: Future[Int] = Future.firstCompletedOf(futures)
+
+        // find: first to satisfy a predicate
+        val foAnswer: Future[Option[Int]] = Future.find(futures)(_ == 42)
+
+        // n.b. while 'find' and 'firstCompletedOf' is done, other threads may still be working;
+        // no means to stop running future in scala, provide your own
+
+        // generate simple future:
+        // successful(r)
+        // failed(ex)
+        // fromTry(t)
+        // unit
+        // never // never completes
     }
 
     // promises
