@@ -318,16 +318,30 @@ object Futures {
 }
 
 object Futures_Exercises {
+    import java.time._
+    import scala.util._
+    import scala.concurrent._
+    import scala.concurrent.duration._
+    import scala.concurrent.ExecutionContext.Implicits.global
+    import java.util.concurrent.Executors
 
     // 1. Consider the expression
-    //Click here to view code image
-    //for (n1 <- Future { Thread.sleep(1000) ; 2 }
-    //n2 <- Future { Thread.sleep(1000); 40 })
-    //println(n1 + n2)
-    //How is the expression translated to map and flatMap calls? Are the two futures executed
-    //concurrently or one after the other? In which thread does the call to println occur?
+    //  for (n1 <- Future { Thread.sleep(1000) ; 2 }
+    //      n2 <- Future { Thread.sleep(1000); 40 })
+    //  println(n1 + n2)
+    // How is the expression translated to map and flatMap calls?
+    // Are the two futures executed concurrently or one after the other?
+    // In which thread does the call to println occur?
     def ex1 = {
-        ???
+        def tid(n: String): Unit = println(s"$n thread: ${Thread.currentThread.getId}")
+        tid("main")
+
+        Future { Thread.sleep(1000); tid("first"); 2 }.flatMap(x =>
+            Future { Thread.sleep(1000); tid("second"); 40 }.map(y =>
+            { tid("res"); println(x + y) }))
+
+        // one after another;
+        // second future thread;
     }
 
     // 2. Write a function doInOrder that, given two functions f: T => Future[U] and g: U
