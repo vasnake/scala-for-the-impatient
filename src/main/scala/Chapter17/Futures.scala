@@ -365,7 +365,15 @@ object Futures_Exercises {
 
     // 3. Repeat the preceding exercise for any sequence of functions of type T => Future[T].
     def ex3 = {
-        ???
+        def doInOrder[T](funcs: (T => Future[T])*)(t: T): Future[T] = {
+            funcs.foldLeft(Future(t)){ case (ft, func) => ft.flatMap(func) }
+        }
+
+        // test
+        val f = (x: Int) => Future { Thread.sleep(100); x * 42 }
+        val g = (x: Int) => Future { Thread.sleep(10); x + 2 }
+        val test: Int => Future[Int] = doInOrder(f, g)
+        assert(Await.result(test(1), 2.seconds) == 44)
     }
 
     // 4. Write a function doTogether that, given two functions f: T => Future[U] and g: U
