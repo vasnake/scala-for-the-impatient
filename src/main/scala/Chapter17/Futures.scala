@@ -344,11 +344,23 @@ object Futures_Exercises {
         // second future thread;
     }
 
-    // 2. Write a function doInOrder that, given two functions f: T => Future[U] and g: U
-    //=> Future[V], produces a function T => Future[U] that, for a given t, eventually
-    //yields g(f(t)).
+    // 2. Write a function doInOrder that, given two functions
+    // f: T => Future[U]
+    // and
+    // g: U => Future[V]
+    // produces a function
+    // T => Future[U]
+    // that, for a given t, eventually yields g(f(t))
     def ex2 = {
-        ???
+        def doInOrder[T, U, V](f: T => Future[U], g: U => Future[V])(t: T): Future[V] = {
+            for (a <- f(t); b <- g(a)) yield b
+        }
+
+        // test
+        val f = (x: Int) => Future { Thread.sleep(100); x + 42 }
+        val g = (x: Int) => Future { Thread.sleep(10); x * 2 }
+        val test: Int => Future[Int] = doInOrder(f, g)
+        assert(Await.result(test(1), 2.seconds) == 86)
     }
 
     // 3. Repeat the preceding exercise for any sequence of functions of type T => Future[T].
