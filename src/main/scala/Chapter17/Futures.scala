@@ -451,8 +451,8 @@ object Futures_Exercises {
     // as reported by BigInt.isProbablePrime
     // Divide the interval into 'p' parts, where p is the number of available processors.
     // Count the primes in each part in concurrent futures and combine the results.
-    def ex7(n: Int = 1000000) = {
-        def isPrime(x: Int): Boolean = BigInt(x).isProbablePrime(100000)
+    def ex7(upto: Int = 1000000, rounds: Int = 100) = {
+        def isPrime(x: Int): Boolean = BigInt(x).isProbablePrime(rounds*2)
         def probablePrimes_seq(from: Int, to: Int): Int = { (from to to).count(isPrime) }
         def probablePrimes_par(maxn: Int): Int = { (1 to maxn).par.count(isPrime) }
 
@@ -479,13 +479,39 @@ object Futures_Exercises {
         assert(probablePrimes(1000) == 168); println("168 / 1000 OK")
         assert(probablePrimes(100000) == 9592); println("9592 / 100 000 OK")
 
-        probablePrimes(n)
+        probablePrimes(upto)
     }
 
-    // 8. Write a program that asks the user for a URL, reads the web page at that URL, and displays all
-    //the hyperlinks. Use a separate Future for each of these three steps.
+    // 8. Write a program that asks the user for a URL,
+    // reads the web page at that URL,
+    // and displays all the hyperlinks.
+    // Use a separate Future for each of these three steps.
     def ex8 = {
-        ???
+        import scala.xml._
+
+        def getUrl(prompt: String = "enter an URL:",
+                   default: String = "http://horstmann.com/unblog/index.html"
+                  ): String = Option(scala.io.StdIn.readLine(prompt)) match {
+            case None | Some("") => default
+            case Some(s) => s
+        }
+
+        def loadXml(url: String): Document = {
+            val parser = new scala.xml.parsing.XhtmlParser(scala.io.Source.fromURL(url))
+            parser.initialize.document
+        }
+
+        def displayLinks(doc: Document): Unit = {
+            doc.docElem \\ "a" foreach { a => println(s"${a.toString}") }
+        }
+
+        val res = for {
+            u <- Future(getUrl())
+            d <- Future(loadXml(u))
+            p <- Future(displayLinks(d))
+        } yield Seq(u, d, p)
+
+        Await.result(res, 42.seconds)
     }
 
     // 9. Write a program that asks the user for a URL, reads the web page at that URL, finds all the
