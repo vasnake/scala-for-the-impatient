@@ -376,11 +376,24 @@ object Futures_Exercises {
         assert(Await.result(test(1), 2.seconds) == 44)
     }
 
-    // 4. Write a function doTogether that, given two functions f: T => Future[U] and g: U
-    //=> Future[V], produces a function T => Future[(U, V)], running the two
-    //computations in parallel and, for a given t, eventually yielding (f(t), g(t)).
+    // 4. Write a function doTogether that, given two functions
+    // f: T => Future[U]
+    // and
+    // g: U => Future[V]
+    // produces a function
+    // T => Future[(U, V)]
+    // running the two computations in parallel and, for a given t, eventually yielding
+    // (f(t), g(t)).
     def ex4 = {
-        ???
+        def doTogether[T, U, V](f: T => Future[U], g: T => Future[V])(t: T): Future[(U, V)] = {
+            f(t).zip(g(t))
+        }
+
+        // test
+        val f = (x: Int) => Future { Thread.sleep(100); x * 42 }
+        val g = (x: Int) => Future { Thread.sleep(10); x + 2 }
+        val test = doTogether(f, g)(_)
+        assert(Await.result(test(1), 2.seconds) == (42, 3))
     }
 
     // 5. Write a function that receives a sequence of futures and returns a future that eventually yields a
