@@ -514,12 +514,60 @@ object Futures_Exercises {
         Await.result(res, 42.seconds)
     }
 
-    // 9. Write a program that asks the user for a URL, reads the web page at that URL, finds all the
-    //hyperlinks, visits each of them concurrently, and locates the Server HTTP header for each of
-    //them. Finally, print a table of which servers were found how often. The futures that visit each
-    //page should return the header.
+    // 9. Write a program that asks the user for a URL,
+    // reads the web page at that URL,
+    // finds all the hyperlinks,
+    // visits each of them concurrently, and locates the Server HTTP header for each of them.
+    // Finally, print a table of which servers were found how often.
+    // The futures that visit each page should return the header.
     def ex9 = {
-        ???
+        import scala.xml._
+        import scala.collection.JavaConverters._
+        val pool = Executors.newCachedThreadPool()
+        // implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(pool)
+
+        def getUrl(prompt: String = "enter an URL:",
+                   default: String = "http://horstmann.com/unblog/index.html"
+                  ): String = Option(scala.io.StdIn.readLine(prompt)) match {
+            case None | Some("") => default
+            case Some(s) => s
+        }
+
+        def loadXml(url: String): Document = {
+            println(s"loading doc: ${url}")
+            val parser = new scala.xml.parsing.XhtmlParser(scala.io.Source.fromURL(url))
+            parser.initialize.document
+        }
+
+        def getLinks(doc: Document): Iterable[String] = {
+            println(s"collecting links: ${doc.toString.take(80)}")
+            (doc.docElem \\ "a" \\ "@href").toSeq.map(_.text)
+        }
+
+        def getHeaders(url: String): Map[String, String] = Try {
+            println(s"getting headers: ${url}")
+            val res = new java.net.URL(url).openConnection.getHeaderFields.asScala.toMap
+            res.map { case (k,v) =>
+                println(s"${k}: ${v.asScala.head}")
+                (k, v.asScala.mkString("\n"))
+            }
+        }.getOrElse(Map.empty)
+
+        val flinks = for {
+            url <- Future(getUrl())
+            doc <- Future(loadXml(url))
+            links <- Future(getLinks(doc))
+        } yield links
+
+        val fmaps = flinks.flatMap(links => Future.traverse(links)(link => Future(getHeaders(link))))
+
+        val res = fmaps.map(ms =>
+            ms.map(m =>
+                m.getOrElse("Server", "undefined")).groupBy(s => s)
+                .map { case (k,v) => (k, v.size) }.toList
+                .sortBy(_._2)(scala.math.Ordering.fromLessThan(_ >= _)))
+
+        Await.result(res, 3.minutes) foreach { case (s, n) => println(s"$s: $n")}
     }
 
     // 10. Change the preceding exercise where the futures that visit each header update a shared Java
