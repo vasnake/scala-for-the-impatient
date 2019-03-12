@@ -424,9 +424,9 @@ object Futures_Exercises {
                 y <- Future { until(x) }
             } yield y
 
-            if (Await.result(res, 30.seconds)) ()
-            else repeat(action, until)
-            //res.foreach(y => if (!y) repeat(action, until) else ())
+            // if (Await.result(res, 30.seconds)) ()
+            // else repeat(action, until)
+            res.foreach(y => if (!y) repeat(action, until) else ())
         }
 
         def repeat2[T](action: => T, until: T => Boolean, maxiter: Int = 10): Future[Boolean] = {
@@ -447,12 +447,39 @@ object Futures_Exercises {
         println("leave main thread")
     }
 
-    // 7. Write a program that counts the prime numbers between 1 and n, as reported by
-    //BigInt.isProbablePrime. Divide the interval into p parts, where p is the number of
-    //available processors. Count the primes in each part in concurrent futures and combine the
-    //results.
-    def ex7 = {
-        ???
+    // 7. Write a program that counts the prime numbers between 1 and n,
+    // as reported by BigInt.isProbablePrime
+    // Divide the interval into 'p' parts, where p is the number of available processors.
+    // Count the primes in each part in concurrent futures and combine the results.
+    def ex7(n: Int = 1000000) = {
+        def isPrime(x: Int): Boolean = BigInt(x).isProbablePrime(100000)
+        def probablePrimes_seq(from: Int, to: Int): Int = { (from to to).count(isPrime) }
+        def probablePrimes_par(maxn: Int): Int = { (1 to maxn).par.count(isPrime) }
+
+        def probablePrimes(maxn: Int): Int = {
+            val numCores = Runtime.getRuntime.availableProcessors
+            println(s"#cores: $numCores")
+            val batchSize: Int = maxn / numCores
+
+            def makeBatch(batchNum: Int): (Int, Int) = { // 1,2; 3,4; 5,6; 7,8
+                val hi = batchSize * batchNum
+                val lo = 1 + hi - batchSize
+                (lo, hi)
+            }
+
+            def lastBatch: (Int, Int) = { (1 + maxn - (maxn % numCores), maxn) }
+
+            val batches = (1 to numCores).map(makeBatch) :+ lastBatch
+            val res = Future.traverse(batches)(b => Future { probablePrimes_seq(b._1, b._2) })
+            Await.result(res.map(_.sum), 59.seconds)
+        }
+
+        // test
+        assert(probablePrimes(100) == 25); println("25 / 100 OK")
+        assert(probablePrimes(1000) == 168); println("168 / 1000 OK")
+        assert(probablePrimes(100000) == 9592); println("9592 / 100 000 OK")
+
+        probablePrimes(n)
     }
 
     // 8. Write a program that asks the user for a URL, reads the web page at that URL, and displays all
