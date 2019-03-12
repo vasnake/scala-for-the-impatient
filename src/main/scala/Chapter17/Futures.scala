@@ -324,7 +324,6 @@ object Futures_Exercises {
     import scala.util._
     import scala.concurrent._
     import scala.concurrent.duration._
-    import scala.concurrent.ExecutionContext.Implicits.global
     import java.util.concurrent.Executors
 
     // 1. Consider the expression
@@ -335,6 +334,7 @@ object Futures_Exercises {
     // Are the two futures executed concurrently or one after the other?
     // In which thread does the call to println occur?
     def ex1 = {
+        import scala.concurrent.ExecutionContext.Implicits.global
         def tid(n: String): Unit = println(s"$n thread: ${Thread.currentThread.getId}")
         tid("main")
 
@@ -354,6 +354,7 @@ object Futures_Exercises {
     // T => Future[U]
     // that, for a given t, eventually yields g(f(t))
     def ex2 = {
+        import scala.concurrent.ExecutionContext.Implicits.global
         def doInOrder[T, U, V](f: T => Future[U], g: U => Future[V])(t: T): Future[V] = {
             for (a <- f(t); b <- g(a)) yield b
         }
@@ -367,6 +368,7 @@ object Futures_Exercises {
 
     // 3. Repeat the preceding exercise for any sequence of functions of type T => Future[T].
     def ex3 = {
+        import scala.concurrent.ExecutionContext.Implicits.global
         def doInOrder[T](funcs: (T => Future[T])*)(t: T): Future[T] = {
             funcs.foldLeft(Future(t)){ case (ft, func) => ft.flatMap(func) }
         }
@@ -387,6 +389,7 @@ object Futures_Exercises {
     // running the two computations in parallel and, for a given t, eventually yielding
     // (f(t), g(t)).
     def ex4 = {
+        import scala.concurrent.ExecutionContext.Implicits.global
         def doTogether[T, U, V](f: T => Future[U], g: T => Future[V])(t: T): Future[(U, V)] = {
             f(t).zip(g(t))
         }
@@ -401,6 +404,7 @@ object Futures_Exercises {
     // 5. Write a function that receives a sequence of futures and
     // returns a future that eventually yields a sequence of all results
     def ex5 = {
+        import scala.concurrent.ExecutionContext.Implicits.global
         def seq[T](fs: Future[T]*): Future[Seq[T]] = {
             Future.sequence(fs)
         }
@@ -418,6 +422,7 @@ object Futures_Exercises {
     // a function that simulates a validity check by sleeping for a second and then checking that
     // the password is "secret". Hint: Use recursion.
     def ex6 = {
+        import scala.concurrent.ExecutionContext.Implicits.global
         def repeat[T](action: => T, until: T => Boolean): Unit = {
             val res = for {
                 x <- Future(action)
@@ -452,6 +457,7 @@ object Futures_Exercises {
     // Divide the interval into 'p' parts, where p is the number of available processors.
     // Count the primes in each part in concurrent futures and combine the results.
     def ex7(upto: Int = 1000000, rounds: Int = 100) = {
+        import scala.concurrent.ExecutionContext.Implicits.global
         def isPrime(x: Int): Boolean = BigInt(x).isProbablePrime(rounds*2)
         def probablePrimes_seq(from: Int, to: Int): Int = { (from to to).count(isPrime) }
         def probablePrimes_par(maxn: Int): Int = { (1 to maxn).par.count(isPrime) }
@@ -487,6 +493,7 @@ object Futures_Exercises {
     // and displays all the hyperlinks.
     // Use a separate Future for each of these three steps.
     def ex8 = {
+        import scala.concurrent.ExecutionContext.Implicits.global
         import scala.xml._
 
         def getUrl(prompt: String = "enter an URL:",
@@ -523,8 +530,9 @@ object Futures_Exercises {
     def ex9 = {
         import scala.xml._
         import scala.collection.JavaConverters._
+
         val pool = Executors.newCachedThreadPool()
-        // implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(pool)
+        implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(pool)
 
         def getUrl(prompt: String = "enter an URL:",
                    default: String = "http://horstmann.com/unblog/index.html"
@@ -534,21 +542,23 @@ object Futures_Exercises {
         }
 
         def loadXml(url: String): Document = {
-            println(s"loading doc: ${url}")
+            println(s"loading doc: $url")
             val parser = new scala.xml.parsing.XhtmlParser(scala.io.Source.fromURL(url))
             parser.initialize.document
         }
 
         def getLinks(doc: Document): Iterable[String] = {
             println(s"collecting links: ${doc.toString.take(80)}")
-            (doc.docElem \\ "a" \\ "@href").toSeq.map(_.text)
+            (doc.docElem \\ "a" \\ "@href").map(_.text)
         }
 
+        // TODO: add timeout parameter
+        //  https://alvinalexander.com/misc/scala-scalaj-http-client-response-headers-head-request
         def getHeaders(url: String): Map[String, String] = Try {
-            println(s"getting headers: ${url}")
+            println(s"getting headers: $url")
             val res = new java.net.URL(url).openConnection.getHeaderFields.asScala.toMap
             res.map { case (k,v) =>
-                println(s"${k}: ${v.asScala.head}")
+                // println(s"${k}: ${v.asScala.head}")
                 (k, v.asScala.mkString("\n"))
             }
         }.getOrElse(Map.empty)
@@ -559,23 +569,84 @@ object Futures_Exercises {
             links <- Future(getLinks(doc))
         } yield links
 
-        val fmaps = flinks.flatMap(links => Future.traverse(links)(link => Future(getHeaders(link))))
+        val headers = flinks.flatMap(links => Future.traverse(links)(link => Future(getHeaders(link))))
 
-        val res = fmaps.map(ms =>
-            ms.map(m =>
-                m.getOrElse("Server", "undefined")).groupBy(s => s)
-                .map { case (k,v) => (k, v.size) }.toList
-                .sortBy(_._2)(scala.math.Ordering.fromLessThan(_ >= _)))
+        val res = headers.map(ms => ms.map(m => m.getOrElse("Server", "undefined"))
+            .groupBy(s => s).map { case (k,v) => (k, v.size) }.toList
+            .sortBy(_._2)(scala.math.Ordering.fromLessThan(_ >= _)))
 
-        Await.result(res, 3.minutes) foreach { case (s, n) => println(s"$s: $n")}
+        val scoreboard = Await.result(res, 3.minutes)
+        println("\nservers counts:\n")
+        scoreboard foreach { case (s, n) => println(s"${s.padTo(30, ' ').take(30)}: $n")}
     }
 
-    // 10. Change the preceding exercise where the futures that visit each header update a shared Java
-    //ConcurrentHashMap or Scala TrieMap. This isn’t as easy as it sounds. A threadsafe data
-    //structure is safe in the sense that you cannot corrupt its implementation, but you have to make
-    //sure that sequences of reads and updates are atomic.
+    // 10. Change the preceding exercise where the futures that visit each header update
+    // a shared Java ConcurrentHashMap or Scala TrieMap.
+    // This isn’t as easy as it sounds. A threadsafe data structure is safe in the sense
+    // that you cannot corrupt its implementation, but you have to make sure that sequences
+    // of reads and updates are atomic.
     def ex10 = {
-        ???
+        import scala.xml._
+        import scala.collection.JavaConverters._
+        import scala.collection.concurrent
+
+        val pool = Executors.newCachedThreadPool()
+        implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(pool)
+        implicit def longToInt(n: Long): Int = n.toInt
+
+        object scoreboard extends Iterable[(String, Int)] {
+            private val board = concurrent.TrieMap.empty[String, Int]
+            def add(server: String): Unit = this.synchronized {
+                board.update(server, 1 + board.getOrElse(server, 0))
+            }
+
+            override def iterator: Iterator[(String, Int)] = board.readOnlySnapshot.iterator
+        }
+
+        def getUrl(prompt: String = "enter an URL:",
+                   default: String = "http://horstmann.com/unblog/index.html"
+                  ): String = Option(scala.io.StdIn.readLine(prompt)) match {
+            case None | Some("") => default
+            case Some(s) => s
+        }
+
+        def loadXml(url: String): Document = {
+            println(s"loading doc: $url")
+            val parser = new scala.xml.parsing.XhtmlParser(scala.io.Source.fromURL(url))
+            parser.initialize.document
+        }
+
+        def getLinks(doc: Document): Iterable[String] = {
+            println(s"collecting links: ${doc.toString.take(80)}")
+            (doc.docElem \\ "a" \\ "@href").map(_.text)
+        }
+
+        def getHeader(url: String): String = {
+            println(s"getting headers: $url")
+            val headers = Try {
+                val conn = new java.net.URL(url).openConnection
+                conn.setConnectTimeout(10.seconds.toMillis); conn.setReadTimeout(10.seconds.toMillis)
+                val res = conn.getHeaderFields.asScala.toMap
+                res.map { case (k,v) => (k, v.asScala.mkString("\n")) }
+            }.getOrElse(Map.empty)
+
+            val res = headers.getOrElse("Server", "undefined")
+            scoreboard.add(res)
+            res
+        }
+
+        val flinks = for {
+            url <- Future(getUrl())
+            doc <- Future(loadXml(url))
+            links <- Future(getLinks(doc))
+        } yield links
+
+        val headers = flinks.flatMap(links => Future.traverse(links)(link => Future(getHeader(link))))
+
+        Await.result(headers, 3.minutes)
+        println("\nservers counts:\n")
+        scoreboard.toList.sortBy(_._2)(scala.math.Ordering.fromLessThan(_ >= _))
+            .foreach { case (s, n) => println(s"${s.padTo(30, ' ').take(30)}: $n")}
     }
 
     // 11. Using futures, run four tasks that each sleep for ten seconds and then print the current time. If
