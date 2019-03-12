@@ -1,5 +1,7 @@
 package Chapter17
 
+import scala.annotation.tailrec
+
 object Futures {
 // topics:
     // running tasks in the future
@@ -409,14 +411,40 @@ object Futures_Exercises {
     }
 
     // 6. Write a method
-    //Click here to view code image
-    //Future[T] repeat(action: => T, until: T => Boolean)
-    //that asynchronously repeats the action until it produces a value that is accepted by the until
-    //predicate, which should also run asynchronously. Test with a function that reads a password
-    //from the console, and a function that simulates a validity check by sleeping for a second and
-    //then checking that the password is "secret". Hint: Use recursion.
+    //  Future[T] repeat(action: => T, until: T => Boolean)
+    // that asynchronously repeats the action until it produces a value that is accepted
+    // by the 'until' predicate, which should also run asynchronously.
+    // Test with a function that reads a password from the console, and
+    // a function that simulates a validity check by sleeping for a second and then checking that
+    // the password is "secret". Hint: Use recursion.
     def ex6 = {
-        ???
+        def repeat[T](action: => T, until: T => Boolean): Unit = {
+            val res = for {
+                x <- Future(action)
+                y <- Future { until(x) }
+            } yield y
+
+            if (Await.result(res, 30.seconds)) ()
+            else repeat(action, until)
+            //res.foreach(y => if (!y) repeat(action, until) else ())
+        }
+
+        def repeat2[T](action: => T, until: T => Boolean, maxiter: Int = 10): Future[Boolean] = {
+            @tailrec def loop(i: Int): Boolean = {
+                until(action) || {
+                    if (i > 0) loop(i - 1) else false
+                }
+            }
+
+            Future { loop(maxiter) }
+        }
+
+        // test
+        def action: String = { scala.io.StdIn.readLine("\nenter password: ") }
+        def until(p: String): Boolean = { Thread.sleep(500); p == "secret" }
+        //repeat(action, until)
+        Await.result(repeat2(action, until), 60.seconds)
+        println("leave main thread")
     }
 
     // 7. Write a program that counts the prime numbers between 1 and n, as reported by
