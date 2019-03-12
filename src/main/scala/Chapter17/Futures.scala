@@ -396,10 +396,16 @@ object Futures_Exercises {
         assert(Await.result(test(1), 2.seconds) == (42, 3))
     }
 
-    // 5. Write a function that receives a sequence of futures and returns a future that eventually yields a
-    //sequence of all results.
+    // 5. Write a function that receives a sequence of futures and
+    // returns a future that eventually yields a sequence of all results
     def ex5 = {
-        ???
+        def seq[T](fs: Future[T]*): Future[Seq[T]] = {
+            Future.sequence(fs)
+        }
+
+        // test
+        val res = seq(Future { 42 }, Future { 3 })
+        assert(Await.result(res, 1.second) == Seq(42, 3))
     }
 
     // 6. Write a method
