@@ -643,33 +643,115 @@ object Futures_Exercises {
 
         val headers = flinks.flatMap(links => Future.traverse(links)(link => Future(getHeader(link))))
 
-        Await.result(headers, 3.minutes)
+        Await.result(headers, 1.minute)
         println("\nservers counts:\n")
         scoreboard.toList.sortBy(_._2)(scala.math.Ordering.fromLessThan(_ >= _))
             .foreach { case (s, n) => println(s"${s.padTo(30, ' ').take(30)}: $n")}
     }
 
-    // 11. Using futures, run four tasks that each sleep for ten seconds and then print the current time. If
-    //you have a reasonably modern computer, it is very likely that it reports four available
-    //processors to the JVM, and the futures should all complete at around the same time. Now repeat
-    //with forty tasks. What happens? Why? Replace the execution context with a cached thread pool.
-    //What happens now? (Be careful to define the futures after replacing the implicit execution
-    //context.)
+    // 11. Using futures, run four tasks that each sleep for ten seconds and then
+    // print the current time.
+    // If you have a reasonably modern computer, it is very likely that it reports four available
+    // processors to the JVM, and the futures should all complete at around the same time.
+    //
+    // Now repeat with forty tasks.
+    // What happens? Why?
+    // Replace the execution context with a cached thread pool.
+    // What happens now?
+    // (Be careful to define the futures after replacing the implicit execution context.)
     def ex11 = {
-        ???
+        import java.time._
+
+        implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
+        //import scala.concurrent.ExecutionContext.Implicits.global
+
+        def task(n: Int): Int = {
+            Thread.sleep(10.seconds.toMillis)
+            println(s"task $n, time ${LocalTime.now}")
+            n
+        }
+
+        def run(n: Int): Future[Seq[Int]] = {
+            Future.traverse((1 to n).toList)(n => Future(task(n)))
+        }
+
+        println(Await.result(run(4), 1.minute).mkString(","))
+        println(Await.result(run(40), 1.minute).mkString(","))
+
+        // pool: scala.concurrent.ExecutionContext.Implicits.global
+        // first 8 tasks executes concurrently, other wait for free resources in pool.
+        //task 3, time 13:43:11.527
+        //task 4, time 13:43:11.527
+        //task 1, time 13:43:11.527
+        //task 2, time 13:43:11.527
+        //1,2,3,4
+        //task 1, time 13:43:21.537
+        //task 2, time 13:43:21.537
+        //task 3, time 13:43:21.538
+        //task 4, time 13:43:21.538
+        //task 5, time 13:43:21.538
+        //task 6, time 13:43:21.538
+        //task 7, time 13:43:21.538
+        //task 8, time 13:43:21.539
+        //task 9, time 13:43:31.538
+        //task 11, time 13:43:31.538
+        //task 10, time 13:43:31.538
+        //task 12, time 13:43:31.538
+        //task 13, time 13:43:31.538
+        //task 14, time 13:43:31.538
+        //task 15, time 13:43:31.538
+        //task 16, time 13:43:31.539
+        //task 19, time 13:43:41.538
+        //...
+
+        // pool: implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
+        // enough threads for all tasks, all executes concurrently.
+        //task 1, time 13:48:03.896
+        //task 2, time 13:48:03.896
+        //task 3, time 13:48:03.896
+        //task 4, time 13:48:03.896
+        //1,2,3,4
+        //task 1, time 13:48:13.898
+        //task 2, time 13:48:13.898
+        //task 3, time 13:48:13.898
+        //task 4, time 13:48:13.898
+        //task 5, time 13:48:13.898
+        //task 6, time 13:48:13.898
+        //task 7, time 13:48:13.899
+        //task 8, time 13:48:13.899
+        //task 9, time 13:48:13.899
+        //task 10, time 13:48:13.900
+        //task 11, time 13:48:13.900
+        //task 12, time 13:48:13.900
+        //task 13, time 13:48:13.900
+        //task 14, time 13:48:13.901
+        //task 15, time 13:48:13.901
+        //task 16, time 13:48:13.901
+        //task 17, time 13:48:13.901
+        //task 18, time 13:48:13.902
+        //task 19, time 13:48:13.902
+        //task 20, time 13:48:13.902
+        //task 21, time 13:48:13.902
+        //task 22, time 13:48:13.902
+        //task 23, time 13:48:13.903
+        // ...
     }
 
-    // 12. Write a method that, given a URL, locates all hyperlinks, makes a promise for each of them,
-    //starts a task in which it will eventually fulfill all promises, and returns a sequence of futures for
-    //the promises. Why would it not be a good idea to return a sequence of promises?
+    // 12. Write a method that, given a URL, locates all hyperlinks,
+    // makes a promise for each of them,
+    // starts a task in which it will eventually fulfill all promises, and
+    // returns a sequence of futures for the promises.
+    // Why would it not be a good idea to return a sequence of promises?
     def ex12 = {
         ???
     }
 
-    // 13. Use a promise for implementing cancellation. Given a range of big integers, split the range into
-    //subranges that you concurrently search for palindromic primes. When such a prime is found, set
-    //it as the value of the future. All tasks should periodically check whether the promise is
-    //completed, in which case they should terminate.
+    // 13. Use a promise for implementing cancellation.
+    // Given a range of big integers, split the range into subranges that
+    // you concurrently search for palindromic primes.
+    // When such a prime is found, set it as the value of the future.
+    // All tasks should periodically check whether the promise is completed,
+    // in which case they should terminate.
     def ex13 = {
         ???
     }
