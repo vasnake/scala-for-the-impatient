@@ -768,7 +768,7 @@ object Futures_Exercises {
         }
 
         def run(url: String = "http://horstmann.com/unblog/index.html"): Seq[Future[String]] = {
-            val links = getLinks(loadXml(url)).toSet
+            val links = getLinks(loadXml(url)).toSet // to make a map we need unique keys
             val promises = links.map(h => (h, Promise[String]())).toMap
             println("start concurrent task")
 
@@ -788,19 +788,81 @@ object Futures_Exercises {
             promises.values.map(_.future).toList
         }
 
-        //Await.result(Future.sequence(run()), 30.seconds)
-        val res = run()
-        res.map(f => Await.result(f, 30.seconds))
+        Await.result(Future.sequence(run()), 42.seconds)
     }
 
     // 13. Use a promise for implementing cancellation.
+    //
     // Given a range of big integers, split the range into subranges that
     // you concurrently search for palindromic primes.
     // When such a prime is found, set it as the value of the future.
     // All tasks should periodically check whether the promise is completed,
     // in which case they should terminate.
-    def ex13 = {
-        ???
+    def ex13(rounds: Int = 100) = {
+        implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
+        // import scala.concurrent.ExecutionContext.Implicits.global
+
+        def isPrime(x: BigInt): Boolean = x.isProbablePrime(rounds*2)
+
+        def isPalindromicPrime(n: BigInt): Boolean = isPrime(n) && {
+            val s = n.toString
+            s == s.reverse
+        }
+
+        def searchPalindromicPrimes(from: BigInt, to: BigInt, p: Promise[Iterable[BigInt]]): Iterable[BigInt] = {
+            @tailrec def loop(next: BigInt, acc: Seq[BigInt]): Seq[BigInt] = {
+                if (next > to || p.isCompleted) acc
+                else {
+                    if (isPalindromicPrime(next)) loop(next + 1, acc :+ next)
+                    else loop(next + 1, acc)
+                }
+            }
+
+            val res = loop(from, Seq.empty[BigInt])
+            p.trySuccess(res)
+            res
+        }
+
+        def makeBatches(minn: BigInt, maxn: BigInt, numBatches: Int): Iterable[(BigInt, BigInt)] = {
+            val batchSize: Int = ((1 + maxn - minn) / BigInt(numBatches)).toInt
+
+            def makeBatch(batchNum: Int): (BigInt, BigInt) = {
+                val hi = batchSize * batchNum + minn - 1
+                val lo = 1 + hi - batchSize
+                (lo, hi)
+            }
+
+            def lastBatch: (BigInt, BigInt) = {
+                val res = makeBatch(numBatches + 1)
+                (res._1, maxn)
+            }
+
+            (1 to numBatches).map(makeBatch) :+ lastBatch
+        }
+
+        def palindromicPrimes(minn: BigInt = 1, maxn: BigInt = 4000 * 1000): Iterable[Future[Iterable[BigInt]]] = {
+            require(maxn > minn, "iteration goes from min to max")
+            val batches = makeBatches(minn, maxn, Runtime.getRuntime.availableProcessors)
+
+            val promises = batches.map{ case (from, to) => {
+                val promise = Promise[Iterable[BigInt]]()
+                Future {
+                    searchPalindromicPrimes(from, to, promise)
+                }
+                promise
+            }}
+
+            // simulate cancellation
+            Thread.sleep(1000)
+            //promises.foreach(p => p.tryFailure(sys.error("can't wait")))
+            promises.foreach(p => p.tryComplete(Try(Seq.empty)))
+
+            promises.map(_.future)
+        }
+
+        val res = Await.result(Future.sequence(palindromicPrimes()), 10.seconds)
+        res.foreach(lst => println(lst.mkString(",")))
+        res
     }
 
 }
