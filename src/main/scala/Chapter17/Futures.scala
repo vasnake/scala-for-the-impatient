@@ -743,7 +743,54 @@ object Futures_Exercises {
     // returns a sequence of futures for the promises.
     // Why would it not be a good idea to return a sequence of promises?
     def ex12 = {
-        ???
+        // Why would it not be a good idea to return a sequence of promises?
+        // promises are writable and you don't want to expose that to client.
+
+        import scala.xml._
+
+        implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
+
+        def loadXml(url: String): Document = {
+            println(s"loading doc: $url")
+            val parser = new scala.xml.parsing.XhtmlParser(scala.io.Source.fromURL(url))
+            parser.initialize.document
+        }
+
+        def getLinks(doc: Document): Iterable[String] = {
+            println(s"collecting links: ${doc.toString.take(80)}")
+            (doc.docElem \\ "a" \\ "@href").map(_.text)
+        }
+
+        def linkProcess(url: String): String = {
+            Thread.sleep(100)
+            println(url)
+            url
+        }
+
+        def run(url: String = "http://horstmann.com/unblog/index.html"): Seq[Future[String]] = {
+            val links = getLinks(loadXml(url)).toSet
+            val promises = links.map(h => (h, Promise[String]())).toMap
+            println("start concurrent task")
+
+            Future {
+                links.foreach(h =>
+                    promises(h).complete(Try(linkProcess(h))) )
+
+                println("closing promises")
+                Thread.sleep(100)
+                promises.values.foreach(p => {
+                    if (!p.isCompleted) p.failure(sys.error("lost a link somewhere"))
+                })
+                println("all promises closed")
+            }
+
+            println("return futures")
+            promises.values.map(_.future).toList
+        }
+
+        //Await.result(Future.sequence(run()), 30.seconds)
+        val res = run()
+        res.map(f => Await.result(f, 30.seconds))
     }
 
     // 13. Use a promise for implementing cancellation.
