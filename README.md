@@ -25,3 +25,4 @@ https://www.google.ru/search?q=scala+for+the+impatient+2nd+edition+cay+horstmann
 15. [Annotations](/src/main/scala/Chapter15/Annotations.scala)
 16. [XML Processing](/src/main/scala/Chapter16/XMLProcessing.scala)
 17. [Futures](/src/main/scala/Chapter17/Futures.scala)
+18. [Type Parameters](/src/main/scala/Chapter18/TypeParameters.scala)
