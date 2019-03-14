@@ -49,7 +49,8 @@ object TypeParameters {
     // bounds for type variables
     def boundsForTypeVariables = {
         // sometimes you need some restrictions or insurance about type;
-        // bounds tell compiler about some expected properties of types
+        // bounds tell compiler about some expected properties of types;
+        // or relations between types
 
         // e.g. we want to be able to compare values
         class Pair_wrong[T](val first: T, val second: T) {
@@ -106,27 +107,92 @@ object TypeParameters {
 
     // view bounds
     def viewBounds = {
-        ???
+        // deprecated feature; about requirement of an implicit conversion in scope;
+        // should be replaced with 'type constraints' (evidence)
+
+        // problem: upper bound for Int won't work
+        //class Pair[T <: Comparable[T]](val first: T, val second: T) {
+        //    def smaller = if (first.compareTo(second) < 0) first else second }
+
+        // view bounds tells compiler that there is an implicit conversion
+        // e.g. Comparable[T] for Int would be RichInt and there is implicit conversions from Int to RichInt
+
+        def deprecated = {
+            // T can be converted to Comparable[T] implicitly
+            class Pair[T <% Comparable[T]](val first: T, val second: T) {
+                def smaller = if (first.compareTo(second) < 0) first else second
+            }
+            val ip = new Pair(1, 2)
+            val si = ip.smaller
+        }
+
+        // running ahead a little, you can use 'type constraints' here
+        class Pair[T](val first: T, val second: T) {
+            // actually, implies existence of 'implicit def convert(t: T): Comparable[T] = ???'
+            def smaller(implicit ev: T => Comparable[T]) =
+                if (first.compareTo(second) < 0) first else second
+        }
+        val ip = new Pair(1, 2)
+        val si = ip.smaller // invoke conversion to RichInt
+        // context bounds / implicit values are better?
+
     }
 
     // context bounds
     def contextBounds = {
-        ???
+        // about requirement of an implicit value of some type in context;
+        // using context bound [T : M] you tell compiler that in scope should be an implicit value x: M[T];
+        // implicit values are more flexible than implicit conversions: search order, explicit passing, etc.
+
+        // class Pair[T: Ordering] // require implicit val x: Ordering[T] in scope
+        // that value can be used in class methods via implicit parameter
+
+        class Pair[T : Ordering](val first: T, second: T) {
+            def smaller(implicit ord: Ordering[T]) =
+                if (ord.compare(first, second) < 0) first else second
+        }
+        val ip = new Pair(1, 2)
+        val si = ip.smaller // search for Ordering[Int] implicit value in context/scope
     }
 
     // the ClassTag context bound
     def the_ClassTag_contextBound = {
-        ???
+        // jvm arrays need this for its type machinery;
+        // type erasure + jvm arrays leads to ClassTag solution;
+
+        // to create an Array[T] one needs a ClassTag[T] object
+        // if T is Int, you want an int[] array in jvm.
+
+        import scala.reflect._
+        def makePair[T : ClassTag](first: T, second: T) = {
+            val arr = new Array[T](2)
+            arr(0) = first; arr(1) = second
+            arr
+        }
+        // compiler calls makePair(...)(classTag)
+        // and 'new ...' translated to classTag.newArray(...)
+
     }
 
     // multiple bounds
     def multipleBounds = {
-        ???
+        // can have both an upper and lower bounds
+        // [T >: L <: U]
+
+        // can't have multiple upper or lower, but can require multiple traits
+        // [T <: Comparable[T] with Serializable with Cloneable]
+
+        // can have multiple context bounds
+        // [T : Ordering : ClassTag]
     }
 
     // type constraints
     def typeConstraints = {
-        ???
+        // used in form of 'implicit evidence parameter';
+        // three forms of type constraints:
+        //      T =:= U     // T is/equals U
+        //      T <:< U     // T is subtype of U
+        //      T =>  U     // T is convertible to U
     }
 
     // variance
