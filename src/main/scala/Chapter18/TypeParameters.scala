@@ -437,7 +437,23 @@ object TypeParameters_Exercises {
     // 6. Write a generic method 'middle' that returns the middle element from any Iterable[T].
     // For example, middle("World") is 'r'.
     def ex6 = {
-        ???
+        def middle[T](it: Iterable[T]): T = {
+            val pos = {
+                val len = it.size
+                require(len > 2, "collection size should be > 2")
+                if (len % 2 == 0) len / 2 - 1
+                else len / 2
+            }
+
+            it.slice(pos, pos + 1).head
+        }
+
+        // test
+        assert(middle("World") == 'r')
+        assert(middle("Word") == 'o')
+        assert(middle("ord".iterator.toIterable) == 'r')
+        assert(middle("1234567890".toIterable) == '5')
+        assert(middle("123456789".toList) == '5')
     }
 
     // 7. Look through the methods of the Iterable[+A] trait.
