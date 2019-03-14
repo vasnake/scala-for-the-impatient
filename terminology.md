@@ -92,7 +92,7 @@ Partial Functions
 
 Destructuring
 
-View Bounds vs Context Bounds
-: implicit converstions vs implicit values
+View Bounds vs Context Bounds (types)
+: implicit conversions vs implicit values
 
 Existential Types
