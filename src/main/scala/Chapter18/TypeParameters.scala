@@ -126,7 +126,7 @@ object TypeParameters {
             val si = ip.smaller
         }
 
-        // running ahead a little, you can use 'type constraints' here
+        // going ahead a little, you can use 'type constraints' here
         class Pair[T](val first: T, val second: T) {
             // actually, implies existence of 'implicit def convert(t: T): Comparable[T] = ???'
             def smaller(implicit ev: T => Comparable[T]) =
@@ -193,6 +193,32 @@ object TypeParameters {
         //      T =:= U     // T is/equals U
         //      T <:< U     // T is subtype of U
         //      T =>  U     // T is convertible to U
+
+        class Pair[T](first: T, second: T)(implicit ev: T <:< Comparable[T])
+        // somewhere in the scope should exist implicit val x: Comparable[T] = ???
+
+        // can be applied to certain methods of a class, not class in whole
+        class Pair_2[T](first: T, second: T) {
+            def smaller(implicit ev: T <:< Ordered[T]) = if (first < second) first else second
+        }
+        // you can create any pair from any types, say URL, but
+        // call to 'smaller' only available for ordered types
+
+        // e.g. trick with null, useful for java api
+        val sOrNull = Map("F" -> "B").get("W")
+            .orNull // string or null, works only for supertype of Null, not for Int for example
+        // def orNull[A1 >: A](implicit ev: Null <:< A1): A1 = this getOrElse ev(null)
+
+        // type constraints as improvement for type inference
+        def firstLast[A, C <: Iterable[A]](it: C) = (it.head, it.last)
+        // firstLast(List(1,2,3)) // error: inferred type arguments [Nothing,List[Int]] do not conform to
+        // method firstLast's type parameter bounds [A,C <: Iterable[A]]
+        // why?
+        // compiler matches types in one step;
+
+        // lets help it
+        def firstLast2[A, C](it: C)(implicit ev: C <:< Iterable[A]) = (it.head, it.last)
+        firstLast2(List(1,2,3)) // OK
     }
 
     // variance
