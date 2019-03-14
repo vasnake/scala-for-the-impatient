@@ -223,7 +223,30 @@ object TypeParameters {
 
     // variance
     def variance = {
-        ???
+        // relations between type derivatives, or parameters, etc;
+        // if Student is a subclass of Person, how Pair[Student] relates to Pair[Person]?
+        // by default: invariant, no relations.
+
+        // make a covariant pair: pair of students is subclass of pair of persons
+        class Pair[+T](first: T, second: T)
+        // contravariant will be [-T]
+
+        // contravariant example
+        trait Friend[-T] { def befriend(x: T): Unit = ??? }
+        class Person extends Friend[Person] { }
+        class Student extends Person { } // Friend[Student] is a superclass for Friend[Person] !!!
+        def makeFriend(s: Student, f: Friend[Student]) = f.befriend(s)
+        // can you call it with a Friend[Person] ? seems like it, Friend[Person] is a subclass of Friend[Student]
+        makeFriend(new Student, new Person) // compiler happy
+
+        // co and contra in the same type example: Function1[-A, +R]
+        // con-sume con-travariance, return covariance
+        def findStudent(p: Person): Student = ???
+        // def friends(students: Array[Student], find: Function1[Student, Person]) = for (s <- students) yield find(s)
+        def friends(students: Array[Student], find: Student => Person) = for (s <- students) yield find(s)
+        val fs = friends(Array(new Student), findStudent) // compiler happy:
+        // feed students where person expected and return student where person expected
+
     }
 
     // co- and contravariant positions
