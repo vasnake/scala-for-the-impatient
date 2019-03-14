@@ -378,7 +378,15 @@ object TypeParameters_Exercises {
     // 3. Given a class Pair[T, S], write a generic method 'swap' that takes a pair as its argument
     // and returns a new pair with the components swapped.
     def ex3 = {
-        ???
+        class Pair[T, S](val t: T, val s: S) {
+            def swap: Pair[S, T] = new Pair(s, t)
+        }
+        def swap(p: Pair[_, _]) = p.swap
+        def swap2[A, B](p: Pair[A, B]) = new Pair(p.s, p.t)
+
+        // test
+        assert(swap(new Pair("a", 42)).t == 42)
+        assert(swap2(new Pair("a", 42)).t == 42)
     }
 
     // 4. Why don’t we need a lower bound for the 'replaceFirst' method in
