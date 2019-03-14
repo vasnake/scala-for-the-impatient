@@ -247,11 +247,48 @@ object TypeParameters {
         val fs = friends(Array(new Student), findStudent) // compiler happy:
         // feed students where person expected and return student where person expected
 
+        // see: Liskov Substitution Principle
     }
 
     // co- and contravariant positions
     def co_and_contraVariantPositions = {
-        ???
+        // functions are contravariant in arguments and covariant in result.
+        // con-sume con-travariance, return covariance
+
+        // for mutable data structures, when object does both (consume and produce),
+        // type should be invariant
+
+        // e.g. scala arrays are invariant, Array[Student] can't be converted to Array[Person] or vice versa;
+        // consider:
+        class Person extends  { }
+        class Student extends Person { }
+        val students = Array(new Student)
+        // val ppl: Array[Person] = students // suppose it possible
+        // ppl(0) = new Person // oops, students is no students anymore!
+
+        // in java you can catch an ArrayStoreException (runtime!) when trying similar tricks,
+        // jvm stores array type in array and check it
+
+        // suppose you want a covariant mutable pair, it wouldn't work,
+        // it would be like an array with two elements.
+        // class Pair[+T](var first: T, var second: T) // error: covariant type T occurs in contravariant position in
+        // type T of value first_=
+
+        // n.b. function parameter flips positions
+        // e.g. foldLeft
+        // trait IndexedSeqOptimized[+A, +Repr] ...
+        //      def foldLeft[B](z: B)(op: (B, A) => B): B
+        // positions:              -       +  +     -   +
+
+        // these position rules are safe, but can be pain in the ass
+        // e.g. immutable pair with an update method, producing a new pair
+        class Pair[+T](val first: T, val second: T) {
+            // def replaceFirst(newFirst: T): Pair[T] = ??? // covariant type T occurs in contravariant position
+            // to bypass this predicament, use a second type parameter:
+            def replaceFirst[R >: T](newFirst: R): Pair[R] = new Pair(newFirst, second)
+            // R is invariant and can be in any position
+        }
+
     }
 
     // objects can't be generic
