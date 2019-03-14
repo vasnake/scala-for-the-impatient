@@ -274,16 +274,17 @@ object TypeParameters {
         // class Pair[+T](var first: T, var second: T) // error: covariant type T occurs in contravariant position in
         // type T of value first_=
 
-        // n.b. function parameter flips positions
+        // n.b. function parameter flips positions,
         // e.g. foldLeft
         // trait IndexedSeqOptimized[+A, +Repr] ...
         //      def foldLeft[B](z: B)(op: (B, A) => B): B
         // positions:              -       +  +     -   +
 
-        // these position rules are safe, but can be pain in the ass
+        // these position rules are safe, but can be pain in the ass;
         // e.g. immutable pair with an update method, producing a new pair
         class Pair[+T](val first: T, val second: T) {
-            // def replaceFirst(newFirst: T): Pair[T] = ??? // covariant type T occurs in contravariant position
+            // def replaceFirst(newFirst: T): Pair[T] = ??? // error: covariant type T occurs in contravariant position
+
             // to bypass this predicament, use a second type parameter:
             def replaceFirst[R >: T](newFirst: R): Pair[R] = new Pair(newFirst, second)
             // R is invariant and can be in any position
@@ -293,7 +294,25 @@ object TypeParameters {
 
     // objects can't be generic
     def objectsCantBeGeneric = {
-        ???
+        // if you need a object with a type parameter, you'll need a trick
+        // e.g. List
+        abstract class List[+T] {
+            def isEmpty: Boolean
+            def head: T
+            def tail: List[T]
+        }
+        class Node[T](val head: T, val tail: List[T]) extends List[T] {
+            override def isEmpty: Boolean = false
+        }
+        // object Empty[T] extends List[T] // no can't do
+
+        object Empty extends List[Nothing] { // Nothing is a subtype of all types
+            override def isEmpty: Boolean = true
+            override def head: Nothing = ???
+            override def tail: List[Nothing] = ???
+        }
+        val lst: Node[Int] = new Node(42, Empty) // error if List is invariant,
+        // here we need a covariant list for subtype-of-all Nothing
     }
 
     // wildcards
