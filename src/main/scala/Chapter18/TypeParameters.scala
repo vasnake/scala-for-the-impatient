@@ -393,7 +393,19 @@ object TypeParameters_Exercises {
     // Section 18.3, “Bounds for Type Variables,” on page 266
     // if we want to replace the first component of a Pair[Person] with a Student?
     def ex4 = {
-        ???
+
+        class Pair[T](val first: T, val second: T) {
+            def replaceFirst(newFirst: T) = new Pair(newFirst, second)
+        }
+
+        class Person; class Student extends Person
+        //val sp: Pair[Student] = ???
+        //val rp = sp.replaceFirst(new Person) // error
+
+        val sp: Pair[Person] = ???
+        val rp = sp.replaceFirst(new Student)
+        // OK, because student is a person, but not other way around;
+        // result pair will be pair of persons (LSP)
     }
 
     // 5. Why does RichInt implement Comparable[Int] and not Comparable[RichInt]?
