@@ -353,7 +353,12 @@ object TypeParameters_Exercises {
     // 1. Define an immutable class Pair[T, S] with a method 'swap' that returns a new pair with the
     // components swapped.
     def ex1 = {
-        ???
+        class Pair[T, S](val t: T, val s: S) {
+            def swap: Pair[S, T] = new Pair(s, t)
+        }
+
+        // test
+        assert(new Pair(42, "a").swap.t == "a")
     }
 
     // 2. Define a mutable class Pair[T] with a method 'swap' that swaps the components of the pair.
