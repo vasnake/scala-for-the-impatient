@@ -313,11 +313,37 @@ object TypeParameters {
         }
         val lst: Node[Int] = new Node(42, Empty) // error if List is invariant,
         // here we need a covariant list for subtype-of-all Nothing
+
     }
 
     // wildcards
     def wildcards = {
-        ???
+        // in java all generic types are invariant,
+        // but you can use wildcards to vary them in application
+
+        class Person
+
+        // java wildcards:
+        // void makeFriends(List<? extends Person> ppl)
+        // can be called with a List<Student>
+
+        // scala wildcards
+        def process(ppl: java.util.List[_ <: Person]) = ???
+
+        // for a covariant class you don't need the wildcard, but for invariant you might need it.
+        // suppose Pair is invariant // it's good for mutable structures
+        class Pair[T](var first: T, var second: T)
+        def makeFriends(p: Pair[_ <: Person]) = ??? // OK to call with Pair[Student]
+
+        // wildcard for contravariance
+        def min[T](p: Pair[T])(comp: java.util.Comparator[_ >: T]) = ???
+
+        // wildcards are syntactic sugar for existential types,
+        // are still a work in progress:
+        //def mmin[T <: Comparable[_ >: T]](p: Pair[T]) = ??? // error: illegal cyclic reference involving type T
+        // workaround:
+        type SuperComparable[T] = Comparable[_ >: T]
+        def mmin[T <: SuperComparable[T]](p: Pair[T]) = ???
     }
 
 }
