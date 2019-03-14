@@ -402,7 +402,7 @@ object TypeParameters_Exercises {
         //val sp: Pair[Student] = ???
         //val rp = sp.replaceFirst(new Person) // error
 
-        val sp: Pair[Person] = ???
+        val sp: Pair[Person] = new Pair(new Person, new Person)
         val rp = sp.replaceFirst(new Student)
         // OK, because student is a person, but not other way around;
         // result pair will be pair of persons (LSP)
@@ -410,7 +410,28 @@ object TypeParameters_Exercises {
 
     // 5. Why does RichInt implement Comparable[Int] and not Comparable[RichInt]?
     def ex5 = {
-        ???
+        // we need operations on int, not richint;
+        // operating with int we have richint with implicit conversion
+
+        def deprecated = {
+            // view bounds tells compiler that there is an implicit conversion
+            // e.g. Comparable[T] for Int would be RichInt and there is implicit conversions from Int to RichInt
+            // T can be converted to Comparable[T] implicitly
+            class Pair[T <% Comparable[T]](val first: T, val second: T) {
+                def smaller = if (first.compareTo(second) < 0) first else second
+            }
+            val ip = new Pair(1, 2)
+            val si = ip.smaller
+        }
+
+        // using 'type constraints'
+        class Pair[T](val first: T, val second: T) {
+            // actually, implies existence of 'implicit def convert(t: T): Comparable[T] = ???'
+            def smaller(implicit ev: T => Comparable[T]) =
+                if (first.compareTo(second) < 0) first else second
+        }
+        val ip = new Pair(1, 2)
+        ip.smaller // invoke conversion to RichInt
     }
 
     // 6. Write a generic method 'middle' that returns the middle element from any Iterable[T].
