@@ -363,7 +363,16 @@ object TypeParameters_Exercises {
 
     // 2. Define a mutable class Pair[T] with a method 'swap' that swaps the components of the pair.
     def ex2 = {
-        ???
+        class Pair[T](var a: T, var b: T) {
+            def swapSafe: Pair[T] = new Pair(b, a)
+            def swap: Unit = { val t = a; a = b; b = t }
+        }
+
+        // test
+        val p = new Pair(1, 2)
+        val swappedSafe = p.swapSafe
+        p.swap
+        assert(p.a == 2 && swappedSafe.b == 1)
     }
 
     // 3. Given a class Pair[T, S], write a generic method 'swap' that takes a pair as its argument
