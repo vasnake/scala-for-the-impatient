@@ -3,6 +3,8 @@ package Chapter19
 import java.awt._
 import java.awt.geom._
 
+import javax.swing.JComponent
+
 import scala.collection.mutable
 
 object AdvancedTypes {
@@ -240,7 +242,45 @@ object AdvancedTypes {
 
     // existential types
     def existentialTypes = {
-        ???
+        // formalism added for compatibility with Java wildcards, `typeExpr[T] forSome { type T ... }`
+
+        type A = Array[T] forSome { type T <: JComponent}
+        // this is the same as
+        type B = Array[_ <: JComponent]
+
+        // scala wildcards are syntactic sugar for existential types
+        type C = Array[_] // is the same as
+        type D = Array[T] forSome { type T }
+        // another equivalent
+        type E = Map[_, _]
+        type F = Map[T, U] forSome { type T; type U }
+
+        // forSome allows complex relationships
+        type J = Map[T, U] forSome { type T; type U <: T}
+
+        // 'val' declarations for nested types
+
+        // nested types
+        class Network {
+            class Member(val name: String)
+            private val members = new mutable.ArrayBuffer[Member]
+            def join(name: String) = { members += new Member(name); members.last }
+        }
+
+        // type projection Network#Member as member of any network, compare to
+        // val declarations
+        type H = n.Member forSome { val n: Network }
+
+        // process only members from same network
+        def process[M <: H](m1: M, m2: M) = (m1, m2)
+        // test
+        val chatter = new Network
+        val myface = new Network
+        val fred = chatter.join("Fred")
+        val barney = myface.join("Barney")
+        // process(fred, barney) // compiler error
+
+        // import scala.language.existentials
     }
 
     // the scala type system
