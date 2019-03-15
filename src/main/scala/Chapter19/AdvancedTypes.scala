@@ -176,7 +176,20 @@ object AdvancedTypes {
 
     // structural types
     def structuralTypes = {
-        ???
+        // is a specification of abstract methods, fields, types
+        // that a conforming type should possess
+
+        // e.g. parameter 'target' of structural type
+        def appendLines(
+                           target: { def append(str: String): Any }, // structural type
+                           lines: Iterable[String]) = {
+            for (x <- lines) target.append(x)
+        }
+        // can pass any object with 'append' method, this is more flexible than defining a Appendable trait;
+        // but much more expensive because of used reflection
+
+        // similar to duck typing: you don't have to declare obj as a Duck
+        // as long as it walks and quacks like one
     }
 
     // compound types

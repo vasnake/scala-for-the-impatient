@@ -47,7 +47,7 @@ Value Classes
 Anonymous Subclasses
 
 Structural Type
-: duck typing equivalent
+: duck typing equivalent, specification of type members; implemented using reflection
 
 Universal Traits
 
