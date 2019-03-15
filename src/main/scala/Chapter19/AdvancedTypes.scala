@@ -1,5 +1,7 @@
 package Chapter19
 
+import scala.collection.mutable
+
 object AdvancedTypes {
 // topics:
     // singleton types
@@ -27,9 +29,9 @@ object AdvancedTypes {
     // singleton types
     def singletonTypes = {
         // obj.type for method chaining with class hierarchy;
-        // or for 'fluent interfaces' api
+        // or for 'fluent interface' api
 
-        // method chaining example
+        // this.type example, method chaining
 
         def compileerror = {
             class Document {
@@ -71,27 +73,67 @@ object AdvancedTypes {
             book.setTitle("").addChapter("")
         }
 
-        // fluent interface with object passing example
-        // book set Title to "foo"
-        // book.set(Title).to("foo")
+        // singleton.type example fluent interface with object passing
+
+        // doc set Title to "foo"
+        // doc.set(Title).to("foo")
         // method 'set' is special, argument is the singleton Title
 
         object Title // singleton, not a type
         class Document {
-            private var useNextArgAs: Any = null
-            def set(obj: Title.type): this.type = { useNextArgAs = obj; this }
-            def to(arg: String) = useNextArgAs match {
+            private var useNextArgAs: Any = _
+            // n.b. Title.type
+            def set(obj: Title.type) = { useNextArgAs = obj; this }
+            def to(x: String) = useNextArgAs match {
                 case Title => ???
                 case _ => ???
             }
         }
-        // etc.
 
     }
 
     // type projections
     def typeProjections = {
-        ???
+        // access to nested class; Network#Member
+        // not a path
+
+        // example: can't access nested class objects
+
+        class Network {
+            class Member(val name: String) { val contacts = new mutable.ArrayBuffer[Member] }
+            private val members = new mutable.ArrayBuffer[Member]
+            def join(name: String) = { members += new Member(name); members.last }
+        }
+        // each network instance has its own Member class
+        val chatter = new Network
+        val myface = new Network
+        // you can't add a member from one network to another
+        val fred = chatter.join("Fred") // chatter.Member
+        val barney = myface.join("Barney") // myface.Member
+        // error:
+        // fred.contacts.append(barney) // compile error, type mismatch
+
+        // you can move Member class outside the Network class,
+        // to a Network companion object maybe.
+
+        // or you can save fine-grained classes, using 'type projection'
+        // Network#Member, which means 'a member of any network'
+        def typeprojection = {
+            class Network {
+                // n.b. type projection in 'contacts' definition!
+                class Member(val name: String) { val contacts = new mutable.ArrayBuffer[Network#Member] }
+                private val members = new mutable.ArrayBuffer[Member]
+                def join(name: String) = { members += new Member(name); members.last }
+            }
+            val chatter = new Network
+            val myface = new Network
+            val fred = chatter.join("Fred")
+            val barney = myface.join("Barney")
+            // works just fine:
+            fred.contacts.append(barney)
+        }
+
+        // n.b. you can't import a type projection, it's not a path
     }
 
     // paths
