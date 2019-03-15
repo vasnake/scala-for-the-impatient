@@ -559,7 +559,24 @@ object TypeParameters_Exercises {
     // 10. Given a mutable Pair[S, T] class, use a type constraint to define a 'swap' method
     // that can be called if the type parameters are the same.
     def ex10 = {
-        ???
+        val a = new Pair_ex10(1, 2)
+        val b = new Pair_ex10(3, "4")
+        // b.swap // compile error: Cannot prove that String =:= Int
+        a.swap
+        a
+    }
+    // moving this class to ex10 function will cause error:
+    // can't existentially abstract over parameterized type
+    class Pair_ex10[S, T](var first: S, var second: T) {
+        // def swap(implicit ev: T =:= S): Pair_ex10[T, S] = new Pair_ex10(second, first)
+
+        def swap(implicit ts: T =:= S, st: S =:= T): Unit = {
+            val temp = second
+            second = first
+            first = temp
+        }
+
+        override def toString: String = s"Pair($first, $second)"
     }
 
 }
