@@ -1,5 +1,8 @@
 package Chapter19
 
+import java.awt._
+import java.awt.geom._
+
 import scala.collection.mutable
 
 object AdvancedTypes {
@@ -194,7 +197,25 @@ object AdvancedTypes {
 
     // compound types
     def compoundTypes = {
-        ???
+        // aka intersection type, `T1 with T2 with T3 ...`
+        // you can use it to require some properties from type
+
+        val image = new mutable.ArrayBuffer[java.awt.Shape with java.io.Serializable]
+        // can draw, can serialize whole collection
+        image += new Rectangle(5, 10, 20, 30)
+        // image += new Area(rect) // compile error: is a shape but not serializable
+
+        trait ImageShape extends Shape with java.io.Serializable
+        // this means: extends the intersection type 'Shape with Serializable'
+
+        // you can add a structural type to compound type
+        type A = Shape with java.io.Serializable { def contains(p: Point): Boolean }
+
+        // { def contains(p: Point): Boolean } transforms to
+        // AnyRef { def contains(p: Point): Boolean }
+        // and
+        // Shape with java.io.Serializable transforms to
+        // Shape with java.io.Serializable { }
     }
 
     // infix types

@@ -104,5 +104,8 @@ Existential Types
 Singleton Type
 : this.type, useful for method chaining or fluent interface
 
+Compound Type
+: aka intersection type, `T1 with T2 with T3 ...`
+
 Cake Pattern
 : self types implementing dependency injection
