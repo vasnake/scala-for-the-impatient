@@ -107,5 +107,8 @@ Singleton Type
 Compound Type
 : aka intersection type, `T1 with T2 with T3 ...`
 
+Infix Types
+: parameters of a type written in infix notation, e.g. `String Map Int`
+
 Cake Pattern
 : self types implementing dependency injection

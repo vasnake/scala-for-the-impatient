@@ -220,7 +220,22 @@ object AdvancedTypes {
 
     // infix types
     def infixTypes = {
-        ???
+        // parameters of a type written in infix notation, e.g. `String Map Int`
+        type StringToInt = String Map Int // Map[String, Int]
+
+        // pairs example
+        type x[A, B] = (A, B)
+        type IntPair = Int x Int
+
+        // infix type operators have the same precedence, left-associative;
+        // unless ends with ':'
+        type A = String x Int x Int // ((String, Int), Int)
+
+        // can't write in infix notation:
+        type B = (Int, String, Double)
+
+        // can't use '*' as infix type name to avoid confusion with variable argument declarations T*
+
     }
 
     // existential types
