@@ -138,12 +138,40 @@ object AdvancedTypes {
 
     // paths
     def paths = {
-        ???
+        // type path: com.horstmann.impatient.Network.Member
+        // each component in com.horstmann.impatient.Network must be stable;
+        // stable: specify a single, definite scope;
+        // - package
+        // - object
+        // - val
+        // - this, super, ...
+
+        // path component can't be a class or 'var'
+        // nested class isn't a single type; var is mutable.
+
+        // internally, compiler translates nested type expressions to type projections
+        // a.b.c -> a.b.type#c
+        // any c inside singleton b.type
     }
 
     // type aliases
     def typeAliases = {
-        ???
+        // keyword 'type';
+        // type alias must be nested inside a class or object;
+
+        // type alias example
+        class Book {
+            type Index = mutable.HashMap[String, String]
+            val idx: Index = ???
+        }
+
+        // aside: 'type' keyword is also used for 'abstract types'
+        // e.g.
+        abstract class Reader {
+            type Contents
+            def read(filename: String): Contents
+        }
+        // details below
     }
 
     // structural types
