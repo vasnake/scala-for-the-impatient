@@ -91,3 +91,8 @@ Fork-Join Pool (execution context)
 Partial Functions
 
 Destructuring
+
+View Bounds vs Context Bounds (types)
+: implicit conversions vs implicit values
+
+Existential Types

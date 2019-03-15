@@ -855,7 +855,7 @@ object Futures_Exercises {
                 println(s"start batch ${(from, to)}")
                 val promise = Promise[Iterable[BigInt]]()
                 Future {
-                    Thread.sleep(100)
+                    Thread.sleep(100) // start searching after init. all batches, debug print is nicer this way
                     searchPalindromicPrimes(from, to, promise)
                 }
                 promise
@@ -876,7 +876,7 @@ object Futures_Exercises {
         // show result
         println(s"completed promises: ${promises}\n")
         val futures = promises.map(_.future)
-        val lst = futures.map(f => Await.ready(f, 59.seconds))
+        val lst = futures.map(f => Await.ready(f, 59.seconds)) // Await.result will throw a future 'cancelled' exception
         lst.foreach(f => println(f))
         lst
     }
