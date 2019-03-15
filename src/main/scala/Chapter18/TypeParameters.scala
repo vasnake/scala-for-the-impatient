@@ -491,7 +491,35 @@ object TypeParameters_Exercises {
     // Why can’t you define an equivalent method on a mutable Pair[T]?
     //  def replaceFirst[R >: T](newFirst: R) { first = newFirst } // Error
     def ex8 = {
-        ???
+        def compile = {
+            // immutable pair
+            class Pair[+T](val first: T, val second: T) {
+                // to bypass this predicament (covariant in contra- position), use a second type parameter:
+                def replaceFirst[R >: T](newFirst: R): Pair[R] = new Pair(newFirst, second)
+                // R is invariant and can be in any position
+            }
+
+            // mutable pair, invariant
+            class PairM[T](var first: T, var second: T) {
+                def replaceFirst(newFirst: T): Unit = first = newFirst
+            }
+
+        }
+
+        def nocompile = {
+            // mutable pair
+
+            // error: setters don't accept covariant param in contravariant position
+            // class PairM[+T](var first: T, var second: T) {
+            // ok
+            class PairM[T](var first: T, var second: T) {
+                // ok: according to LSP you can use subclass of a type here
+                def replaceFirst[R <: T](newFirst: R) { first = newFirst }
+                // error : you can't use superclass to replace a type in mutable pair, it changes a pair type
+                // def replaceFirst[R >: T](newFirst: R) { first = newFirst }
+            }
+        }
+
     }
 
     // 9. It may seem strange to restrict method parameters in an immutable class Pair[+T].
