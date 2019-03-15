@@ -460,7 +460,30 @@ object TypeParameters_Exercises {
     // Which methods use the type parameter A?
     // Why is it in a covariant position in these methods?
     def ex7 = {
-        ???
+
+        // https://www.scala-lang.org/api/current/scala/collection/Iterable.html#find(p:A=%3EBoolean):Option[A]
+        // https://www.scala-lang.org/api/current/scala/collection/Iterable.html#head:A
+        // https://www.scala-lang.org/api/current/scala/collection/Iterable.html#minBy[B](f:A=%3EB):A
+        // etc.
+
+        // covariant because 'consume contravariant, produce covariant';
+        // iterable produces values of type A;
+        // also, functional parameters flips positions, in that case A in contravariant position;
+        // iterable is covariant so we can use iterable of subtype in place where iterable of type expected,
+        // e.g. see: object Empty extends List[Nothing].
+
+        // but with a cost:
+
+        // these position rules are safe, but can be pain in the ass;
+        // e.g. immutable pair with an update method, producing a new pair
+        class Pair[+T](val first: T, val second: T) {
+            // def replaceFirst(newFirst: T): Pair[T] = ??? // error: covariant type T occurs in contravariant position
+
+            // to bypass this predicament, use a second type parameter:
+            def replaceFirst[R >: T](newFirst: R): Pair[R] = new Pair(newFirst, second)
+            // R is invariant and can be in any position
+        }
+
     }
 
     // 8. In Section 18.10, “Co- and Contravariant Positions,” on page 272,
