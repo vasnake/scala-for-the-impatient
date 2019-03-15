@@ -518,6 +518,7 @@ object TypeParameters_Exercises {
                 // error : you can't use superclass to replace a type in mutable pair, it changes a pair type
                 // def replaceFirst[R >: T](newFirst: R) { first = newFirst }
             }
+            // mutable datastructure should be invariant
         }
 
     }
@@ -529,12 +530,30 @@ object TypeParameters_Exercises {
     // The problem is that this method can be overridden in an unsound way.
     //
     // Construct an example of the problem.
+    //
     // Define a subclass NastyDoublePair of Pair[Double] that overrides
     // replaceFirst so that it makes a pair with the square root of newFirst.
     // Then construct the call replaceFirst("Hello") on a Pair[Any] that
     // is actually a NastyDoublePair.
     def ex9 = {
-        ???
+        def goodCovariantPair = {
+            class Pair[+T](val first: T, val second: T) {
+                def replaceFirst[R >: T](newFirst: R): Pair[R] = new Pair(newFirst, second)
+            }
+        }
+
+//        class Pair[+T](val first: T, val second: T) {
+//            def replaceFirst(newFirst: T): Pair[T] = new Pair(newFirst, second) // compile error: contra- position
+//        }
+//
+//        class NastyDoublePair(first: Double, second: Double) extends Pair[Double](first, second) {
+//            // if you add type restriction [R >: T] sqrt will not compile as sqrt(x: R)
+//            override def replaceFirst(newFirst: Double) = new NastyDoublePair(scala.math.sqrt(newFirst), second)
+//        }
+//
+//        val nasty: Pair[Any] = new NastyDoublePair(1d , 2d) // error if Pair is invariant; covariant pair is good
+//        val newNasty = nasty.replaceFirst("Hello") // sqrt(string) !!!
+
     }
 
     // 10. Given a mutable Pair[S, T] class, use a type constraint to define a 'swap' method
