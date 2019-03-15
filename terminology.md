@@ -22,8 +22,10 @@ Scaladoc
 : https://www.scala-lang.org/api/current/
 
 Self Type
+: indication that a trait requires another type, `this: Type => ...`, useful in cake pattern
 
 Type Projection
+: nested class objects access, e.g. `Network#Member`
 
 Class Parameters
 
@@ -45,6 +47,7 @@ Value Classes
 Anonymous Subclasses
 
 Structural Type
+: duck typing equivalent
 
 Universal Traits
 
@@ -96,3 +99,10 @@ View Bounds vs Context Bounds (types)
 : implicit conversions vs implicit values
 
 Existential Types
+: formalism added for compatibility with Java wildcards, `typeExpr[T] forSome { type T ... }`
+
+Singleton Type
+: this.type, useful for method chaining or fluent interface
+
+Cake Pattern
+: self types implementing dependency injection

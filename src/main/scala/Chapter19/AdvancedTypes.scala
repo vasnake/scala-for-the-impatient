@@ -17,9 +17,76 @@ object AdvancedTypes {
     // family polymorphism
     // higher-kinded types
 
+    // singleton types: this.type (for method chaining);
+    // type projection: inner class access, Network#Member (not a path);
+    // structural type: duck typing, in-place type definition;
+    // existential type: X[T] forSome { type T ... }, for java wildcards;
+    // self type: this: Type => ...; restriction to mixin;
+    // dependency injection = self types + cake pattern;
+
     // singleton types
     def singletonTypes = {
-        ???
+        // obj.type for method chaining with class hierarchy;
+        // or for 'fluent interfaces' api
+
+        // method chaining example
+
+        def compileerror = {
+            class Document {
+                // n.b. return type is 'Document', later we'll need it to be 'Book'
+                def setTitle(title: String) = /* do stuff */ this
+                def setAuthor(author: String) = /* do stuff */ this
+            }
+            // chain
+            val article: Document = ???
+            article.setTitle("").setAuthor("")
+
+            // what about subclass? problem
+            class Book extends Document {
+                def addChapter(ch: String) = /* do stuff */ this
+            }
+            val book: Book = ???
+
+            // compile error, Document.addChapter???
+            // book.setTitle("").addChapter("")
+        }
+
+        def compileok = {
+            class Document {
+                // fix method return type: 'this.type', not 'Document'
+                def setTitle(title: String): this.type = /* do stuff */ this
+                def setAuthor(author: String) = /* do stuff */ this
+            }
+            // chain
+            val article: Document = ???
+            article.setTitle("").setAuthor("")
+
+            // what about subclass? problem
+            class Book extends Document {
+                def addChapter(ch: String) = /* do stuff */ this
+            }
+            val book: Book = ???
+
+            // compile OK
+            book.setTitle("").addChapter("")
+        }
+
+        // fluent interface with object passing example
+        // book set Title to "foo"
+        // book.set(Title).to("foo")
+        // method 'set' is special, argument is the singleton Title
+
+        object Title // singleton, not a type
+        class Document {
+            private var useNextArgAs: Any = null
+            def set(obj: Title.type): this.type = { useNextArgAs = obj; this }
+            def to(arg: String) = useNextArgAs match {
+                case Title => ???
+                case _ => ???
+            }
+        }
+        // etc.
+
     }
 
     // type projections
