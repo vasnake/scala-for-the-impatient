@@ -285,7 +285,22 @@ object AdvancedTypes {
 
     // the scala type system
     def theScalaTypeSystem = {
-        ???
+        // scala types that user can declare:
+        // class, trait: class C ..., trait T ...
+        // tuple: (T1, ..., Tn)
+        // function: (T1, ..., Tn) => T
+        // annotated type: T @A
+        // parameterized type: T[A, ..., B]
+        // singleton: value.type
+        // type projection: A#B
+        // compound type: T1 with T2, ... with Tn { declarations }
+        // infix type: A T B
+        // existential type: T forSome { type, val declarations }
+
+        // also, internally there is 'method type'
+        // (T1, ..., Tn)T
+        // n.b. compare to function type
+
     }
 
     // self types
