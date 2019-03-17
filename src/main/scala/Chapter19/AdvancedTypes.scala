@@ -286,6 +286,7 @@ object AdvancedTypes {
     // the scala type system
     def theScalaTypeSystem = {
         // scala types that user can declare:
+
         // class, trait: class C ..., trait T ...
         // tuple: (T1, ..., Tn)
         // function: (T1, ..., Tn) => T
@@ -305,7 +306,31 @@ object AdvancedTypes {
 
     // self types
     def selfTypes = {
-        ???
+        // a trait can require that it can only be mixed into a subclass of the given type
+        // using 'self type' declaration
+        // this: Type => ...
+
+        trait Logged { def log(msg: String): Unit }
+        trait LoggedException extends Logged {
+            this: Exception => // self type declaration
+            override def log(msg: String): Unit = log(getMessage)
+        }
+        // LoggedException can only be mixed into Exception
+
+        // if you require multiple types, use a compound type
+        // this: T1 with T2 with ... =>
+
+        // you can combine self type with  the 'alias for enclosing this'
+        // trait Group{ outer: Network =>
+        //      class Member ( ...
+        // this syntax introduces a great deal of confusion
+
+        // self types do not automatically inherit:
+        trait ManagedException extends LoggedException {
+            // you must to repeat the self type
+            this: Exception => ???
+        }
+
     }
 
     // dependency injection
