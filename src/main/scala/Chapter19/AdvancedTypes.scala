@@ -335,7 +335,31 @@ object AdvancedTypes {
 
     // dependency injection
     def dependencyInjection = {
-        ???
+        // cake pattern
+
+        // large system: different implementations for each component;
+        // need to assemble the component choices;
+        // mock/real database, console/file/etc logging, ...
+        // some dependency among the components: database(logging)
+
+        // java: spring, OSGi describes component interfaces it depends on,
+        // references to actual implementation are injected when app is assembled.
+
+        // scala: simple form of dependency injection using traits and self types
+
+        // not really good but very simple method: glue/mix-in actual classes
+        def traitsMixin = {
+            // assemble an app
+            trait Logger { def log(msg: String): Unit }
+            trait Auth { this: Logger => def login(id: String, secret: String): Boolean }
+            trait App { this: Logger with Auth => ??? }
+
+            object ComplexApp extends App with FileLogger with MockAuth { val logfname="test.log"; val dbfname="users.db" }
+
+            // using implementations
+            trait FileLogger extends Logger { def logfname: String; override def log(msg: String): Unit = ??? }
+            trait MockAuth extends Auth { this: Logger => def dbfname: String; override def login(id: String, secret: String): Boolean = ??? }
+        }
     }
 
     // abstract types
