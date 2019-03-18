@@ -2,6 +2,7 @@ package Chapter19
 
 import java.awt._
 import java.awt.geom._
+import java.awt.image.BufferedImage
 
 import javax.swing.JComponent
 
@@ -397,7 +398,47 @@ object AdvancedTypes {
 
     // abstract types
     def abstractTypes = {
-        ???
+        // useful replacement for type parameters while creating a class hierarchy
+
+        // class or trait can define an abstract type (with type bounds)
+
+        def abstracttypes = {
+            trait Reader {
+                type Contents // abstract
+                def read(fname: String): Contents
+            }
+            // concrete subclass needs to specify the type
+            class StringReader extends Reader {
+                type Contents = String
+                override def read(fname: String): String = ???
+            }
+            class ImageReader extends Reader {
+                type Contents = BufferedImage
+                override def read(fname: String): BufferedImage = ???
+            }
+        }
+
+        // the same effect could be achieved with a type parameter
+        trait Reader[C] { def read(fname: String): C }
+        class StringReader extends Reader[String] { override def read(fname: String): String = ??? }
+        class ImageReader extends Reader[BufferedImage] { override def read(fname: String): BufferedImage = ??? }
+
+        // which is better?
+        // - use type parameters when the types are supplied at the class instantiation;
+        // - use abstract types when building a class hierarchy;
+
+        // abstract types can work better when there are many type dependencies/type parameters;
+        // or you need to express subtle interdependencies between types
+
+        trait Listener {
+            class EventObject
+            type Event <: EventObject // can't be done with type parameters: bound is an inner class
+        }
+        trait ActionListener extends Listener {
+            class ActionEvent extends EventObject
+            type Event = ActionEvent
+        }
+
     }
 
     // family polymorphism

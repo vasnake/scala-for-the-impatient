@@ -112,3 +112,6 @@ Infix Types
 
 Cake Pattern
 : self types implementing dependency injection
+
+Abstract Types
+: useful replacement for type parameters while creating a class hierarchy
