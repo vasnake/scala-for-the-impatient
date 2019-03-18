@@ -445,7 +445,7 @@ object AdvancedTypes {
     // family polymorphism
     def familyPolymorphism = {
         // families of types that vary together;
-        // event handling for instance
+        // consider event handling for instance
 
         // generic types/type parameters example
 
@@ -476,7 +476,7 @@ object AdvancedTypes {
             }
         }
 
-        // button implementation
+        // button implementation could be:
         class ButtonEvent extends Event[Button]
         trait ButtonListener extends Listener[Button, ButtonEvent]
         class Button extends Source[Button, ButtonEvent, ButtonListener] {
@@ -485,7 +485,7 @@ object AdvancedTypes {
         // you can see the proliferation of the type parameters,
         // family polymorphism in action
 
-        // abstract types example (a little nicer);
+        // lets rewrite it with abstract types (a little nicer);
         // price to pay: you need to wrap declarations in top-level object/trait/class
 
         trait ListenerSupport {
@@ -511,6 +511,7 @@ object AdvancedTypes {
             trait ButtonListener extends Listener
             class Button extends Source { def click() = { fire(new ButtonEvent) } }
         }
+
         // button usage example:
         object Main {
             val b = new ButtonModule.Button
@@ -522,7 +523,71 @@ object AdvancedTypes {
 
     // higher-kinded types
     def higherKindedTypes = {
-        ???
+        // type that uses a type constructor to produce types
+        // (e.g. implementing generic 'map' method)
+
+        // consider: type List depends on type T (List[T]) and produces a type, say List[Int].
+        // List is a type constructor.
+
+        // where we may need to use a type constructor?
+        // 'map' function (what about functor?)
+        def problem = {
+
+            trait Iterable[E] {
+                def map[F](func: E => F): Iterable[F]
+            }
+            // if you want a generic implementation, you want to construct concrete Iterable[F] in this trait,
+            // but you can't
+
+            class Buffer[E] extends Iterable[E] {
+                def map[F](f: E => F): Buffer[F] = ??? // you need to produce Buffer[F] in Iterable trait, do you?
+            }
+        }
+
+        // unless you add another type parameter: type constructor:
+        def add_type_constructor = {
+
+            trait Iterable[E, C[_]] { // iterable depends on a type constructor: Iterable is a higher-kinded type
+                def build[F](): C[F] = ???
+                def map[F](f: E => F): C[F] = ???
+            }
+        }
+
+        // to use a constructed type we need to know that it can be an appendable container
+        def add_container = {
+            // typical use of a higher-kinded types: an iterator depends on Container,
+            // container is a mechanism for making types (type constructor)
+
+            trait Container[E] { def +=(e: E): Unit = ??? }
+
+            trait Iterable[E, C[F] <: Container[F]] { // type constructor bound to be a Container
+                def build[F](): C[F] = ???              // result is a container, appendable
+                def map[F](f: E => F): C[F] = {       // build, then append
+                    val res = build[F]()
+                    // res += f(iter.next())
+                    res }
+            }
+
+            // generic higher-kinded type Iterable can be used in collections lib:
+
+            // range is an iterable but not a container, can't append;
+            // 'map' produce not a range but buffer
+            class Range(low: Int, high: Int) extends Iterable[Int, Buffer] {
+                override def build[F]() = new Buffer[F]
+            }
+
+            // buffer is an iterable and container
+            class Buffer[E] extends Iterable[E, Buffer] with Container[E] {
+                override def build[F]() = new Buffer[F]
+                override def +=(e: E) = ???
+            }
+
+        }
+
+        // scala in collections lib uses an implicit parameter to conjure up an object
+        // for building the target collection
+
+        // import scala.language.higherKinds
     }
 
 }
