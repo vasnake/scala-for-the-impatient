@@ -1,6 +1,7 @@
 package Chapter19
 
 import java.awt._
+import java.awt.event.ActionEvent
 import java.awt.geom._
 import java.awt.image.BufferedImage
 
@@ -443,7 +444,80 @@ object AdvancedTypes {
 
     // family polymorphism
     def familyPolymorphism = {
-        ???
+        // families of types that vary together;
+        // event handling for instance
+
+        // generic types/type parameters example
+
+        def firstApproach = {
+            trait Listener[Event] { def occured(e: Event): Unit }
+            trait Source[Event, L <: Listener[Event]] {
+                private val listeners = new mutable.ArrayBuffer[L]
+                // def add, remove
+                def fire(e: Event) = { for (x <- listeners) x.occured(e) }
+            }
+
+            // consider a button with action events, good enough
+            trait ActionListener extends Listener[ActionEvent]
+            class Button extends Source[ActionEvent, ActionListener] {
+                // but, ActionEvent source is Object, not a type-safe
+                def click() = { fire(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "click")) }
+            }
+        }
+
+        // type-safe version
+        trait Event[S] { var source: S = _ }
+        trait Listener[S, E <: Event[S]] { def occured(e: E): Unit }
+        trait Source[S, E <: Event[S], L <: Listener[S, E]] { this: S => // self type for source
+            private val listeners = new mutable.ArrayBuffer[L]
+            def fire(e: E) = {
+                e.source = this // type-safe event source
+                for (x <- listeners) x.occured(e)
+            }
+        }
+
+        // button implementation
+        class ButtonEvent extends Event[Button]
+        trait ButtonListener extends Listener[Button, ButtonEvent]
+        class Button extends Source[Button, ButtonEvent, ButtonListener] {
+            def click() = fire(new ButtonEvent)
+        }
+        // you can see the proliferation of the type parameters,
+        // family polymorphism in action
+
+        // abstract types example (a little nicer);
+        // price to pay: you need to wrap declarations in top-level object/trait/class
+
+        trait ListenerSupport {
+            type E <: Event
+            type L <: Listener
+            type S <: Source
+
+            trait Event { var source: S = _ }
+            trait Listener { def occured(e: E): Unit }
+            trait Source { this: S =>
+                private val listeners = new mutable.ArrayBuffer[L]
+                def fire(e: E) = { e.source = this; for (x <- listeners) x.occured(e) }
+            }
+        }
+
+        // button implementation
+        object ButtonModule extends ListenerSupport {
+            type E = ButtonEvent
+            type L = ButtonListener
+            type S = Button
+
+            class ButtonEvent extends Event
+            trait ButtonListener extends Listener
+            class Button extends Source { def click() = { fire(new ButtonEvent) } }
+        }
+        // button usage example:
+        object Main {
+            val b = new ButtonModule.Button
+            // b.add(new ButtonListener { def occured(e: ButtonEvent) = ??? }
+            b.click()
+        }
+
     }
 
     // higher-kinded types
