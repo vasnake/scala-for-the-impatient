@@ -526,6 +526,8 @@ object AdvancedTypes {
         // type that uses a type constructor to produce types
         // (e.g. implementing generic 'map' method)
 
+        // import scala.language.higherKinds
+
         // consider: type List depends on type T (List[T]) and produces a type, say List[Int].
         // List is a type constructor.
 
@@ -587,21 +589,32 @@ object AdvancedTypes {
         // scala in collections lib uses an implicit parameter to conjure up an object
         // for building the target collection
 
-        // import scala.language.higherKinds
     }
 
 }
 
 object AdvancedTypes_Exercises {
 
-    // 1. Implement a Bug class modeling a bug that moves along a horizontal line. The move method
-    //moves in the current direction, the turn method makes the bug turn around, and the show
-    //method prints the current position. Make these methods chainable. For example,
-    //Click here to view code image
-    //bugsy.move(4).show().move(6).show().turn().move(5).show()
-    //should display 4 10 5.
+    // 1. Implement a Bug class modeling a bug that moves along a horizontal line.
+    // The 'move' method moves in the current direction,
+    // the 'turn' method makes the bug turn around,
+    // and the 'show' method prints the current position.
+    // Make these methods chainable.
+    // For example,
+    //      bugsy.move(4).show().move(6).show().turn().move(5).show()
+    // should display '4 10 5'
     def ex1 = {
-        ???
+        class Bug {
+            private var position: Int = 0
+            private var direction: Int = 1
+            def move(steps: Int): this.type = { position += steps * direction; this }
+            def turn(): this.type = { direction *= -1; this }
+            def show(): this.type = { println(position); this }
+        }
+
+        // test
+        val bugsy = new Bug
+        bugsy.move(4).show().move(6).show().turn().move(5).show()
     }
 
     // 2. Provide a fluent interface for the Bug class of the preceding exercise, so that one can write
