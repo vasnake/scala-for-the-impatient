@@ -617,11 +617,43 @@ object AdvancedTypes_Exercises {
         bugsy.move(4).show().move(6).show().turn().move(5).show()
     }
 
-    // 2. Provide a fluent interface for the Bug class of the preceding exercise, so that one can write
-    //Click here to view code image
-    //bugsy move 4 and show and then move 6 and show turn around move 5 and show
+    // 2. Provide a fluent interface for the Bug class of the preceding exercise,
+    // so that one can write
+    //      bugsy move 4 and show and then move 6 and show turn around move 5 and show
     def ex2 = {
-        ???
+        // compiler unhappy when I define classes inside method
+        import ex2_classes._
+
+        // test: scala> Chapter19.AdvancedTypes_Exercises.ex2
+        import BugCmd._
+        val bugsy = new Bug with Fluent
+        bugsy move 4 and show and next move 6 and show turn around move 5 and show // 4 10 5
+        // bugsy.move(4).and(show).and(next).move(6).and(show).turn(around).move(5).and(show)
+    }
+
+    object ex2_classes {
+        class Bug {
+            private var position: Int = 0
+            private var direction: Int = 1
+            def move(steps: Int): this.type = { position += steps * direction; this }
+            def turn(): this.type = { direction *= -1; this }
+            def show(): this.type = { println(position); this }
+        }
+
+        object BugCmd { // extra namespace because 'show' doubling
+            class Command
+            object show extends Command
+            object next extends Command
+            object around extends Command
+        }
+
+        trait Fluent { this: Bug =>
+            def turn(dir: BugCmd.around.type): this.type = { turn(); this }
+            def and(cmd: BugCmd.Command): this.type = cmd match {
+                case a: BugCmd.show.type => this.show()
+                case b: BugCmd.next.type => this
+            }
+        }
     }
 
     // 3. Complete the fluent interface in Section 19.1, “Singleton Types,” on page 280 so that one can
