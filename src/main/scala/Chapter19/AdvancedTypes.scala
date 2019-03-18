@@ -349,17 +349,50 @@ object AdvancedTypes {
 
         // not really good but very simple method: glue/mix-in actual classes
         def traitsMixin = {
-            // assemble an app
+            // define components using self types
             trait Logger { def log(msg: String): Unit }
             trait Auth { this: Logger => def login(id: String, secret: String): Boolean }
             trait App { this: Logger with Auth => ??? }
 
-            object ComplexApp extends App with FileLogger with MockAuth { val logfname="test.log"; val dbfname="users.db" }
-
-            // using implementations
+            // some implementations
             trait FileLogger extends Logger { def logfname: String; override def log(msg: String): Unit = ??? }
             trait MockAuth extends Auth { this: Logger => def dbfname: String; override def login(id: String, secret: String): Boolean = ??? }
+
+            // assemble an app
+            object ComplexApp extends App with FileLogger with MockAuth { val logfname="test.log"; val dbfname="users.db" }
+
+            // app really isn't an authenticator and a logger, not very clever solution.
+            // but simple
         }
+
+        // more natural to use instance variables for the components;
+        // cake pattern:
+        // supply a component trait for each service, containing:
+        // - dependent components expressed as self types;
+        // - a trait describing the service interface;
+        // - an abstract 'val' instantiated with a concrete service;
+        // - implementations of the service interface (optionally)
+
+        trait LoggerComponent { // no self type: not depend on anything
+            trait Logger { ??? }                                    // interface
+            val logger: Logger                                      // instance
+            class FileLogger(fname: String) extends Logger { ??? }  // implementation
+        }
+
+        trait AuthComponent { this: LoggerComponent =>  // self type, depend on logger
+            trait Auth { ??? }                          // interface
+            val auth: Auth                              // instance
+            class MockAuth(fname: String) extends Auth { ??? }  // implementation
+        }
+
+        // assemble an app, configure components
+        object AppComponent extends LoggerComponent with AuthComponent {
+            val logger = new FileLogger("test.log")
+            val auth = new MockAuth("users.db")
+        }
+
+        // either approach is better than some config magic with XML:
+        // compiler can verify the module dependencies are satisfied
     }
 
     // abstract types
