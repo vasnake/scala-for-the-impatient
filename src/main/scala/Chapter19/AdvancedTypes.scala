@@ -682,11 +682,43 @@ object AdvancedTypes_Exercises {
         // book.set(Title).to("Scala for the Impatient").set(Author).to("Cay Horstmann")
     }
 
-    // 4. Implement the equals method for the Member class that is nested inside the Network class
-    //in Section 19.2, “Type Projections,” on page 281. For two members to be equal, they need to be
-    //in the same network.
+    // 4. Implement the 'equals' method for the Member class that is nested inside the Network class
+    // in Section 19.2, “Type Projections,” on page 281.
+    // For two members to be equal, they need to be in the same network.
     def ex4 = {
-        ???
+        // you can save fine-grained classes, using 'type projection'
+        // Network#Member, which means 'a member of any network'.
+        // n.b. you can't import a type projection, it's not a path
+
+        class Network { outer =>
+
+            class Member(val name: String) {
+                val contacts = new mutable.ArrayBuffer[Network#Member]
+
+                override def equals(other: Any): Boolean = other match {
+                    case that: outer.Member => name == that.name && contacts == that.contacts
+                    case _ => false
+                }
+                final override def hashCode(): Int = (name, contacts.mkString).## // ## method is null-safe: yields 0 for null
+                override def toString: String = s"Member($name) with contacts: ${contacts.map(_.name).mkString(",")}"
+            }
+
+            private val members = new mutable.ArrayBuffer[Member]
+            def join(name: String): Member = { members += new Member(name); members.last }
+        }
+
+        // test
+        val chatter = new Network
+        val myface = new Network
+
+        val fred =         chatter.join("Fred")
+        val anotherFred =  chatter.join("Fred")
+        val barney =        myface.join("Fred")
+        // works just fine:
+        //fred.contacts.append(barney)
+
+        assert(fred == anotherFred)
+        assert(barney != fred)
     }
 
     // 5. Consider the type alias
