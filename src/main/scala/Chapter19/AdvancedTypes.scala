@@ -274,7 +274,7 @@ object AdvancedTypes {
         type H = n.Member forSome { val n: Network }
 
         // process only members from same network
-        def process[M <: H](m1: M, m2: M) = (m1, m2)
+        def process[M <: n.Member forSome { val n: Network }](m1: M, m2: M) = (m1, m2)
         // test
         val chatter = new Network
         val myface = new Network
@@ -696,8 +696,8 @@ object AdvancedTypes_Exercises {
                 val contacts = new mutable.ArrayBuffer[Network#Member]
 
                 override def equals(other: Any): Boolean = other match {
-                    case that: outer.Member => name == that.name && contacts == that.contacts
-                    case _ => false
+                    case that: outer.Member => { name == that.name && contacts == that.contacts }
+                    case _ => { println("wrong type"); false }
                 }
                 final override def hashCode(): Int = (name, contacts.mkString).## // ## method is null-safe: yields 0 for null
                 override def toString: String = s"Member($name) with contacts: ${contacts.map(_.name).mkString(",")}"
@@ -714,23 +714,44 @@ object AdvancedTypes_Exercises {
         val fred =         chatter.join("Fred")
         val anotherFred =  chatter.join("Fred")
         val barney =        myface.join("Fred")
-        // works just fine:
-        //fred.contacts.append(barney)
+        // possible to add contacts from another network
+        fred.contacts.append(barney)
+        anotherFred.contacts.append(barney)
 
         assert(fred == anotherFred)
         assert(barney != fred)
     }
 
     // 5. Consider the type alias
-    //Click here to view code image
-    //type NetworkMember = n.Member forSome { val n: Network }
-    //and the function
-    //Click here to view code image
-    //def process(m1: NetworkMember, m2: NetworkMember) = (m1, m2)
-    //How does this differ from the process function in Section 19.8, “Existential Types,” on page
-    //286?
+    //      type NetworkMember = n.Member forSome { val n: Network }
+    // and the function
+    //      def process(m1: NetworkMember, m2: NetworkMember) = (m1, m2)
+    // How does this differ from the 'process' function in
+    // Section 19.8, “Existential Types,” on page 286?
     def ex5 = {
-        ???
+        class Network { class Member { } }
+
+        // Section 19.8, “Existential Types,” on page 286
+        def process[M <: n.Member forSome { val n: Network }](m1: M, m2: M) = (m1, m2)
+        // allow processing members only from the same network
+
+        // ex5 func
+        type NetworkMember = n.Member forSome { val n: Network }
+        def processEx5(m1: NetworkMember, m2: NetworkMember) = (m1, m2)
+        // allow processing members from different networks
+
+        // test
+        val n1 = new Network
+        val n2 = new Network
+        val n1m1 = new n1.Member
+        val n1m2 = new n1.Member
+        val n2m1 = new n2.Member
+
+        val p1 = process(n1m1, n1m2)
+        // val p2 = process(n1m1, n2m1) // compiler error: inferred type arguments [Network#Member] do not conform to method process's type parameter bounds [M <: n.Member forSome { val n: Network }]
+
+        val p2 = processEx5(n1m1, n1m2)
+        val p3 = processEx5(n1m1, n2m1) // ok
     }
 
     // 6. The Either type in the Scala library can be used for algorithms that return either a result or
