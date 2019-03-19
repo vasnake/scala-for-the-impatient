@@ -656,12 +656,30 @@ object AdvancedTypes_Exercises {
         }
     }
 
-    // 3. Complete the fluent interface in Section 19.1, “Singleton Types,” on page 280 so that one can
-    //call
-    //Click here to view code image
-    //book set Title to "Scala for the Impatient" set Author to "Cay Horstmann"
+    // 3. Complete the fluent interface in Section 19.1, “Singleton Types,” on page 280
+    // so that one can call
+    //      book set Title to "Scala for the Impatient" set Author to "Cay Horstmann"
     def ex3 = {
-        ???
+        class Property
+        object Title extends Property
+        object Author extends Property
+
+        class Document {
+            private var useNextArgAs: Any = _
+
+            def set(obj: Property): this.type = { useNextArgAs = obj; this }
+
+            def to(x: String): this.type = { useNextArgAs match {
+                case a: Title.type => println(s"set title to '${x}'")
+                case b: Author.type => println(s"set author to '${x}'")
+                case _ => sys.error(s"unknown property ${useNextArgAs}")
+            }; this }
+        }
+
+        // test
+        val book = new Document
+        book set Title to "Scala for the Impatient" set Author to "Cay Horstmann"
+        // book.set(Title).to("Scala for the Impatient").set(Author).to("Cay Horstmann")
     }
 
     // 4. Implement the equals method for the Member class that is nested inside the Network class
