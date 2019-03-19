@@ -754,12 +754,30 @@ object AdvancedTypes_Exercises {
         val p3 = processEx5(n1m1, n2m1) // ok
     }
 
-    // 6. The Either type in the Scala library can be used for algorithms that return either a result or
-    //some failure information. Write a function that takes two parameters: a sorted array of integers
-    //and an integer value. Return either the index of the value in the array or the index of the element
-    //that is closest to the value. Use an infix type as the return type.
+    // 6. The Either type in the Scala library can be used for algorithms
+    // that return either a result or some failure information.
+    // Write a function that takes two parameters:
+    // a sorted array of integers and an integer value.
+    // Return either the index of the value in the array or
+    // the index of the element that is closest to the value.
+    // Use an infix type as the return type.
     def ex6 = {
-        ???
+        type SearchResult = Int Either Int
+
+        def findIndex(arr: Array[Int], value: Int): SearchResult = {
+            // probably should iterate over arr checking the iteration state:
+            // (distance to prev.value, dist. to curr. value, curr idx)
+            val res = arr.zipWithIndex.map { case (n, idx) => (math.abs(n - value), idx) }
+            val nearest = res.sortBy(_._1).apply(0)
+            if (nearest._1 == 0) Right(nearest._2)
+            else Left(nearest._2)
+        }
+
+        // test
+        val arr = Array(1,2,3)
+        assert(findIndex(arr, 2).right.get == 1)
+        assert(findIndex(arr, 4).left.get == 2)
+        findIndex(arr, 0)
     }
 
     // 7. Implement a method that receives an object of any class that has a method
