@@ -802,14 +802,25 @@ object AdvancedTypes_Exercises {
         process(obj, x => println(s"processing object ${x}"))
     }
 
-    // 8. Write a function printValues with three parameters f, from, to that prints all values of f
-    //with inputs from the given range. Here, f should be any object with an apply method that
-    //consumes and yields an Int. For example,
-    //Click here to view code image
-    //printValues((x: Int) => x * x, 3, 6) // Prints 9 16 25 36
-    //printValues(Array(1, 1, 2, 3, 5, 8, 13, 21, 34, 55), 3, 6) // Prints 3 5 8 13
+    // 8. Write a function 'printValues' with three parameters
+    // f, from, to
+    // that prints all values of 'f' with inputs from the given range.
+    // Here, 'f' should be any object with an apply method that consumes and yields an Int.
+    // For example,
+    //      printValues((x: Int) => x * x, 3, 6) // Prints 9 16 25 36
+    //      printValues(Array(1, 1, 2, 3, 5, 8, 13, 21, 34, 55), 3, 6) // Prints 3 5 8 13
     def ex8 = {
-        ???
+        // probably, he meant Function1[Int, Int], not 'object with an apply'
+
+        // def printValues(f: { def apply(x: Int): Int }, from: Int, to: Int): Unit = {
+        def printValues(f: Int => Int, from: Int, to: Int): Unit = {
+            val res = for (i <- from to `to`) yield f(i)
+            println(res.mkString(" "))
+        }
+
+        // test
+        printValues((x: Int) => x * x, 3, 6) // Prints 9 16 25 36
+        printValues(Array(1, 1, 2, 3, 5, 8, 13, 21, 34, 55), 3, 6) // Prints 3 5 8 13
     }
 
     // 9. Consider this class that models a physical dimension:
