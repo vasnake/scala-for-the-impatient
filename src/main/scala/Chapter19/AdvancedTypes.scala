@@ -8,6 +8,7 @@ import java.awt.image.BufferedImage
 import javax.swing.JComponent
 
 import scala.collection.mutable
+import scala.util.Try
 
 object AdvancedTypes {
 // topics:
@@ -765,7 +766,8 @@ object AdvancedTypes_Exercises {
         type SearchResult = Int Either Int
 
         def findIndex(arr: Array[Int], value: Int): SearchResult = {
-            // probably should iterate over arr checking the iteration state:
+            // probably should apply binary search or
+            // iterate over arr checking the iteration state:
             // (distance to prev.value, dist. to curr. value, curr idx)
             val res = arr.zipWithIndex.map { case (n, idx) => (math.abs(n - value), idx) }
             val nearest = res.sortBy(_._1).apply(0)
@@ -781,11 +783,23 @@ object AdvancedTypes_Exercises {
     }
 
     // 7. Implement a method that receives an object of any class that has a method
-    //def close(): Unit
-    //together with a function that processes that object. Call the function and invoke the close
-    //method upon completion, or when any exception occurs.
+    //      def close(): Unit
+    // together with a function that processes that object.
+    // Call the function and invoke the 'close' method upon completion, or when any exception occurs.
     def ex7 = {
-        ???
+
+        // compound type // structural type
+        type Closable = { def close(): Unit }
+
+        def process[A <: Closable, R](obj: A, func: Closable => R): Option[R] = {
+            val res = Try(func(obj))
+            obj.close()
+            res.toOption
+        }
+
+        // test
+        val obj = new AnyRef { def close(): Unit = println(s"closing object ${this}") }
+        process(obj, x => println(s"processing object ${x}"))
     }
 
     // 8. Write a function printValues with three parameters f, from, to that prints all values of f
