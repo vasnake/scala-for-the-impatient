@@ -26,3 +26,6 @@ https://www.google.ru/search?q=scala+for+the+impatient+2nd+edition+cay+horstmann
 16. [XML Processing](/src/main/scala/Chapter16/XMLProcessing.scala)
 17. [Futures](/src/main/scala/Chapter17/Futures.scala)
 18. [Type Parameters](/src/main/scala/Chapter18/TypeParameters.scala)
+19. [Advanced Types](/src/main/scala/Chapter19/AdvancedTypes.scala)
+20. [Parsing](/src/main/scala/Chapter20/Parsing.scala)
+21. [Implicits](/src/main/scala/Chapter21/Implicits.scala)
