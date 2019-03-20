@@ -16,6 +16,17 @@ object Parsing {
     // token-based parsers
     // error handling
 
+    // https://www.scala-lang.org/files/archive/api/current/scala-parser-combinators/index.html
+    // parser combinators library helps you analyze texts with fixed structure (json, for example);
+    // basic concepts of grammars and parsers;
+    // good example of Domain-Specific Language;
+    // RegexParser, literal strings and regular expressions match tokens;
+    // 'repsep' combinator, repeated items with a separator;
+    // token-based parser for languages with reserved words;
+    // parsers are functions reader => result;
+    // you need a robust error reporting;
+    // parser combinator library useful with a context-free grammars;
+
     // grammars
     def grammars = {
         ???
