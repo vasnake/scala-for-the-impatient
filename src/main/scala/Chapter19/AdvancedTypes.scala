@@ -861,11 +861,67 @@ object AdvancedTypes_Exercises {
 
     }
 
-    // 10. Self types can usually be replaced with traits that extend classes, but there can be situations
-    //where using self types changes the initialization and override orders. Construct such an
-    //example.
+    // 10. Self types can usually be replaced with traits that extend classes,
+    // but there can be situations where using self types changes the
+    // initialization and override orders.
+    // Construct such an example.
     def ex10 = {
-        ???
+        def traitConstructionOrder = {
+
+            // constructors execution order:
+            //  superclass
+            //  traits left-to-right
+            //  within each trait, parents constructed first (each parent only once)
+            //  subclass
+
+            // e.g.
+            // class SavingsAccount extends Account with FileLogger with ShortLogger
+            //  Account as superclass
+            //  Logger as parent of FileLogger
+            //  FileLogger
+            //  ShortLogger w/o Logger
+            //  SavingsAccount
+
+            // constructor ordering is the _reverse_ of the linearization
+
+            // linearization of the class: tech spec of all superclasses, defined by rule:
+            // if C extends C1 with C2 with ... Cn,
+            // then lin(C) = C >> lin(Cn) >> ... >> lin(C2) >> lin(C1)
+            // where '>>' means "concatenate and remove duplicates, with the right winning out"
+            // e.g. lin(SavingsAccount)
+            //  = SavingsAccount >> lin(ShortLogger) >> lin(FileLogger) >> lin(Account)
+            //  = SavingsAcount >> (ShortLogger >> Logger) >> (FileLogger >> Logger) >> Account
+            //  = SavingsAcount >> ShortLogger >> FileLogger >> Logger >> Account
+
+            // linearization gives the order (left-to-right) in which 'super' is resolved in a _trait_
+
+        }
+
+        // no traits, self type
+        abstract class Dim[T](val value: Double, val name: String) { this: T =>
+            protected def create(v: Double): T
+            override def toString: String = s"$value $name"
+        }
+
+        // lin(Seconds) = Seconds >> lin(Dim)
+        // construction order: Dim(value=v, name=s), Seconds
+        class Seconds(v: Double) extends Dim[Seconds](v, "s") {
+            override def create(v: Double) = new Seconds(v)
+        }
+
+        // traits, no self type
+        trait TDim[T] {
+            def value: Double
+            def name: String
+            def create(v: Double): T
+            override def toString: String = s"$value $name"
+        }
+
+        // lin(Seconds) = Seconds >> lin(Dim)
+        // construction order: Dim(), Seconds(value, name=s)
+        class TSeconds(val value: Double, val name: String = "s") extends TDim[TSeconds] {
+            override def create(v: Double): TSeconds = new TSeconds(v, name)
+        }
     }
 
 }
