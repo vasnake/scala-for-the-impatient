@@ -267,7 +267,28 @@ object Parsing {
 
     // more combinators
     def moreCombinators = {
-        ???
+        // https://www.scala-lang.org/files/archive/api/current/scala-parser-combinators/scala/util/parsing/combinator/Parsers.html#rep[T](p:=%3EParsers.this.Parser[T]):Parsers.this.Parser[List[T]]
+
+        // rep: 0..n repetitions
+        // repsep
+        // rep1
+        // repN
+        // chainl1
+
+        // def numberList = number ~ rep("," ~> number)
+        // def numberList = repsep(number, ",")
+
+        // into or >> : store to a variable
+        // p ^^^ v: for parsing literals "true" ^^^ true
+        // p ^? f : partial function f
+        // log(p)(str)
+        // guard(p) : useful for looking ahead
+
+        // def term = factor ~ rep("*" ~> factor)
+        // def term = factor into { first => rep("*" ~> factor) ^^ { first * _.product }
+
+        // def factor = log(number)("number") ^^ { _.toInt } ...
+
     }
 
     // avoiding backtracking
