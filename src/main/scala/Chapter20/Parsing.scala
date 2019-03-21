@@ -458,7 +458,26 @@ object Parsing {
 
     // error handling
     def errorHandling = {
-        ???
+        // you want a message indicating where the failure occured;
+
+        // the parser reported the last visited failure point;
+        // e.g. in rule
+        // def value = numericLit | "true" | "false"
+        // input failed to match "false" will be reported, if none is matched;
+
+        // you can add explicit failure
+        // def value = numericLit | "true" | "false" | failure("not a valid value")
+        // or
+        // def value = opt(sign) ~ digits withFailureMessage "not a valid number"
+
+        // when the parser fails, parseAll returns Failure result with 'msg' property;
+        // 'next' property: Reader pointer to unconsumed input;
+        // next.pos.line, next.pos.column: failed position;
+        // next.first : lexical element of failure, Char for RegexParsers;
+
+        // you can add 'positioned' combinator to save positions to a parse result
+        // def vardecl = "var" ~ positioned(ident ^^ { Ident(_)}) ~ "=" ~ value
+
     }
 }
 
