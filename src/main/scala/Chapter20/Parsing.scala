@@ -169,7 +169,41 @@ object Parsing {
 
     // generating parse trees
     def generatingParseTrees = {
-        ???
+        // to build a compiler or interpreter you want to build up a parse tree
+
+        // done with case classes usually
+        class Expr
+        case class Number(value: Int) extends Expr
+        case class Operator(op: String, left: Expr, right: Expr) extends Expr
+        // parser should transform "3+4*5" into
+        // Operator("+", Number(3), Operator("*", Number(4), Number(5)))
+
+        class ExprParser extends RegexParsers {
+            val number = "[0-9]+".r
+
+            def term: Parser[Expr] =                             // replaced rep/list with option. why?
+                factor ~ opt("*" ~> factor) ^^ {
+                    case a ~ None => a
+                    case a ~ Some(b) => Operator("*", a, b)
+                }
+
+            def factor: Parser[Expr] =                           // number or (expr)
+                number ^^ { n => Number(n.toInt) } |
+                    "(" ~> expr <~ ")"
+
+            def expr: Parser[Expr] =                             // term with optional (op expr)
+                term ~ opt(("+" | "-") ~ expr) ^^ {
+                    case t ~ None => t
+                    case a ~ Some("+" ~ b) => Operator("+", a, b)
+                    case a ~ Some("-" ~ b) => Operator("-", a, b)
+                }
+        }
+
+        val parser = new ExprParser
+        val result = parser.parseAll(parser.expr, "3-4*5")
+        println(result.get)
+        // ParseResult[Expr] = [1.6] parsed: Operator(-,Number(3),Operator(*,Number(4),Number(5)))
+
     }
 
     // avoiding left recursion
