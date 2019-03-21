@@ -122,12 +122,49 @@ object Parsing {
                 }
         }
 
+        val parser = new ExprParser
+        val result = parser.parseAll(parser.expr, "3-4*5")
+        println(result.get)
+        // ParseResult[Int] = [1.6] parsed: -17
+
         // compute the parsing tree: see below
     }
 
     // discarding tokens
     def discardingTokens = {
-        ???
+        // to do the match and then discard the token, use '~>', '<~' operators;
+
+        // <~ has a lower precedence than ~ and ~>
+        // e.g.: "if" ~> "(" ~> expr <~ ")" ~ expr
+        // this discards subexpr (")" ~ expr), not just ")"
+        // correct version would be
+        // "if" ~> "(" ~> (expr <~ ")") ~ expr
+
+        class ExprParser extends RegexParsers {
+            val number = "[0-9]+".r
+
+            def term: Parser[Int] =                             // factor with optional many (* factor)
+                factor ~ rep("*" ~> factor) ^^ {
+                    case f ~ lst => f * lst.product             // rep("*" ~> factor) become a list of factors, no "*" tokens
+                }
+
+            def factor: Parser[Int] =                           // number or (expr)
+                number ^^ { _.toInt } |                         // apply toInt to number.result
+                    "(" ~> expr <~ ")"                          // drop parenthesis before forming op.result
+
+            def expr: Parser[Int] =                             // term with optional (op expr)
+                term ~ opt(("+" | "-") ~ expr) ^^ {
+                    case t ~ None => t
+                    case t ~ Some("+" ~ e) => t + e
+                    case t ~ Some("-" ~ e) => t - e
+                }
+        }
+
+        val parser = new ExprParser
+        val result = parser.parseAll(parser.expr, "3-4*5")
+        println(result.get)
+        // ParseResult[Int] = [1.6] parsed: -17
+
     }
 
     // generating parse trees
