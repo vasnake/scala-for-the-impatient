@@ -77,8 +77,8 @@ object Parsing {
         // - match a token
         // - ops alternative (|) // first op or second op or Failure/Error
         // - sequence of ops (~) // ~ case class, similar to a pair
-        // - repeat an op (rep)  // List
-        // - optional op (opt)   // Option class
+        // - repeat an op (rep)  // List            // postfix '*'
+        // - optional op (opt)   // Option class    // postfix '?'
 
         // e.g. simple arithmetic expressions parser
         class ExprParser extends RegexParsers {
@@ -87,6 +87,7 @@ object Parsing {
             def term: Parser[Any] = factor ~ rep("*" ~ factor)      // term ::= factor ( "*" factor )*
             def factor: Parser[Any] = number | "(" ~ expr ~ ")"     // factor ::= number | "(" expr ")"
         }
+
         val parser = new ExprParser
         val result = parser.parseAll(parser.expr, "3-4*5")
         println(result.get)
@@ -96,7 +97,32 @@ object Parsing {
 
     // transforming parsing results
     def transformingParsingResults = {
-        ???
+        // you should transform intermediate outputs to a useful form, value or tree.
+
+        // ^^ combinator precedence lower than ~ and higher than |
+
+        // compute the value of an expression
+        class ExprParser extends RegexParsers {
+            val number = "[0-9]+".r
+
+            def factor: Parser[Int] =                           // number or (expr)
+                number ^^ { _.toInt } |                         // apply toInt to number.result
+                "(" ~ expr ~ ")" ^^ { case _ ~ e ~ _ => e }     // drop parenthesis
+
+            def expr: Parser[Int] =                             // term with optional (op expr)
+                term ~ opt(("+" | "-") ~ expr) ^^ {
+                    case t ~ None => t
+                    case t ~ Some("+" ~ e) => t + e
+                    case t ~ Some("-" ~ e) => t - e
+                }
+
+            def term: Parser[Int] =                             // factor with optional many (* factor)
+                factor ~ rep("*" ~ factor) ^^ {
+                    case f ~ lst => f * lst.map(_._2).product
+                }
+        }
+
+        // compute the parsing tree: see below
     }
 
     // discarding tokens
