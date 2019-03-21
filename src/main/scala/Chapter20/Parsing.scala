@@ -293,7 +293,39 @@ object Parsing {
 
     // avoiding backtracking
     def avoidingBacktracking = {
-        ???
+        // backtracking: processing (p | q) if p fails, the parser tries q on the same input.
+        // also happens when there is a failure in an 'opt' or 'rep';
+
+        // backtracking can be inefficient
+
+        // consider (3+4)*5 parsing with rules:
+        // def expr = term ~ ("+" | "-") ~ expr | term
+        // def term = factor ~ "*" ~ term | factor
+        // def factor = "(" ~ expr ~ ")" | number
+
+        // while parsing expr ( term ~ ("+" | "-") ~ expr | term )
+        // term matches the entire input, then match for +/- fails and the
+        // compiler backtracks to the second alternative, parsing term again
+
+        // it is often possible to rearrange the grammar rules to avoid backtracking
+        // def expr = term ~ opt(("+" | "-") ~ expr)
+        // def term = factor ~ rep("*" ~ factor)
+        // def factor = "(" ~ expr ~ ")" | number
+
+        // then you can use the '~!' operator to express that there is no need to backtrack
+        class ExprParser extends RegexParsers {
+            val number = "[0-9]+".r
+
+            def expr: Parser[Any] = term ~ opt(("+" | "-") ~! expr) // always should be expr after +/-
+            def term: Parser[Any] = factor ~ rep("*" ~! factor)     // always a factor after *
+            def factor: Parser[Any] = "(" ~! expr ~! ")" | number   // always an expr inside parenthesis
+        }
+
+        val parser = new ExprParser
+        val result = parser.parseAll(parser.expr, "(3+4)-5")
+        println(result.get)
+        // ParseResult[Any] = [1.8] parsed: (((((~((3~List())~Some((+~((4~List())~None)))))~))~List())~Some((-~((5~List())~None))))
+
     }
 
     // packrat parsers
