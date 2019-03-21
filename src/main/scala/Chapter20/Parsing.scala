@@ -1,6 +1,7 @@
 package Chapter20
 
-import scala.util.parsing.combinator.RegexParsers
+import scala.util.parsing.combinator.{PackratParsers, RegexParsers}
+import scala.util.parsing.input.CharSequenceReader
 
 object Parsing {
 // topics:
@@ -330,7 +331,30 @@ object Parsing {
 
     // packrat parsers
     def packratParsers = {
-        ???
+        // parsing algorithm that caches previous parse results.
+
+        // advantages:
+        // - parse time is guaranteed to be proportional to the length of the input;
+        // - the parser can accept left-recursive grammars;
+
+        // to use packrat parser:
+        // mix in PackratParsers into your parser;
+        // use val/lazy val for parser functions;
+        // parser functions return : PackratParser[T];
+        // use a PackratReader and supply a parseAll method;
+
+        class OnesPackratParser extends RegexParsers with PackratParsers {
+            lazy val ones: PackratParser[Any] = ones ~ "1" | "1"
+
+            def parseAll[T](p: Parser[T], in: String): ParseResult[T] =
+                phrase(p)(new PackratReader(new CharSequenceReader(in)))
+        }
+
+        val parser = new OnesPackratParser
+        val result = parser.parseAll(parser.ones, "111")
+        println(result.get)
+        // ParseResult[Any] = [1.4] parsed: ((1~1)~1)
+
     }
 
     // what exactly are parsers
