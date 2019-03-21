@@ -17,6 +17,7 @@ object Parsing {
     // error handling
 
     // https://www.scala-lang.org/files/archive/api/current/scala-parser-combinators/index.html
+
     // parser combinators library helps you analyze texts with fixed structure (json, for example);
     // basic concepts of grammars and parsers;
     // good example of Domain-Specific Language;
@@ -29,7 +30,42 @@ object Parsing {
 
     // grammars
     def grammars = {
-        ???
+        // a few concepts from the theory of formal languages;
+        // a grammar: set of rules for producing all strings in a particular format;
+
+        // e.g. arithmetic expression rules:
+        // - whole number is an expression;
+        // - '+', '-', '*' are operators;
+        // - 'left op right' is an expression if left, right are expressions and op is an operator;
+        // - '( expr )' is an expression;
+
+        // BNF
+        // a grammar is written in a notation: Backus-Naur Form, arithmetic expression rules:
+        // op ::= "+" | "-" | "*"
+        // expr ::= number | expr op expr | "(" expr ")"
+
+        // number is undefined, although it could be, as an sequence of digits;
+        // but in practice, is more efficient to collect numbers (and other tokens) before
+        // actual parsing, in a step called 'lexical analysis'.
+
+        // 'op', 'expr' are not tokens, they are structural elements of a grammar;
+        // aka 'nonterminal symbols'.
+        // to produce parsed text, you start with the 'start symbol' (one of nonterminal),
+        // and apply grammar rules until only tokens remain.
+
+        // EBNF
+        // Extended BNF: allows optional elements and repetition;
+        // ?: 0..1
+        // *: 0..n
+        // +: 1..n
+        // e.g. numberList ::= number ( "," numberList )?
+        // or   numberList ::= number ( "," number )*
+
+        // arithmetic expr. rules with operator precedence support:
+        // expr ::= term ( ( "+" | "-" ) expr )?    // term with optional (op expr)
+        // term ::= factor ( "*" factor )*          // factor with optional many (* factor) // n.b. forgot "/"
+        // factor ::= number | "(" expr ")"         // number or (expr) // n.b. loop: expr defined through expr
+
     }
 
     // combining parser operations
