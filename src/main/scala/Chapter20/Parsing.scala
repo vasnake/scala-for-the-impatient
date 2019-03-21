@@ -208,7 +208,61 @@ object Parsing {
 
     // avoiding left recursion
     def avoidingLeftRecursion = {
-        ???
+        // if parser func calls itself without consuming some input first: endless loop:
+        // def ones: Parser[Any] = ones ~ "1" | "1"
+        // left-recursive function
+
+        // two alternatives (three: use Packrat parser)
+        // def ones: Parser[Any] = "1" ~ ones | "1"
+        // def ones: Parser[Any] = rep1("1")
+
+        // it's a common problem.
+
+        // consider: 3-4-5
+        // the result should be ((3-4) - 5) = -6
+        // but using rule
+        // def expr: Parser[Expr] = term ~ opt(("+" | "-") ~ expr)
+        // we got (3) - (4-5) = 4
+
+        // turning rule around we would get the correct parse tree,
+        // but with left-recursive function
+        // def expr: Parser[Expr] = expr ~ opt(("+" | "-") ~ term)
+
+        // you need to collect the intermediate results and then combine them in the correct order
+        // easier with lists: collect -t or +t and then coll.sum
+        // def expr: Parser[Int] = term ~ rep(("+" | "-") ~ term)
+
+        class ExprParser extends RegexParsers {
+            val number = "[0-9]+".r
+
+            def term: Parser[Int] =                             // factor with optional many (* factor)
+                factor ~ rep("*" ~> factor) ^^ {
+                    case f ~ lst => f * lst.product
+                }
+
+            def factor: Parser[Int] =                           // number or (expr)
+                number ^^ { _.toInt } |
+                    "(" ~> expr <~ ")"
+
+            def expr: Parser[Int] = term ~ rep(                 // term with list(+/- term)
+                ("+" | "-") ~ term ^^ {
+                    case "+" ~ t => t
+                    case "-" ~ t => -t
+                }) ^^ { case t ~ lst => t + lst.sum }
+
+//            def expr: Parser[Int] =
+//                term ~ opt(("+" | "-") ~ expr) ^^ {
+//                    case t ~ None => t
+//                    case t ~ Some("+" ~ e) => t + e
+//                    case t ~ Some("-" ~ e) => t - e
+//                }
+        }
+
+        val parser = new ExprParser
+        val result = parser.parseAll(parser.expr, "3-4-5")
+        println(result.get)
+        // ParseResult[Int] = [1.6] parsed: -6
+
     }
 
     // more combinators
