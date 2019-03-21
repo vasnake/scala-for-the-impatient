@@ -359,7 +359,27 @@ object Parsing {
 
     // what exactly are parsers
     def whatExactlyAreParsers = {
-        ???
+        // Parser[T] is a function(r: Reader[Elem]): ParseResult[T]
+
+        // Elem is an abstract type inside Parsers trait;
+        // Elem is a Char in RegexParsers trait; is a Token in StdTokenParsers;
+
+        // Reader[Elem] reads a sequence of elems;
+        // parser returns one of three options: Success[T], Failure, Error;
+
+        // Error terminates the parser;
+        // error happens when: p ~! q fails to match q (after p), commit(p) fails, err(msg) invoked;
+
+        // Failure is a failure to math, normally triggers alternatives in an enclosing |;
+
+        // Sucess[T] has a 'result: T'; has a 'next: Reader[Elem]';
+
+        // consider
+        class ExprParser extends RegexParsers {
+            val number = "[0-9]+".r // implicit conversion to Parser[String] function
+            def expr: Parser[Any] = number | "(" ~ expr ~ ")" // (p | q) is a combined function
+        }
+
     }
 
     // regex parsers
