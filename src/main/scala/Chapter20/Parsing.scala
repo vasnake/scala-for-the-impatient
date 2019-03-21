@@ -485,7 +485,38 @@ object Parsing_Exercises {
 
     // 1. Add / and % operations to the arithmetic expression evaluator.
     def ex1 = {
-        ???
+
+        class ExprParser extends RegexParsers {
+            val number = "[0-9]+".r
+
+            val mul: (Int, Int) => Int = (x, y) => x * y
+            val div: (Int, Int) => Int = (x, y) => x / y
+            val mod: (Int, Int) => Int = (x, y) => x % y
+
+            // factor with list(*/% factor)
+            def term: Parser[Int] = factor ~ rep(
+                ("*" | "/" | "%") ~ factor ^^ {
+                    case "*" ~ n => (mul, n)
+                    case "/" ~ n => (div, n)
+                    case "%" ~ n => (mod, n)
+                }) ^^ { case x ~ lst => (x /: lst)((acc, elem) => elem._1(acc, elem._2)) }
+
+            // number or (expr)
+            def factor: Parser[Int] = number ^^ { _.toInt } | "(" ~> expr <~ ")"
+
+            // term with list(+/- term)
+            def expr: Parser[Int] = term ~ rep(
+                ("+" | "-") ~ term ^^ {
+                    case "+" ~ t => t
+                    case "-" ~ t => -t
+                }) ^^ { case t ~ lst => t + lst.sum }
+        }
+
+        // test
+        val parser = new ExprParser
+        val result = parser.parseAll(parser.expr, "2*3-4/2-5%2") // 6 - 2 - 1
+        assert(result.get == 3)
+        result // ParseResult[Int] = [1.12] parsed: 3
     }
 
     // 2. Add a ^ operator to the arithmetic expression evaluator. As in mathematics, ^ should have a
