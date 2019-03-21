@@ -1,5 +1,7 @@
 package Chapter20
 
+import scala.util.parsing.combinator.RegexParsers
+
 object Parsing {
 // topics:
     // grammars
@@ -70,7 +72,26 @@ object Parsing {
 
     // combining parser operations
     def combiningParserOperations = {
-        ???
+        // extend Parsers trait and
+        // define parsing operations, combined from given primitives:
+        // - match a token
+        // - ops alternative (|) // first op or second op or Failure/Error
+        // - sequence of ops (~) // ~ case class, similar to a pair
+        // - repeat an op (rep)  // List
+        // - optional op (opt)   // Option class
+
+        // e.g. simple arithmetic expressions parser
+        class ExprParser extends RegexParsers {
+            val number = "[0-9]+".r                                 // regex for number tokens
+            def expr: Parser[Any] = term ~ opt(("+" | "-") ~ expr)  // expr ::= term ( ( "+" | "-" ) expr )?
+            def term: Parser[Any] = factor ~ rep("*" ~ factor)      // term ::= factor ( "*" factor )*
+            def factor: Parser[Any] = number | "(" ~ expr ~ ")"     // factor ::= number | "(" expr ")"
+        }
+        val parser = new ExprParser
+        val result = parser.parseAll(parser.expr, "3-4*5")
+        println(result.get)
+        // ParseResult[Any] = [1.6] parsed: ((3~List())~Some((-~((4~List((*~5)))~None))))
+
     }
 
     // transforming parsing results
