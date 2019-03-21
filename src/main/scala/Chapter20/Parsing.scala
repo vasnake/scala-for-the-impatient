@@ -1,5 +1,9 @@
 package Chapter20
 
+import scala.util.matching.Regex
+import scala.util.parsing.combinator.lexical.StdLexical
+import scala.util.{Failure, Success}
+import scala.util.parsing.combinator.syntactical.{StandardTokenParsers, StdTokenParsers}
 import scala.util.parsing.combinator.{PackratParsers, RegexParsers}
 import scala.util.parsing.input.CharSequenceReader
 
@@ -384,12 +388,72 @@ object Parsing {
 
     // regex parsers
     def regexParsers = {
-        ???
+        // provides two implicit conversions
+        // Parser[String] from a literal "foo";
+        // Parser[String] from a regexp "bar".r
+
+        // by default, regex parsers skip whitespaces;
+        // you may override val whiteSpace = ...;
+
+        // JavaTokenParsers trait extends RegexParsers and specifies five tokens:
+        // ident, wholeNumber, decimalNumber, stringLiteral, floatingPointNumber;
+        // none of them correspond exactly to their Java forms.
     }
 
     // token-based parsers
     def tokenBasedParsers = {
-        ???
+        // use a Reader[Token] instead of a Reader[Char];
+        import scala.util.parsing.combinator.token.Tokens
+
+        // subtype
+        import scala.util.parsing.combinator.token.StdTokens
+        // defines four types of tokens:
+        // Identifier, Keyword, NumericLit, StringLit
+
+        new StandardTokenParsers
+        // provides parser for these tokens
+
+        // extending this parser you can add any reserved words and tokens
+        class MLP extends StandardTokenParsers {
+            lexical.reserved += ("break", "case")   // becomes a Keyword, not Identifier
+            lexical.delimiters += ("=", "!=")
+        }
+        // ident function parses an identifier;
+        // numericLit, stringLit parse literals;
+
+        class ExprParser extends StandardTokenParsers {
+            lexical.delimiters += ("+", "-", "*", "(", ")")
+
+            def expr: Parser[Any] = term ~ rep(("+" | "-") ~ term)
+            def term: Parser[Any] = factor ~ rep("*" ~> factor)
+            def factor: Parser[Any] = numericLit | "(" ~> expr <~ ")"
+
+            def parseAll[T](p: Parser[T], in: String): ParseResult[T] =
+                phrase(p)(new lexical.Scanner(in))
+        }
+
+        // to process languages with different tokens, adapt the token parser.
+        // extend StdLexical and override the 'token' method;
+        // extend StdTokenParsers and override lexical
+
+        // e.g. overriding 'token' method using regexp
+        class MyLexical extends StdLexical {
+            def regex(r: Regex): Parser[String] = new Parser[String] {
+                def apply(in: Input) = r.findPrefixMatchOf(in.source.subSequence(in.offset, in.source.length)
+                ) match {
+                    case Some(matched) =>
+                        Success(in.source.subSequence(in.offset, in.offset + matched.end).toString, in.drop(matched.end))
+                    case None =>
+                        Failure("string matching regex '$r' expected but ${in.first} found", in)
+                }}
+
+            override def token: Parser[Token] = {
+                regex("[a-z][a-zA-Z0-9]*".r) ^^ { processIdent(_) } |
+                    regex("0|[1-9][0-9]*".r) ^^ { NumericLit(_) } |
+                    ???
+            }
+        }
+
     }
 
     // error handling
