@@ -489,17 +489,14 @@ object Parsing_Exercises {
         class ExprParser extends RegexParsers {
             val number = "[0-9]+".r
 
-            val mul: (Int, Int) => Int = (x, y) => x * y
-            val div: (Int, Int) => Int = (x, y) => x / y
-            val mod: (Int, Int) => Int = (x, y) => x % y
-
             // factor with list(*/% factor)
-            def term: Parser[Int] = factor ~ rep(
-                ("*" | "/" | "%") ~ factor ^^ {
-                    case "*" ~ n => (mul, n)
-                    case "/" ~ n => (div, n)
-                    case "%" ~ n => (mod, n)
-                }) ^^ { case x ~ lst => (x /: lst)((acc, elem) => elem._1(acc, elem._2)) }
+            def term: Parser[Int] = factor ~ rep(("*" | "/" | "%") ~ factor) ^^ {
+                case f ~ lst => (f /: lst)((acc, pair) => pair._1 match {
+                    case "*" => acc * pair._2
+                    case "/" => acc / pair._2
+                    case "%" => acc % pair._2
+                })
+            }
 
             // number or (expr)
             def factor: Parser[Int] = number ^^ { _.toInt } | "(" ~> expr <~ ")"
@@ -512,6 +509,20 @@ object Parsing_Exercises {
                 }) ^^ { case t ~ lst => t + lst.sum }
         }
 
+        class ExprParser2 extends ExprParser {
+            val mul: (Int, Int) => Int = (x, y) => x * y
+            val div: (Int, Int) => Int = (x, y) => x / y
+            val mod: (Int, Int) => Int = (x, y) => x % y
+
+            // factor with list(*/% factor)
+            override def term: Parser[Int] = factor ~ rep(
+                ("*" | "/" | "%") ~ factor ^^ {
+                    case "*" ~ n => (mul, n)
+                    case "/" ~ n => (div, n)
+                    case "%" ~ n => (mod, n)
+                }) ^^ { case x ~ lst => (x /: lst)((acc, elem) => elem._1(acc, elem._2)) }
+        }
+
         // test
         val parser = new ExprParser
         val result = parser.parseAll(parser.expr, "2*3-4/2-5%2") // 6 - 2 - 1
@@ -519,11 +530,53 @@ object Parsing_Exercises {
         result // ParseResult[Int] = [1.12] parsed: 3
     }
 
-    // 2. Add a ^ operator to the arithmetic expression evaluator. As in mathematics, ^ should have a
-    //higher precedence than multiplication, and it should be right-associative. That is, 4^2^3
-    //should be 4^(2^3), or 65536.
+    // 2. Add a ^ operator to the arithmetic expression evaluator.
+    // As in mathematics, ^ should have a higher precedence than multiplication,
+    // and it should be right-associative. That is, 4^2^3 should be 4^(2^3), or 65 536.
     def ex2 = {
-        ???
+
+        class ExprParser extends RegexParsers {
+            val number = "[0-9]+".r
+
+            // expr = term with list(+/- term)
+            def expr: Parser[Int] = term ~ rep(
+                ("+" | "-") ~ term ^^ {
+                    case "+" ~ t => t
+                    case "-" ~ t => -t
+                }) ^^ { case t ~ lst => t + lst.sum }
+
+            // term = exponent with list(*/% exponent)
+            def term : Parser[Int] = exponent ~ rep(("*" | "/" | "%") ~ exponent) ^^ {
+                case f ~ lst => (f /: lst)((acc, pair) => pair._1 match {
+                    case "*" => acc * pair._2
+                    case "/" => acc / pair._2
+                    case "%" => acc % pair._2
+                })
+            }
+
+            // exponent = factor with list(^ factor)
+            def exponent: Parser[Int] = factor ~ rep("^" ~> factor) ^^ {
+                case n ~ lst => (n :: lst).reduceRight((a, b) => math.pow(a.toDouble, b.toDouble).toInt)
+            }
+
+            // factor = number or (expr)
+            def factor: Parser[Int] = number ^^ { _.toInt } | "(" ~> expr <~ ")"
+        }
+
+        // test
+        def eval(e: String) = {
+            val parser = new ExprParser
+            parser.parseAll(parser.expr, e)
+        }
+
+        assert(eval("2*3^4").get == 162)
+        assert(eval("4^2^3 - (2*3-4/2-5%2)").get == 65533)
+
+        Seq(
+            eval("4^2^3 - (2*3-4/2-5%2)"),
+            eval("2*3^4")
+        )
+
     }
 
     // 3. Write a parser that parses a list of integers (such as (1, 23, -79)) into a List[Int].
