@@ -572,16 +572,27 @@ object Parsing_Exercises {
         assert(eval("2*3^4").get == 162)
         assert(eval("4^2^3 - (2*3-4/2-5%2)").get == 65533)
 
-        Seq(
-            eval("4^2^3 - (2*3-4/2-5%2)"),
-            eval("2*3^4")
-        )
-
     }
 
     // 3. Write a parser that parses a list of integers (such as (1, 23, -79)) into a List[Int].
     def ex3 = {
-        ???
+
+        class ListParser extends RegexParsers {
+            val number = """(-?)(\d+)""".r
+
+            def expr: Parser[List[Int]] = "(" ~> repsep(number, ",") <~ ")" ^^ {
+                lst => lst.map(_.toInt).toList
+            }
+        }
+
+        // test
+        def eval(e: String) = {
+            val parser = new ListParser
+            parser.parseAll(parser.expr, e)
+        }
+
+        assert(eval("(1, 23, -79)").get == List(1, 23, -79))
+
     }
 
     // 4. Write a parser that can parse date and time expressions in ISO 8601. Your parser should return
