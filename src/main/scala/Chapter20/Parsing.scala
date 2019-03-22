@@ -819,7 +819,63 @@ object Parsing_Exercises {
     // 9. Extend the preceding exercise into a parser for a programming language that has
     // variable assignments, Boolean expressions, and if/else and while statements.
     def ex9 = {
-        ???
+
+        abstract class Expression { def value: Int; def isBoolean: Boolean = false }
+        case class Number(value: Int) extends Expression
+        case class Variable(name: String) extends Expression { var value: Int = 0 }
+        case class Operator(op: String, left: Expression, right: Expression) extends Expression {
+            override def value: Int = ???
+        }
+        case class Condition(op: String, left: Expression, right: Expression) extends Expression {
+            override def value: Int = ???
+            override def isBoolean: Boolean = true
+        }
+
+        object Environment {
+            private var env: Map[String, Variable] = Map.empty.withDefault(Variable)
+            // TODO: optimize
+            def unapply(name: String): Option[Variable] = { val v = env(name); env = env.updated(name, v); Some(v) }
+        }
+
+        class ScriptParser extends StandardTokenParsers {
+            lexical.reserved ++= "while if else".split(" ")
+            lexical.delimiters ++= "; = < > == ( ) { } + - * %".split(" ")
+
+            def parseAll(p: Parser[List[Block]], in: String): ParseResult[List[Block]] =
+                phrase(p)(new lexical.Scanner(in))
+
+            def block: Parser[List[Block]] = repsep(statement | assignment, ";")
+
+            def assignment: Parser[Block] = (ident <~ "=") ~ expr ^^ {
+                case Environment(v) ~ e => Assignment(v, e)
+            }
+
+            def statement: Parser[Block] = ( (("while" | "if") <~ "(") ~ (condition <~ ")") ~
+                ("{" ~> block <~ "}") ~
+                opt("else" ~> "{" ~> block <~ "}" )) ^^ { ??? }
+
+            def expr: Parser[Expression] = ???
+            def condition: Parser[Expression] = ???
+        }
+
+        abstract class Block { def eval: Int }
+
+        case class Assignment(left: Variable, right: Expression) extends Block {
+            override def eval: Int = ???
+        }
+        case class Statement(op: String, cond: Expression, trueExpr: List[Block], falseExpr: List[Block]) extends Block {
+            override def eval: Int = ???
+        }
+
+        // test
+        def eval(s: String) = {
+            val parser = new ScriptParser
+            val res = parser.parseAll(parser.block, s)
+            println(s"input: '$s', parsed: '${res.get.toString}'")
+            (0 /: res.get)((acc, elem) => elem.eval)
+        }
+        assert(eval("x = 11; while(x > 0){x = x-1; if(x%2 == 0){even = even+x;} else{odd = odd+x;}; out=even; out=odd;};") == 30)
+
     }
 
     // 10. Add function definitions to the programming language of the preceding exercise.
