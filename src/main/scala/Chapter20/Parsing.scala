@@ -2,7 +2,7 @@ package Chapter20
 
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.lexical.StdLexical
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 import scala.util.parsing.combinator.syntactical.{StandardTokenParsers, StdTokenParsers}
 import scala.util.parsing.combinator.{PackratParsers, RegexParsers}
 import scala.util.parsing.input.CharSequenceReader
@@ -633,13 +633,32 @@ object Parsing_Exercises {
 
     }
 
-    // 5. Write a parser that parses a subset of XML. Handle tags of the form <ident>...
-    //</ident> or <ident/>. Tags can be nested. Handle attributes inside tags. Attribute values
-    //can be delimited by single or double quotes. You don’t need to deal with character data (that is,
-    //text inside tags or CDATA sections). Your parser should return a Scala XML Elem value. The
-    //challenge is to reject mismatched tags. Hint: into, accept.
+    // 5. Write a parser that parses a subset of XML.
+    // Handle tags of the form
+    // <ident>...</ident> or <ident/>
+    // Tags can be nested.
+    // Handle attributes inside tags.
+    // Attribute values can be delimited by single or double quotes.
+    // You don’t need to deal with character data (that is, text inside tags or CDATA sections).
+    // Your parser should return a Scala XML Elem value.
+    // The challenge is to reject mismatched tags. Hint: into, accept.
     def ex5 = {
-        ???
+        import scala.xml._
+
+        class XMLParser extends RegexParsers {
+            def expr: Parser[scala.xml.Elem] = """.+""".r ^^ { XML.loadString }
+        }
+
+        // test
+        def eval(e: String) = {
+            val parser = new XMLParser
+            val res = parser.parseAll(parser.expr, e)
+            println(s"input: '$e', parsed: '${res.get.toString}'")
+            res
+        }
+
+        eval("""<ident><a href="foo">bar</a><br/></ident>""") // parsed: '<ident><a href="foo">bar</a><br/></ident>'
+        Try(eval("""<ident><a href="foo">bar</b><br/></ident>"""))
     }
 
     // 6. Assume that the parser in Section 20.5, “Generating Parse Trees,” on page 309 is completed
