@@ -196,12 +196,7 @@ object Parsing {
                 number ^^ { n => Number(n.toInt) } |
                     "(" ~> expr <~ ")"
 
-            def expr: Parser[Expr] =                             // term with optional (op expr)
-                term ~ opt(("+" | "-") ~ expr) ^^ {
-                    case t ~ None => t
-                    case a ~ Some("+" ~ b) => Operator("+", a, b)
-                    case a ~ Some("-" ~ b) => Operator("-", a, b)
-                }
+            def expr: Parser[Expr] = ???
         }
 
         val parser = new ExprParser
@@ -616,6 +611,7 @@ object Parsing_Exercises {
 //            def expr: Parser[DateTime] = ???
 //        }
 
+        // TODO: implement regex parser for DateTime ISO 8601
         class DateTimeParser extends RegexParsers {
             def expr: Parser[LocalDateTime] = ".+".r ^^ { OffsetDateTime.parse(_).toLocalDateTime }
         }
@@ -643,10 +639,11 @@ object Parsing_Exercises {
     // Your parser should return a Scala XML Elem value.
     // The challenge is to reject mismatched tags. Hint: into, accept.
     def ex5 = {
-        import scala.xml._
+        import scala.xml.{XML, Elem => xmlElem}
 
+        // TODO: implement regex parser for XML subset
         class XMLParser extends RegexParsers {
-            def expr: Parser[scala.xml.Elem] = """.+""".r ^^ { XML.loadString }
+            def expr: Parser[xmlElem] = """.+""".r ^^ { XML.loadString }
         }
 
         // test
@@ -661,21 +658,68 @@ object Parsing_Exercises {
         Try(eval("""<ident><a href="foo">bar</b><br/></ident>"""))
     }
 
-    // 6. Assume that the parser in Section 20.5, “Generating Parse Trees,” on page 309 is completed
-    //with
-    //Click here to view code image
-    //class ExprParser extends RegexParsers {
-    //def expr: Parser[Expr] = (term ~ opt(("+" | "-") ~ expr)) ^^ {
-    //case a ~ None => a
-    //case a ~ Some(op ~ b) => Operator(op, a, b)
-    //}
-    //...
-    //}
-    //Unfortunately, this parser computes an incorrect expression tree—operators with the same
-    //precedence are evaluated right-to-left. Modify the parser so that the expression tree is correct.
-    //For example, 3-4-5 should yield an Operator("-", Operator("-", 3, 4), 5).
+    // 6. Assume that the parser in
+    // Section 20.5, “Generating Parse Trees,” on page 309
+    // is completed with
+    //  class ExprParser extends RegexParsers {
+    //      def expr: Parser[Expr] = (term ~ opt(("+" | "-") ~ expr)) ^^ {
+    //          case a ~ None => a
+    //          case a ~ Some(op ~ b) => Operator(op, a, b)
+    //      }
+    //      ...
+    //  }
+    // Unfortunately, this parser computes an incorrect expression tree —
+    // operators with the same precedence are evaluated right-to-left.
+    // Modify the parser so that the expression tree is correct.
+    // For example, 3-4-5 should yield an
+    // Operator("-", Operator("-", 3, 4), 5)
     def ex6 = {
-        ???
+
+        class Expr
+        case class Operator(op: String, left: Expr, right: Expr) extends Expr
+        case class Number(value: Int) extends Expr
+
+        implicit def intToExpr(n: Int): Number = Number(n)
+
+        class ExprParserWrong extends RegexParsers {
+            val number: Regex = "[0-9]+".r
+
+            // input: '3-4-5', parsed: 'Operator(-,Number(3),Operator(-,Number(4),Number(5)))'
+            def expr: Parser[Expr] = term ~ opt(("+" | "-") ~ expr) ^^ {
+                case a ~ None => a
+                case a ~ Some(op ~ b) => Operator(op, a, b)
+            }
+
+            def term: Parser[Expr] =
+                factor ~ opt("*" ~> factor) ^^ {
+                    case a ~ None => a
+                    case a ~ Some(b) => Operator("*", a, b)
+                }
+
+            def factor: Parser[Expr] =
+                number ^^ { n => Number(n.toInt) } |
+                    "(" ~> expr <~ ")"
+        }
+
+        class ExprParser extends ExprParserWrong {
+            override def expr: Parser[Expr] = term ~ rep(sumterm) ^^ {
+                case t ~ lst => (t /: lst)((acc, elem) => elem.asInstanceOf[Operator].copy(left = acc))
+            }
+
+            def sumterm: Parser[Expr] = ("+" | "-") ~ term ^^ {
+                case op ~ term => Operator(op, 0, term)
+            }
+        }
+
+        // test
+        def eval(e: String) = {
+            val parser = new ExprParser
+            val res = parser.parseAll(parser.expr, e)
+            println(s"input: '$e', parsed: '${res.get.toString}'")
+            res
+        }
+        assert(eval("3-4-5").get == Operator("-", Operator("-", 3, 4), 5))
+
     }
 
     // 7. Suppose in Section 20.6, “Avoiding Left Recursion,” on page 310, we first parse an expr into
