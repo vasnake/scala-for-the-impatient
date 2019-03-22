@@ -578,11 +578,9 @@ object Parsing_Exercises {
     def ex3 = {
 
         class ListParser extends RegexParsers {
-            val number = """(-?)(\d+)""".r
-
-            def expr: Parser[List[Int]] = "(" ~> repsep(number, ",") <~ ")" ^^ {
-                lst => lst.map(_.toInt).toList
-            }
+            def expr: Parser[List[Int]] = "(" ~> repsep(number, ",") <~ ")"
+            def number: Parser[Int] = numberRegex ^^ { _.toInt }
+            val numberRegex: Regex = """-?\d+""".r
         }
 
         // test
@@ -590,15 +588,49 @@ object Parsing_Exercises {
             val parser = new ListParser
             parser.parseAll(parser.expr, e)
         }
-
         assert(eval("(1, 23, -79)").get == List(1, 23, -79))
 
     }
 
-    // 4. Write a parser that can parse date and time expressions in ISO 8601. Your parser should return
-    //a java.time.LocalDateTime object.
+    // 4. Write a parser that can parse date and time expressions in ISO 8601.
+    // Your parser should return a java.time.LocalDateTime object.
     def ex4 = {
-        ???
+        import java.time.{LocalDateTime, OffsetDateTime}
+        // Date and time in UTC
+        // 2019-03-22T09:19:51+00:00
+        // 2019-03-22T09:19:51Z
+
+//        case class DateTime(year: String, month: String, day: String,
+//                            hour: String, minutes: String, seconds: String,
+//                            offset: String)
+//
+//        class DateTimeParser extends RegexParsers {
+//            val year: Regex = """\d{4}""".r
+//            val month: Regex = """\d{2}""".r
+//            val day: Regex = """\d{2}""".r
+//            val hour: Regex = """\d{2}""".r
+//            val minutes: Regex = """\d{2}""".r
+//            val seconds: Regex = """\d{2}""".r
+//            val offset: Regex = """(\+|\-)\d{2}\:\d{2}""".r
+//
+//            def expr: Parser[DateTime] = ???
+//        }
+
+        class DateTimeParser extends RegexParsers {
+            def expr: Parser[LocalDateTime] = ".+".r ^^ { OffsetDateTime.parse(_).toLocalDateTime }
+        }
+
+        // test
+        def eval(e: String) = {
+            val parser = new DateTimeParser
+            val res = parser.parseAll(parser.expr, e)
+            println(s"input: '$e', parsed: '${res.get.toString}'")
+            res
+        }
+
+        assert(eval("2019-03-22T09:19:51+00:00").get.toString == "2019-03-22T09:19:51")
+        assert(eval("2019-03-22T09:19:51Z").get.toString == "2019-03-22T09:19:51")
+
     }
 
     // 5. Write a parser that parses a subset of XML. Handle tags of the form <ident>...
