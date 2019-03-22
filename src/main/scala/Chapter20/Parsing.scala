@@ -722,25 +722,60 @@ object Parsing_Exercises {
 
     }
 
-    // 7. Suppose in Section 20.6, “Avoiding Left Recursion,” on page 310, we first parse an expr into
-    //a list of ~ with operations and values:
-    //Click here to view code image
-    //def expr: Parser[Int] = term ~ rep(("+" | "-") ~ term) ^^ {...}
-    //To evaluate the result, we need to compute ((t 0 ± t1) ± t2) ± . . . Implement this computation as a
-    //fold (see Chapter 13).
+    // 7. Suppose in
+    // Section 20.6, “Avoiding Left Recursion,” on page 310,
+    // we first parse an expr into a list of ~ with operations and values:
+    //      def expr: Parser[Int] = term ~ rep(("+" | "-") ~ term) ^^ {...}
+    // To evaluate the result, we need to compute
+    // ((t0 ± t1) ± t2) ± ...
+    // Implement this computation as a fold (see Chapter 13).
     def ex7 = {
-        ???
+
+        class ExprParser extends RegexParsers {
+            val number = "[0-9]+".r
+
+            // presumably, 'foldLeft' should be used, but he said 'fold':
+            // operations order will be nondeterministic
+            def expr: Parser[Int] = term ~ rep(("+" | "-") ~ term) ^^ {
+                case t ~ lst => lst.fold( this.~("", t) )((a, b) => add(a, b))._2
+            }
+
+            private def add(a: ~[String, Int], b: ~[String, Int]): String ~ Int = this.~(a._1, b match {
+                case "-" ~ n => a._2 - n
+                case _ ~ n => a._2 + n
+            })
+
+            def term: Parser[Int] =
+                factor ~ rep("*" ~> factor) ^^ {
+                    case f ~ lst => f * lst.product
+                }
+
+            def factor: Parser[Int] =
+                number ^^ { _.toInt } |
+                    "(" ~> expr <~ ")"
+        }
+
+        // test
+        def eval(e: String) = {
+            val parser = new ExprParser
+            val res = parser.parseAll(parser.expr, e)
+            println(s"input: '$e', parsed: '${res.get.toString}'")
+            res
+        }
+        assert(eval("3-4-5").get == -6)
+
     }
 
-    // 8. Add variables and assignment to the calculator program. Variables are created when they are
-    //first used. Uninitialized variables are zero. To print a value, assign it to the special variable
-    //out.
+    // 8. Add variables and assignment to the calculator program.
+    // Variables are created when they are first used.
+    // Uninitialized variables are zero.
+    // To print a value, assign it to the special variable 'out'
     def ex8 = {
         ???
     }
 
-    // 9. Extend the preceding exercise into a parser for a programming language that has variable
-    //assignments, Boolean expressions, and if/else and while statements.
+    // 9. Extend the preceding exercise into a parser for a programming language that has
+    // variable assignments, Boolean expressions, and if/else and while statements.
     def ex9 = {
         ???
     }
