@@ -771,7 +771,49 @@ object Parsing_Exercises {
     // Uninitialized variables are zero.
     // To print a value, assign it to the special variable 'out'
     def ex8 = {
-        ???
+        class ExprParser extends RegexParsers {
+            type Name = String
+
+            // script = list(assignment)
+            def script: Parser[Int] = repsep(assignment, ";") ^^ { lst => lst.lastOption.getOrElse(0) }
+
+            // assignment = name=expr
+            def assignment: Parser[Int] = (name <~ "=") ~ expr ^^ {
+                case n ~ e => updateVar(n, e)
+            }
+
+            // expr = term with list(+/-term)
+            def expr: Parser[Int] = term ~ rep(
+                ("+" | "-") ~ term ^^ { case "-" ~ n => -n; case _ ~ n => n }
+            ) ^^ { case t ~ lst => (t /: lst)(_ + _) }
+
+            // term = factor with list(*/% factor)
+            def term: Parser[Int] = factor ~ rep("*" ~> factor) ^^ { case f ~ lst => f * lst.product }
+
+            // factor = name or number or (expr)
+            def factor: Parser[Int] = number | name ^^ { getVar } | "(" ~> expr <~ ")"
+
+            def name: Parser[Name] = """[a-z]+""".r
+            def number: Parser[Int] = """\d+""".r ^^ { _.toInt }
+
+            private var env: Map[String, Int] = Map.empty.withDefaultValue(0)
+            def getVar(n: Name): Int = env(n)
+            def updateVar(n: Name, v: Int): Int = {
+                env = env.updated(n, v);
+                if (n == "out") println(s"out: $v")
+                v
+            }
+        }
+
+        // test
+        def eval(e: String) = {
+            val parser = new ExprParser
+            val res = parser.parseAll(parser.script, e)
+            println(s"input: '$e', parsed: '${res.get.toString}'")
+            res
+        }
+        assert(eval("b = (a + 3 - 1) * 4; out = b").get == 8)
+
     }
 
     // 9. Extend the preceding exercise into a parser for a programming language that has
