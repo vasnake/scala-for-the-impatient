@@ -939,7 +939,7 @@ object Parsing_Exercises {
               |     else { odd = odd + x };
               |     out = odd; out = even
               |}
-            """.stripMargin.split("\n").mkString(" ")
+            """.stripMargin.trim
 
         assert(eval(script) == 30)
 
@@ -947,7 +947,132 @@ object Parsing_Exercises {
 
     // 10. Add function definitions to the programming language of the preceding exercise.
     def ex10 = {
-        ???
+
+        object ScriptParser extends StandardTokenParsers {
+            lexical.reserved ++= "while if else".split(" ")
+            lexical.delimiters ++= "; = < > == ( ) { } + - * %".split(" ")
+
+            def apply(in: String): Int = parseAll(block, in) match {
+                case Success(res, inp) => {
+                    println(s"input: '$in', parsed: '${res}")
+                    res.value
+                }
+                case fail: NoSuccess => sys.error(s"msg: ${fail.msg}; next: ${fail.next.pos}")
+            }
+
+            def parseAll(p: Parser[Expression], in: String): ParseResult[Expression] =
+                phrase(p)(new lexical.Scanner(in))
+
+            def block: Parser[Expression] = repsep(statement | assignment, ";") ^^ { blocks }
+
+            def assignment: Parser[Expression] = (ident <~ "=") ~ expr ^^ {
+                case n ~ e => Assignment(n, e)
+            }
+
+            def statement: Parser[Expression] = (
+                (("while" | "if") <~ "(") ~ (condition <~ ")") ~
+                    ("{" ~> block  <~ "}") ~
+                    opt("else" ~> "{" ~> block <~ "}" )
+                ) ^^ {
+                case op ~ cond ~ tblock ~ fblock => ConditionalOp(op, cond, tblock, fblock)
+            }
+
+            def condition: Parser[Expression] = expr ~ ("<" | ">" | "==") ~ expr ^^ {
+                case left ~ op ~ right => Operator(op, left, right)
+            }
+
+            def expr: Parser[Expression] = term ~ rep(("+" | "-") ~ term) ^^ { operators }
+            def term: Parser[Expression] = factor ~ rep(("*" | "%") ~ factor) ^^ { operators }
+
+            def factor: Parser[Expression] = numericLit ^^ { x => Number(x.toInt) } |
+                ident ^^ { Variable } |
+                "(" ~> expr <~ ")"
+
+            private def blocks(xs: Seq[Expression]) = xs match {
+                case Nil => Number(0)
+                case head :: Nil => Operator(";", Number(0), xs.head)
+                case _ => xs.reduceLeft((a, b) => Operator(";", a, b))
+            }
+
+            private def operators(x: ~[Expression, Seq[~[String, Expression]]]) = x match {
+                case t ~ lst => (t /: lst)((left, elem) => elem match {
+                    case op ~ right => Operator(op, left, right)
+                })
+            }
+
+            object Environment {
+                private var env: Map[String, Int] = Map.empty.withDefaultValue(0)
+                def apply(name: String): Int = env(name)
+                def unapply(name: String): Option[Int] = Some(env(name))
+                def update(name: String, value: Int): Unit = {
+                    env = env.updated(name, value)
+                    if (name == "out") println(s"out = '$value'")
+                }
+            }
+
+            abstract class Expression { def value: Int }
+
+            case class Number(value: Int) extends Expression {
+                override def toString: String = value.toString
+            }
+
+            case class Variable(name: String) extends Expression {
+                def value: Int = Environment(name)
+                override def toString: String = s"(name: $name, value: ${Environment(name)})"
+            }
+
+            case class Assignment(name: String, e: Expression) extends Expression {
+                override def value: Int = {
+                    val res = e.value
+                    Environment(name) = res
+                    res
+                }
+            }
+
+            case class Operator(op: String, left: Expression, right: Expression) extends Expression {
+                override def value: Int = op match {
+                    case ";" => left.value; right.value
+                    case "*" => left.value * right.value
+                    case "%" => left.value % right.value
+                    case "+" => left.value + right.value
+                    case "-" => left.value - right.value
+                    case "==" => if (left.value == right.value) 1 else 0
+                    case "<" => if (left.value < right.value) 1 else 0
+                    case ">" => if (left.value > right.value) 1 else 0
+                }
+            }
+
+            case class ConditionalOp(op: String, condition: Expression, tblock: Expression,
+                                     fblock: Option[Expression]) extends Expression {
+                override def value: Int = op match {
+                    case "while" => {
+                        var res = 0
+                        while(condition.value != 0) res = tblock.value
+                        res
+                    }
+                    case "if" => if(condition.value != 0) tblock.value else fblock.fold(0)(_.value)
+                }
+            }
+        }
+
+        // test
+        def eval(s: String) =  ScriptParser(s)
+
+        val script =
+            """
+              |def oddAndEvenSum (x) => {
+              |     while (x > 0) {
+              |         x = x - 1;
+              |         if (x % 2 == 0) { even = even + x }
+              |         else { odd = odd + x };
+              |         out = odd; out = even
+              |     }
+              |}
+              |out = oddAndEvenSum(11)
+            """.stripMargin.trim
+
+        assert(eval(script) == 30)
+
     }
 
 }
