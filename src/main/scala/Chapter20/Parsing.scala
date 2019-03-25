@@ -949,8 +949,8 @@ object Parsing_Exercises {
     def ex10 = {
 
         object ScriptParser extends StandardTokenParsers {
-            lexical.reserved ++= "while if else".split(" ")
-            lexical.delimiters ++= "; = < > == ( ) { } + - * %".split(" ")
+            lexical.reserved ++= "def while if else".split(" ")
+            lexical.delimiters ++= "=> ; = < > == ( ) { } + - * %".split(" ")
 
             def apply(in: String): Int = parseAll(block, in) match {
                 case Success(res, inp) => {
@@ -968,8 +968,9 @@ object Parsing_Exercises {
             // def oddAndEvenSum (x) => { ... }
             def funcdef: Parser[Expression] = (("def" ~> ident) ~
                 ("(" ~> repsep(ident, ",") <~ ")") ~
-                ("=>{" ~> block <~ "}") ) ^^ {
-                case fname ~ params ~ block => FunctionDef(fname, params, block)
+                "=>" ~
+                ("{" ~> block <~ "}") ) ^^ {
+                case fname ~ params ~ "=>" ~ block => FunctionDef(fname, params, block)
             }
 
             def assignment: Parser[Expression] = (ident <~ "=") ~ expr ^^ {
@@ -992,8 +993,8 @@ object Parsing_Exercises {
             def term: Parser[Expression] = factor ~ rep(("*" | "%") ~ factor) ^^ { operators }
 
             def factor: Parser[Expression] = numericLit ^^ { x => Number(x.toInt) } |
-                ident ^^ { Variable } |
                 funcapp |
+                ident ^^ { Variable } |
                 "(" ~> expr <~ ")"
 
             // oddAndEvenSum(11)
@@ -1096,7 +1097,7 @@ object Parsing_Exercises {
               |         else { odd = odd + x };
               |         out = odd; out = even
               |     }
-              |}
+              |};
               |out = oddAndEvenSum(11)
             """.stripMargin.trim
 
