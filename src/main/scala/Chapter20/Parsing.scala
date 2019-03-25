@@ -24,6 +24,7 @@ object Parsing {
     // error handling
 
     // https://www.scala-lang.org/files/archive/api/current/scala-parser-combinators/index.html
+    // https://www.scala-lang.org/files/archive/api/current/scala-parser-combinators/scala/util/parsing/combinator/RegexParsers.html
 
     // parser combinators library helps you analyze texts with fixed structure (json, for example);
     // basic concepts of grammars and parsers;
