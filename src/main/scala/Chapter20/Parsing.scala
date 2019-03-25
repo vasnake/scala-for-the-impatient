@@ -820,43 +820,104 @@ object Parsing_Exercises {
     // variable assignments, Boolean expressions, and if/else and while statements.
     def ex9 = {
 
-        abstract class Expression { def value: Int; def isBoolean: Boolean = false }
-        case class Number(value: Int) extends Expression
-        case class Variable(name: String) extends Expression { var value: Int = 0 }
-        case class Operator(op: String, left: Expression, right: Expression) extends Expression {
-            override def value: Int = ???
-        }
-        case class Condition(op: String, left: Expression, right: Expression) extends Expression {
-            override def value: Int = ???
-            override def isBoolean: Boolean = true
-        }
-
-        object Environment {
-            private var env: Map[String, Variable] = Map.empty.withDefault(Variable)
-            // TODO: optimize
-            def unapply(name: String): Option[Variable] = { val v = env(name); env = env.updated(name, v); Some(v) }
-        }
-
-        class ScriptParser extends StandardTokenParsers {
+        object ScriptParser extends StandardTokenParsers {
             lexical.reserved ++= "while if else".split(" ")
             lexical.delimiters ++= "; = < > == ( ) { } + - * %".split(" ")
+            implicit def strToNumber(s: String): Number = Number(s.toInt)
+            implicit def intToNumber(n: Int): Number = Number(n)
+            implicit def numberToInt(n: Number): Int = n.value
+
+            def apply(in: String): Int = parseAll(script, in) match {
+                case Success(res, inp) => {
+                    println(s"input: '$in', parsed: '${res.mkString("\n")}")
+                    (0 /: res)((acc, elem) => elem.eval)
+                }
+                case fail: NoSuccess => sys.error(s"msg: ${fail.msg}; next: ${fail.next}")
+            }
 
             def parseAll(p: Parser[List[Block]], in: String): ParseResult[List[Block]] =
                 phrase(p)(new lexical.Scanner(in))
 
-            def block: Parser[List[Block]] = repsep(statement | assignment, ";")
+            def script: Parser[List[Block]] = repsep(block, ";")
+            def block: Parser[Block] = statement | assignment
 
             def assignment: Parser[Block] = (ident <~ "=") ~ expr ^^ {
                 case Environment(v) ~ e => Assignment(v, e)
             }
 
-            def statement: Parser[Block] = ( (("while" | "if") <~ "(") ~ (condition <~ ")") ~
+            def statement: Parser[Block] = (
+                (("while" | "if") <~ "(") ~ (condition <~ ")") ~
                 ("{" ~> block <~ "}") ~
-                opt("else" ~> "{" ~> block <~ "}" )) ^^ { ??? }
+                opt("else" ~> "{" ~> block <~ "}" )
+            ) ^^ { ??? }
 
-            def expr: Parser[Expression] = ???
-            def condition: Parser[Expression] = ???
+            def condition: Parser[Expression] = expr ~ ("<" | ">" | "==") ~ expr ^^ {
+                case left ~ op ~ right => Operator(op, left, right)
+            }
+
+            def expr: Parser[Expression] = term ~ rep(("+" | "-") ~ term) ^^ { operators }
+            def term: Parser[Expression] = factor ~ rep(("*" | "%") ~ factor) ^^ { operators }
+
+            def factor: Parser[Expression] = numericLit ^^ { x => Number(x.toInt) } |
+                ident ^^ { Variable } |
+                "(" ~> expr <~ ")"
+
+            private def operators(x: ~[Expression, Seq[~[String, Expression]]]) = x match {
+                case t ~ lst => (t /: lst)((left, elem) => elem match {
+                    case op ~ right => Operator(op, left, right)
+                })
+            }
+
+            object Environment {
+                private var env: Map[String, Int] = Map.empty.withDefaultValue(0)
+                def unapply(name: String): Option[Int] = Some(env(name))
+                def apply(name: String): Int = env(name)
+                def update(name: String, value: Int): Unit = { env = env.updated(name, value) }
+            }
+
+            abstract class Expression { def value: Int }
+            case class Number(value: Int) extends Expression { override def toString: String = value.toString }
+            case class Variable(name: String) extends Expression {
+                def value: Int = Environment(name)
+                override def toString: String = s"(name: $name, value: $value)"
+            }
+
+            case class Operator(op: String, left: Expression, right: Expression) extends Expression {
+                // < > ==
+                // + -
+                // * %
+                override def value: Int = ???
+            }
+
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         abstract class Block { def eval: Int }
 
