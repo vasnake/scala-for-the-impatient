@@ -824,32 +824,27 @@ object Parsing_Exercises {
             lexical.reserved ++= "while if else".split(" ")
             lexical.delimiters ++= "; = < > == ( ) { } + - * %".split(" ")
 
-            implicit def strToNumber(s: String): Number = Number(s.toInt)
-            implicit def intToNumber(n: Int): Number = Number(n)
-            implicit def numberToInt(n: Number): Int = n.value
-
-            def apply(in: String): Int = parseAll(script, in) match {
+            def apply(in: String): Int = parseAll(block, in) match {
                 case Success(res, inp) => {
-                    println(s"input: '$in', parsed: '${res.mkString("\n")}")
-                    (0 /: res)((acc, elem) => elem.value)
+                    println(s"input: '$in', parsed: '${res}")
+                    res.value
                 }
                 case fail: NoSuccess => sys.error(s"msg: ${fail.msg}; next: ${fail.next.pos}")
             }
 
-            def parseAll(p: Parser[List[Expression]], in: String): ParseResult[List[Expression]] =
+            def parseAll(p: Parser[Expression], in: String): ParseResult[Expression] =
                 phrase(p)(new lexical.Scanner(in))
 
-            def script: Parser[List[Expression]] = repsep(block, ";")
-            def block: Parser[Expression] = statement | assignment
+            def block: Parser[Expression] = repsep(statement | assignment, ";") ^^ { blocks }
 
             def assignment: Parser[Expression] = (ident <~ "=") ~ expr ^^ {
-                case n ~ e => Environment(n) = e.value; e
+                case n ~ e => Assignment(n, e)
             }
 
             def statement: Parser[Expression] = (
                 (("while" | "if") <~ "(") ~ (condition <~ ")") ~
-                ("{" ~> (script ^^ { blocks }) <~ "}") ~
-                opt("else" ~> "{" ~> (script ^^ { blocks }) <~ "}" )
+                ("{" ~> block  <~ "}") ~
+                opt("else" ~> "{" ~> block <~ "}" )
             ) ^^ {
                 case op ~ cond ~ tblock ~ fblock => ConditionalOp(op, cond, tblock, fblock)
             }
@@ -866,8 +861,9 @@ object Parsing_Exercises {
                 "(" ~> expr <~ ")"
 
             private def blocks(xs: Seq[Expression]) = xs match {
-                case head :: tail => (head /: tail)((acc, elem) => Operator(";", acc, elem))
-                case _ => Number(0)
+                case Nil => Number(0)
+                case head :: Nil => Operator(";", Number(0), xs.head)
+                case _ => xs.reduceLeft((a, b) => Operator(";", a, b))
             }
 
             private def operators(x: ~[Expression, Seq[~[String, Expression]]]) = x match {
@@ -878,8 +874,8 @@ object Parsing_Exercises {
 
             object Environment {
                 private var env: Map[String, Int] = Map.empty.withDefaultValue(0)
-                def unapply(name: String): Option[Int] = Some(env(name))
                 def apply(name: String): Int = env(name)
+                def unapply(name: String): Option[Int] = Some(env(name))
                 def update(name: String, value: Int): Unit = {
                     env = env.updated(name, value)
                     if (name == "out") println(s"out = '$value'")
@@ -887,11 +883,22 @@ object Parsing_Exercises {
             }
 
             abstract class Expression { def value: Int }
-            case class Number(value: Int) extends Expression { override def toString: String = value.toString }
+
+            case class Number(value: Int) extends Expression {
+                override def toString: String = value.toString
+            }
 
             case class Variable(name: String) extends Expression {
                 def value: Int = Environment(name)
-                override def toString: String = s"(name: $name, value: $value)"
+                override def toString: String = s"(name: $name, value: ${Environment(name)})"
+            }
+
+            case class Assignment(name: String, e: Expression) extends Expression {
+                override def value: Int = {
+                    val res = e.value
+                    Environment(name) = res
+                    res
+                }
             }
 
             case class Operator(op: String, left: Expression, right: Expression) extends Expression {
@@ -910,7 +917,11 @@ object Parsing_Exercises {
             case class ConditionalOp(op: String, condition: Expression, tblock: Expression,
                                      fblock: Option[Expression]) extends Expression {
                 override def value: Int = op match {
-                    case "while" => var res = 0; while(condition.value != 0) res = tblock.value; res
+                    case "while" => {
+                        var res = 0
+                        while(condition.value != 0) res = tblock.value
+                        res
+                    }
                     case "if" => if(condition.value != 0) tblock.value else fblock.fold(0)(_.value)
                 }
             }
@@ -918,7 +929,19 @@ object Parsing_Exercises {
 
         // test
         def eval(s: String) =  ScriptParser(s)
-        assert(eval("x = 11; while(x > 0){x = x-1; if(x%2 == 0){even = even+x} else{odd = odd+x}; out=even; out=odd}") == 30)
+
+        val script =
+            """
+              |x = 11;
+              |while (x > 0) {
+              |     x = x - 1;
+              |     if (x % 2 == 0) { even = even + x }
+              |     else { odd = odd + x };
+              |     out = odd; out = even
+              |}
+            """.stripMargin.split("\n").mkString(" ")
+
+        assert(eval(script) == 30)
 
     }
 
