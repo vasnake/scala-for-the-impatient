@@ -963,7 +963,14 @@ object Parsing_Exercises {
             def parseAll(p: Parser[Expression], in: String): ParseResult[Expression] =
                 phrase(p)(new lexical.Scanner(in))
 
-            def block: Parser[Expression] = repsep(statement | assignment, ";") ^^ { blocks }
+            def block: Parser[Expression] = repsep(funcdef | statement | assignment, ";") ^^ { blocks }
+
+            // def oddAndEvenSum (x) => { ... }
+            def funcdef: Parser[Expression] = (("def" ~> ident) ~
+                ("(" ~> repsep(ident, ",") <~ ")") ~
+                ("=>{" ~> block <~ "}") ) ^^ {
+                case fname ~ params ~ block => FunctionDef(fname, params, block)
+            }
 
             def assignment: Parser[Expression] = (ident <~ "=") ~ expr ^^ {
                 case n ~ e => Assignment(n, e)
@@ -986,7 +993,13 @@ object Parsing_Exercises {
 
             def factor: Parser[Expression] = numericLit ^^ { x => Number(x.toInt) } |
                 ident ^^ { Variable } |
+                funcapp |
                 "(" ~> expr <~ ")"
+
+            // oddAndEvenSum(11)
+            def funcapp: Parser[Expression] = ident ~ ("(" ~> repsep(numericLit, ",") <~ ")") ^^ {
+                case fname ~ params => FunctionApp(fname, params.map(_.toInt))
+            }
 
             private def blocks(xs: Seq[Expression]) = xs match {
                 case Nil => Number(0)
@@ -1001,10 +1014,10 @@ object Parsing_Exercises {
             }
 
             object Environment {
-                private var env: Map[String, Int] = Map.empty.withDefaultValue(0)
-                def apply(name: String): Int = env(name)
-                def unapply(name: String): Option[Int] = Some(env(name))
-                def update(name: String, value: Int): Unit = {
+                private var env: Map[String, Expression] = Map.empty[String, Expression].withDefaultValue(Number(0))
+                def apply(name: String): Expression = env(name)
+                def unapply(name: String): Option[Expression] = Some(env(name))
+                def update(name: String, value: Expression): Unit = {
                     env = env.updated(name, value)
                     if (name == "out") println(s"out = '$value'")
                 }
@@ -1017,14 +1030,14 @@ object Parsing_Exercises {
             }
 
             case class Variable(name: String) extends Expression {
-                def value: Int = Environment(name)
+                def value: Int = Environment(name).value
                 override def toString: String = s"(name: $name, value: ${Environment(name)})"
             }
 
             case class Assignment(name: String, e: Expression) extends Expression {
                 override def value: Int = {
                     val res = e.value
-                    Environment(name) = res
+                    Environment(name) = Number(res)
                     res
                 }
             }
@@ -1051,6 +1064,22 @@ object Parsing_Exercises {
                         res
                     }
                     case "if" => if(condition.value != 0) tblock.value else fblock.fold(0)(_.value)
+                }
+            }
+
+            case class FunctionDef(name: String, params: Seq[String], block: Expression) extends Expression {
+                override def value: Int = {
+                    Environment(name) = this
+                    0
+                }
+            }
+
+            case class FunctionApp(name: String, params: Seq[Int]) extends Expression {
+                override def value: Int = {
+                    val f = Environment(name).asInstanceOf[FunctionDef]
+                    // TODO: add stack frames
+                    f.params.zip(params).foreach { case (k, v) => Environment(k) = Number(v) }
+                    f.block.value
                 }
             }
         }
