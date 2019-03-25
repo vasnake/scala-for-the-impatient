@@ -823,6 +823,7 @@ object Parsing_Exercises {
         object ScriptParser extends StandardTokenParsers {
             lexical.reserved ++= "while if else".split(" ")
             lexical.delimiters ++= "; = < > == ( ) { } + - * %".split(" ")
+
             implicit def strToNumber(s: String): Number = Number(s.toInt)
             implicit def intToNumber(n: Int): Number = Number(n)
             implicit def numberToInt(n: Number): Int = n.value
@@ -830,26 +831,28 @@ object Parsing_Exercises {
             def apply(in: String): Int = parseAll(script, in) match {
                 case Success(res, inp) => {
                     println(s"input: '$in', parsed: '${res.mkString("\n")}")
-                    (0 /: res)((acc, elem) => elem.eval)
+                    (0 /: res)((acc, elem) => elem.value)
                 }
-                case fail: NoSuccess => sys.error(s"msg: ${fail.msg}; next: ${fail.next}")
+                case fail: NoSuccess => sys.error(s"msg: ${fail.msg}; next: ${fail.next.pos}")
             }
 
-            def parseAll(p: Parser[List[Block]], in: String): ParseResult[List[Block]] =
+            def parseAll(p: Parser[List[Expression]], in: String): ParseResult[List[Expression]] =
                 phrase(p)(new lexical.Scanner(in))
 
-            def script: Parser[List[Block]] = repsep(block, ";")
-            def block: Parser[Block] = statement | assignment
+            def script: Parser[List[Expression]] = repsep(block, ";")
+            def block: Parser[Expression] = statement | assignment
 
-            def assignment: Parser[Block] = (ident <~ "=") ~ expr ^^ {
-                case Environment(v) ~ e => Assignment(v, e)
+            def assignment: Parser[Expression] = (ident <~ "=") ~ expr ^^ {
+                case n ~ e => Environment(n) = e.value; e
             }
 
-            def statement: Parser[Block] = (
+            def statement: Parser[Expression] = (
                 (("while" | "if") <~ "(") ~ (condition <~ ")") ~
-                ("{" ~> block <~ "}") ~
-                opt("else" ~> "{" ~> block <~ "}" )
-            ) ^^ { ??? }
+                ("{" ~> (script ^^ { blocks }) <~ "}") ~
+                opt("else" ~> "{" ~> (script ^^ { blocks }) <~ "}" )
+            ) ^^ {
+                case op ~ cond ~ tblock ~ fblock => ConditionalOp(op, cond, tblock, fblock)
+            }
 
             def condition: Parser[Expression] = expr ~ ("<" | ">" | "==") ~ expr ^^ {
                 case left ~ op ~ right => Operator(op, left, right)
@@ -862,6 +865,11 @@ object Parsing_Exercises {
                 ident ^^ { Variable } |
                 "(" ~> expr <~ ")"
 
+            private def blocks(xs: Seq[Expression]) = xs match {
+                case head :: tail => (head /: tail)((acc, elem) => Operator(";", acc, elem))
+                case _ => Number(0)
+            }
+
             private def operators(x: ~[Expression, Seq[~[String, Expression]]]) = x match {
                 case t ~ lst => (t /: lst)((left, elem) => elem match {
                     case op ~ right => Operator(op, left, right)
@@ -872,70 +880,45 @@ object Parsing_Exercises {
                 private var env: Map[String, Int] = Map.empty.withDefaultValue(0)
                 def unapply(name: String): Option[Int] = Some(env(name))
                 def apply(name: String): Int = env(name)
-                def update(name: String, value: Int): Unit = { env = env.updated(name, value) }
+                def update(name: String, value: Int): Unit = {
+                    env = env.updated(name, value)
+                    if (name == "out") println(s"out = '$value'")
+                }
             }
 
             abstract class Expression { def value: Int }
             case class Number(value: Int) extends Expression { override def toString: String = value.toString }
+
             case class Variable(name: String) extends Expression {
                 def value: Int = Environment(name)
                 override def toString: String = s"(name: $name, value: $value)"
             }
 
             case class Operator(op: String, left: Expression, right: Expression) extends Expression {
-                // < > ==
-                // + -
-                // * %
-                override def value: Int = ???
+                override def value: Int = op match {
+                    case ";" => left.value; right.value
+                    case "*" => left.value * right.value
+                    case "%" => left.value % right.value
+                    case "+" => left.value + right.value
+                    case "-" => left.value - right.value
+                    case "==" => if (left.value == right.value) 1 else 0
+                    case "<" => if (left.value < right.value) 1 else 0
+                    case ">" => if (left.value > right.value) 1 else 0
+                }
             }
 
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        abstract class Block { def eval: Int }
-
-        case class Assignment(left: Variable, right: Expression) extends Block {
-            override def eval: Int = ???
-        }
-        case class Statement(op: String, cond: Expression, trueExpr: List[Block], falseExpr: List[Block]) extends Block {
-            override def eval: Int = ???
+            case class ConditionalOp(op: String, condition: Expression, tblock: Expression,
+                                     fblock: Option[Expression]) extends Expression {
+                override def value: Int = op match {
+                    case "while" => var res = 0; while(condition.value != 0) res = tblock.value; res
+                    case "if" => if(condition.value != 0) tblock.value else fblock.fold(0)(_.value)
+                }
+            }
         }
 
         // test
-        def eval(s: String) = {
-            val parser = new ScriptParser
-            val res = parser.parseAll(parser.block, s)
-            println(s"input: '$s', parsed: '${res.get.toString}'")
-            (0 /: res.get)((acc, elem) => elem.eval)
-        }
-        assert(eval("x = 11; while(x > 0){x = x-1; if(x%2 == 0){even = even+x;} else{odd = odd+x;}; out=even; out=odd;};") == 30)
+        def eval(s: String) =  ScriptParser(s)
+        assert(eval("x = 11; while(x > 0){x = x-1; if(x%2 == 0){even = even+x} else{odd = odd+x}; out=even; out=odd}") == 30)
 
     }
 
