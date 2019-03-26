@@ -428,7 +428,35 @@ object Implicits_Exercises {
     // For example:
     // Read in aString askingFor "Your name" and anInt askingFor "Yourage" and aDouble askingFor "Your weight"
     def ex4 = {
-        ???
+        object Read {
+
+            sealed trait Target
+            object aString extends Target
+            object anInt extends Target
+            object aDouble extends Target
+
+            case class Item(klass: Target, value: String)
+
+            private var storage: Map[String, Item] = Map.empty
+            private var nextTarget: Target = _
+
+            def in(target: Target): this.type = { nextTarget = target; this }
+            def and(target: Target): this.type = in(target)
+
+            def askingFor(prompt: String): this.type = {
+                val inp = Option(scala.io.StdIn.readLine(prompt))
+                storage = storage.updated(prompt, Item(nextTarget, inp.getOrElse("")))
+                this
+            }
+
+            override def toString: String = storage.toString
+        }
+
+        // test
+        import Read._
+        val res = Read in aString askingFor "Your name" and anInt askingFor "Your age" and aDouble askingFor "Your weight"
+        // Read.in(aString).askingFor("Your name").and(anInt).askingFor("Your age").and(aDouble).askingFor("Your weight")
+        res.toString
     }
 
     // 5. Provide the machinery that is needed to compute
