@@ -1,7 +1,6 @@
 package Chapter21
 
 import java.io.File
-
 import scala.io.Source
 
 object Implicits {
@@ -108,6 +107,7 @@ object Implicits {
 
         // select the specific conversions
         object select {
+            import scala.language.implicitConversions
             object Fraction { def apply(n: Int, d: Int): Fraction = ??? }
             class Fraction(n: Int, d: Int) { def *(other: Fraction): Fraction = ??? }
             object FractionConversions {
@@ -126,12 +126,55 @@ object Implicits {
 
     // rules for implicit conversions
     def rulesForImplicitConversions = {
-        ???
+        // when implicit conversions are attempted:
+        // - if the type of an expression differs from expected;
+        // - if an object accesses a nonexistent member;
+        // - if a method called with parameters of unmatched type;
+
+        // 3 * Fraction // f2d, Int has a method '*(Double)
+        // 3.denominator // i2f
+        // Fraction * 3 // i2f, Fraction.* method wanted a Fraction
+
+        // implicit conversion is not attempted:
+        // - code compiles w/o it;
+        // - never multiple conversions;
+        // - ambiguous conversions;
+
+        // 3 * Fraction // 3 * f2d wins, it does not require modification of the first object
+
+        // compile 'scalac -Xprint:typer fname.scala' to see src after implicit conversions
+        // In SBT just add the following setting: set scalacOptions in (Compile, console) := "-Xprint:typer"
+        // in REPL you can use :settings -Xprint:typer
+
     }
 
     // implicit parameters
     def implicitParameters = {
-        ???
+        // function/method parameters list marked as 'implicit'
+        // compiler will look for default values in scope (a nice way to define different environments)
+
+        case class Delimiters(left: String, right: String)
+        // n.b. function is curried
+        def quote(what: String)(implicit delims: Delimiters) = delims.left + what + delims.right
+
+        // call with explicit delims
+        quote("Bonjour le monde")(Delimiters("«", "»"))
+
+        object delimitersScope {
+            // or with implicit, searched in scope or companion objects for type/type parameters
+            object FrenchPunctuation { implicit val quoteDelimiters = Delimiters("«", "»") }
+
+            // implicit: search in scope
+            import FrenchPunctuation._
+            quote("Bonjour le monde")
+        }
+
+        object Delimiters { implicit val quoteDelimiters = Delimiters("«", "»") }
+        // implicit: search in companion object
+        quote("Bonjour le monde")
+
+        // n.b. only one implicit value for a given type allowed: not a good idea to use common types like
+        // ...(implicit left: String, right: String)
     }
 
     // implicit conversions with implicit parameters
