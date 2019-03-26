@@ -300,7 +300,30 @@ object Implicits {
 
     // evidence
     def evidence = {
-        ???
+        // evidence object: its existence is evidence of the fact that type T related to type U by
+        // type constraints:
+        // T =:= U
+        // T <:< U
+        // T => U
+
+        // for using such a type constraints, you supply an implicit parameter, evidence
+        // e.g.
+        def firstLast[A, C](it: C)(implicit ev: C <:< Iterable[A]) = {
+            // here ev is an identity function: implicit conversion from C to Iterable[A]
+            (it.head, it.last)
+        }
+
+        // =:= and <:< are classes with implicit values, defined in the Predef
+        object explained {
+            // trick in variance
+            abstract class <:<[-From, +To] extends Function1[From, To]
+            object <:< { implicit def conforms[A] = new (A <:< A) { def apply(x: A) = x } }
+            // suppose the compiler processes a constraint 'implicit ev: String <:< AnyRef';
+            // then object
+            implicit val stringidentity = <:<.conforms[String]
+            // is usable as a String <:< AnyRef instance, because of variance;
+            // evidence of the fact that String is a subtype of AnyRef
+        }
     }
 
     // the @implicitNotFound annotation
