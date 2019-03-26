@@ -245,7 +245,57 @@ object Implicits {
 
     // type classes
     def typeClasses = {
-        ???
+        // in OOP design, to use a function 'smaller' aka 'algorithm', we have to extend some trait;
+        // but using 'implicit conversions' or, better 'context bounds aka implicit values'
+        // we can use algorithm w/o changing the class. as-hoc polymorphism, very useful.
+
+        // a trait such as Ordering (abstract generic interface, de facto) is called a
+        // type class.
+
+        // a type class defines some behaviour and a type can join the class by providing that behaviour
+
+        // example: compute averages, to do so, we need sum and divide;
+
+        // define a type class:
+        trait NumberLike[T] {
+            def plus(x: T, y: T): T
+            def divideBy(x: T, n: Int): T
+        }
+
+        // add some members to type class
+        object NumberLike {
+            implicit object NumberLikeDouble extends NumberLike[Double] {
+                override def plus(x: Double, y: Double): Double = x + y
+                override def divideBy(x: Double, n: Int): Double = x / n
+            }
+        }
+
+        // calc averages using the NumberLike type class;
+
+        // let's use implicit parameter: evidence
+        def average[T](x: T, y: T)(implicit ev: NumberLike[T]): T =
+            ev.divideBy(ev.plus(x, y), 2)
+
+        // or, using context bound
+        def average2[T: NumberLike](x: T, y: T): T = {
+            val ev = implicitly[NumberLike[T]]
+            ev.divideBy(ev.plus(x, y), 2)
+        }
+
+        // how Point can join a type class?
+        class Point(val x: Double, val y: Double) { ??? }
+        object Point {
+            def apply(x: Double,y: Double): Point = new Point(x, y)
+            // by defining an implicit object of type NumberLike[Point]
+            implicit object NumberLikePoint extends NumberLike[Point] {
+                override def plus(x: Point, y: Point): Point = ???
+                override def divideBy(x: Point, n: Int): Point = ???
+            }
+        }
+
+        // scala stdlib useful type classes:
+        // Equiv, Ordering, Numeric, Fractional, Hashing, IsTraversableOnce, IsTraversableLike, etc.
+
     }
 
     // evidence
