@@ -384,7 +384,19 @@ object Implicits_Exercises {
     // be pairs ("Hello", 42) and (42, "Hello")?
     // Hint: Predef.ArrowAssoc
     def ex1 = {
-        ???
+        val p1: (String, Int) = "hello" -> 42
+        val p2: (Int, String) = 42 -> "hello"
+
+        object explain {
+            // implicit class (conversion from A to ArrowAssoc[A])
+            // has method '->(b: B)' that produces a tuple (A, B);
+            // so, calling a method x.->(y) we have an implicit conversion x => ArrowAssoc(x) first,
+            // then trivial
+            implicit final class ArrowAssoc[A](private val self: A) {
+                @inline def -> [B](y: B): Tuple2[A, B] = Tuple2(self, y)
+                def →[B](y: B): Tuple2[A, B] = ->(y)
+            }
+        }
     }
 
     // 2. Define an operator '+%' that adds a given percentage to a value.
