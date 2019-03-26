@@ -115,3 +115,6 @@ Cake Pattern
 
 Abstract Types
 : useful replacement for type parameters while creating a class hierarchy
+
+Type Classes
+: https://stackoverflow.com/a/8535107 it's worth noting that type classes / type traits are infinitely more flexible

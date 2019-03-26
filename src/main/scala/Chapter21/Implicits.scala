@@ -1,5 +1,9 @@
 package Chapter21
 
+import java.io.File
+
+import scala.io.Source
+
 object Implicits {
 // topics
     // implicit conversions
@@ -16,18 +20,60 @@ object Implicits {
 
     // useful for building elegant libraries;
     // implicit conversions must be in scope: import them;
-    // implicit parameters list: obtained from objects in scope or companion object of the desired type;
+    // implicit parameters list: obtained from objects in scope or companion objects;
     // implicit param that is a single-argument func: implicit conversion;
     // type context bound: require the existence of an implicit object;
+    // https://stackoverflow.com/a/8535107 it's worth noting that type classes / type traits are infinitely more flexible
 
     // implicit conversions
     def implicitConversions = {
-        ???
+        import scala.language.implicitConversions
+        // is a function declared with the 'implicit' keyword, with a single argument;
+
+        // consider type
+        object Fraction { def apply(n: Int, d: Int): Fraction = new Fraction(n, d) }
+        class Fraction(n: Int, d: Int) {
+            private val num: Int = ???
+            private val den: Int = ???
+            def *(other: Fraction) = new Fraction(num * other.num, den * other.den)
+        }
+        // and conversion
+        implicit def int2Fraction(n: Int): Fraction = new Fraction(n, 1)
+        // and now we can evaluate
+        3 * Fraction(4,5)
+
+        // sourceToTarget naming convention;
     }
 
     // using implicits for enriching existing classes
     def usingImplicitsForEnrichingExistingClasses = {
-        ???
+        // do you ever wish that a class had a method its creator failed to provide?
+        // java.io.File.read for example?
+
+        object firstattempt {
+            // you can define an enriched class and conversion to it
+            class RichFile(val from: File) { def read: String = Source.fromFile(from.getPath).mkString }
+            implicit def fileToRichFile(from: File): RichFile = new RichFile(from)
+            // now you got it:
+            new File("/tmp/test.txt").read
+        }
+
+        object secondattempt {
+            // you can do better: define an implicit class (primary constructor)
+            implicit class RichFile(val from: File) { def read: String = ??? }
+            // must have a primary constructor with exactly one argument
+            new File("/tmp/test.txt").read
+        }
+
+        object evenbetter {
+            // it is a good idea to declare the enriched class as a value class
+            implicit class RichFile(val from: File) extends AnyVal { def read: String = ??? }
+            // file.read is compiled into a static method call
+            new File("/tmp/test.txt").read
+        }
+
+        // n.b. an implicit class can't be a top-level class
+
     }
 
     // importing implicits
