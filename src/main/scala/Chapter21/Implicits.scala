@@ -2,6 +2,7 @@ package Chapter21
 
 import java.io.File
 
+import scala.annotation.implicitNotFound
 import scala.io.Source
 
 object Implicits {
@@ -67,9 +68,11 @@ object Implicits {
 
         object evenbetter {
             // it is a good idea to declare the enriched class as a value class
-            implicit class RichFile(val from: File) extends AnyVal { def read: String = ??? }
+            // implicit class RichFile(val from: File) extends AnyVal { def read: String = ??? }
+            // but: value class may not be a member of another class
+
             // file.read is compiled into a static method call
-            new File("/tmp/test.txt").read
+            // new File("/tmp/test.txt").read
         }
 
         // n.b. an implicit class can't be a top-level class
@@ -239,7 +242,7 @@ object Implicits {
         implicit object FractionOrdering extends Ordering[Fraction] {
             override def compare(x: Fraction, y: Fraction): Int = ???
         }
-        new Pair(Fraction(1,2), Fraction(3,4))
+        val p = new Pair(Fraction(1,2), Fraction(3,4))
 
     }
 
@@ -328,12 +331,46 @@ object Implicits {
 
     // the @implicitNotFound annotation
     def theImplicitNotFoundAnnotation = {
-        ???
+        // you can give a useful error message when implicit not found
+
+        // e.g.
+        // @implicitNotFound(msg = "Cannot prove that ${From} <:< ${To}.")
+        // abstract class <:<[-From, +To] extends (From => To)
+        def firstLast[A, C](it: C)(implicit ev: C <:< Iterable[A]) = ???
+
+        // and if you call
+        // firstLast[String, List[Int]](List(1,2,3))
+        // then error message is
+        // Cannot prove that List[Int] <:< Iterable[String].
     }
 
     // CanBuildFrom demystified
     def CanBuildFromDemystified = {
-        ???
+        // about implicit parameter: collection buffer builder in collections lib.
+        // collection builder factories.
+
+        // implicit parameter CanBuildFrom[Repr, B, That] locates a factory object,
+        // that can produce a builder for target collection;
+        // the builder factory is defined as implicit in the companion of Repr.
+
+        // consider the 'map' method of Iterable[A, Repr]
+        // def map[B, That](f: A => B)(implicit bf: CanBuildFrom[Repr, B, That]): That = {
+        //      val builder = bf() ... builder += f(next) ... builder.result }
+
+        // Repr is used when collection is not primitive, e.g. Range or String, for them
+        // ArrayBuffer will be used.
+
+        // trait CanBuildFrom[From, E, To] provides evidence that it is possible to create a collection
+        // of type To, holding values of type E, implemented as From
+
+        // CanBuildFrom trait has an apply method: Builder[E, To]
+        // Builder has += method for adding elements into an internal buffer
+        // and 'result' for producing the desired collection
+
+        // each collection provides an implicit CanBuildFrom object in its companion
+
+        // a builder for the Range does not return a Range
+        // (1 to 10).map(x => x*x) should be a Vector as implemented in IndexedSeq, super for Range
     }
 
 }
