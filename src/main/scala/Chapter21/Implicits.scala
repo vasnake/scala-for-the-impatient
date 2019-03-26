@@ -415,7 +415,12 @@ object Implicits_Exercises {
     // For example, 5.! is 120.
     // Use an implicit class.
     def ex3 = {
-        ???
+        implicit class RichInt(x: Int) {
+            def ! : Int = (1 to x).product
+        }
+
+        // test
+        assert(5.! == 120)
     }
 
     // 4. Some people are fond of “fluent APIs” that read vaguely like English sentences.
