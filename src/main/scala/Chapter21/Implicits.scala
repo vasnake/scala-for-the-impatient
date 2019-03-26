@@ -153,7 +153,6 @@ object Implicits {
         // function/method parameters list marked as 'implicit'
         // compiler will look for default values in scope (a nice way to define different environments)
 
-        case class Delimiters(left: String, right: String)
         // n.b. function is curried
         def quote(what: String)(implicit delims: Delimiters) = delims.left + what + delims.right
 
@@ -161,25 +160,49 @@ object Implicits {
         quote("Bonjour le monde")(Delimiters("«", "»"))
 
         object delimitersScope {
-            // or with implicit, searched in scope or companion objects for type/type parameters
+            // or, call with implicit, searched in scope or companion objects for type/type parameters
             object FrenchPunctuation { implicit val quoteDelimiters = Delimiters("«", "»") }
+            import FrenchPunctuation._
 
             // implicit: search in scope
-            import FrenchPunctuation._
             quote("Bonjour le monde")
         }
 
+        // companion
         object Delimiters { implicit val quoteDelimiters = Delimiters("«", "»") }
         // implicit: search in companion object
         quote("Bonjour le monde")
 
-        // n.b. only one implicit value for a given type allowed: not a good idea to use common types like
+        // n.b. only one implicit value for a given type allowed: not a good idea to use common types like:
         // ...(implicit left: String, right: String)
+
+        case class Delimiters(left: String, right: String)
     }
 
     // implicit conversions with implicit parameters
     def implicitConversionsWithImplicitParameters = {
-        ???
+        // implicit parameter could be a Function1 aka implicit conversion
+
+        // consider
+        // def smaller[T](a: T, b: T) = if (a < b) a else b // type T have not '<' method
+
+        object ordered1 {
+            // we can add conversion from T to Ordered
+            def smaller[T](a: T, b: T)(implicit order: T => Ordered[T]) =
+                if (order(a) < b) a else b
+
+            // Predef object defines a lot of implicit values T => Ordered[T]
+            smaller(1, 2)
+            smaller("Hello", "World")
+
+            // but not for Fraction, you have to define it (in companion object in this case)
+            class Fraction(n: Int, d: Int) { def *(other: Fraction): Fraction = ??? }
+            object Fraction { def apply(n: Int, d: Int): Fraction = ??? }
+            // smaller(Fraction(1,2), Fraction(3,4))
+        }
+
+        // the point is: function 'order' is an implicit conversion for 'smaller' scope
+        def smaller[T](a: T, b: T)(implicit order: T => Ordered[T]) = if (a < b) a else b
     }
 
     // context bounds
