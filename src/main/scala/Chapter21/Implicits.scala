@@ -78,7 +78,50 @@ object Implicits {
 
     // importing implicits
     def importingImplicits = {
-        ???
+        // scala search implicit conversions in:
+        // - companion objects of source/target types (or type parameters);
+        // - defined/imported in scope -- w/o a prefix!;
+
+        object placeone {
+            // companion object of a target type
+            object Fraction {
+                implicit def int2Fraction(n: Int): Fraction = ???
+                def apply(n: Int, d: Int): Fraction = ???
+            }
+            class Fraction(n: Int, d: Int) { def *(other: Fraction): Fraction = ??? }
+            // int converted to fraction
+            val res: Fraction = 3 * Fraction(4,5)
+        }
+
+        object placetwo {
+            object Fraction { def apply(n: Int, d: Int): Fraction = ??? }
+            class Fraction(n: Int, d: Int) { def *(other: Fraction): Fraction = ??? }
+            // conversions in separate namespace
+            object FractionConversions { implicit def int2Fraction(n: Int): Fraction = ??? }
+
+            // int converted to fraction imported into scope
+            import FractionConversions._
+            val res: Fraction = 3 * Fraction(4,5)
+        }
+
+        // in REPL you can type ':implicits -v' to see all implicits;
+
+        // select the specific conversions
+        object select {
+            object Fraction { def apply(n: Int, d: Int): Fraction = ??? }
+            class Fraction(n: Int, d: Int) { def *(other: Fraction): Fraction = ??? }
+            object FractionConversions {
+                implicit def int2Fraction(n: Int): Fraction = ???
+                implicit def fraction2Double(f: Fraction): Double = ???
+            }
+            // exclude f2d conversion
+            import FractionConversions.{fraction2Double => _, _}
+            val res: Fraction = 3 * Fraction(4,5)
+
+            // you can try to use conversion explicitly, to clarify 'strange' compiler behavior
+            val x: Double = 3 * FractionConversions.fraction2Double(Fraction(4, 5))
+        }
+
     }
 
     // rules for implicit conversions
