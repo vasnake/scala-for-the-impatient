@@ -1,6 +1,7 @@
 package Chapter21
 
 import java.io.File
+
 import scala.io.Source
 
 object Implicits {
@@ -207,7 +208,39 @@ object Implicits {
 
     // context bounds
     def contextBounds = {
-        ???
+        // as you can see, implicit conversion T => M[T] is quite useful;
+        // remember 'context bound'? def foo[T : M](...)
+        // it tells as that we have the implicit value of type M[T] in scope.
+
+        // consider
+        // class Pair[T: Ordering]
+        // that require an implicit value of Ordering[T]
+        // that value can be used in class methods:
+        class Pair[T: Ordering](val first: T, val second: T) {
+
+            // that 'ord' becomes a field of the class?
+            def smaller1(implicit ord: Ordering[T]): T =
+                if (ord.compare(first, second) < 0) first else second
+
+            // alternatively, you can summon implicit value from nether world using identity function
+            def smaller2 =
+                if (implicitly[Ordering[T]].compare(first, second) < 0) first else second
+            // Predef: def implicitly[T](implicit e: T) = e
+
+            // alternatively, you can take advantage of Ordering => Ordered
+            // implicit conversion in Ordered trait
+            def smaller3 = { import Ordered._; if (first < second) first else second }
+        }
+        // you can instantiate Pair[T] whenever there is an implicit value of type Ordering[T]
+
+        // e.g.
+        class Fraction(n: Int, d: Int)
+        object Fraction { def apply(n: Int, d: Int): Fraction = ??? }
+        implicit object FractionOrdering extends Ordering[Fraction] {
+            override def compare(x: Fraction, y: Fraction): Int = ???
+        }
+        new Pair(Fraction(1,2), Fraction(3,4))
+
     }
 
     // type classes
