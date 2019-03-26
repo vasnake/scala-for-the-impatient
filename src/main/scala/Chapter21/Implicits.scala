@@ -403,7 +403,12 @@ object Implicits_Exercises {
     // For example, 120 +% 10 should be 132.
     // Use an implicit class.
     def ex2 = {
-        ???
+        implicit class RichInt(x: Int) {
+            def +%(y: Int): Int = (x + x / 100d * y).toInt
+        }
+
+        // test
+        assert(120 +% 10 == 132)
     }
 
     // 3. Define a '!' operator that computes the factorial of an integer.
