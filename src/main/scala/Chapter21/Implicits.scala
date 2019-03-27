@@ -589,7 +589,62 @@ object Implicits_Exercises {
     // Section 21.6, “Implicit Conversions with Implicit Parameters,” on page 329.
     // What objects do you get?
     def ex8 = {
-        ???
+        //Implicit Parameters
+        case class Delimiters(left: String, right: String)
+        def quote(what: String)(implicit delims: Delimiters) = delims.left + what + delims.right
+
+        // or, call with implicit, searched in scope or companion objects for type/type parameters
+        object FrenchPunctuation { implicit val quoteDelimiters = Delimiters("«", "»") }
+        import FrenchPunctuation._
+        quote("Bonjour le monde")
+
+        // companion
+        object Delimiters { implicit val quoteDelimiters = Delimiters("«", "»") }
+        // implicit: search in companion object
+        quote("Bonjour le monde")
+
+        // implicit conversions with implicit parameters
+        def smaller[T](a: T, b: T)(implicit order: T => Ordered[T]) = if (order(a) < b) a else b
+        // Predef object defines a lot of implicit values T => Ordered[T]
+        smaller(1, 2)
+        smaller("Hello", "World")
+
+        // scala> implicitly[Delimiters]
+        //res4: Delimiters = Delimiters(«,»)
+
+        // scala> implicitly[Int => Ordered[Int]]
+        //res5: Int => Ordered[Int] = $$Lambda$6227/606712809@94f1e64
+
+        //scala> implicitly[String => Ordered[String]]
+        //res6: String => Ordered[String] = $$Lambda$6228/1172546004@17e5614b
+
+        // scala> :implicits
+        ///* 1 implicit members imported from FrenchPunctuation */
+        //  /* 1 defined in FrenchPunctuation */
+        //  implicit val quoteDelimiters: Delimiters
+
+        // scala> :implicits -v
+        ///* 69 implicit members imported from scala.Predef */
+        //  /* 7 inherited from scala */
+        //  final implicit class ArrayCharSequence extends CharSequence
+        //  final implicit class ArrowAssoc[A <: <?>] extends AnyVal
+        //  final implicit class Ensuring[A <: <?>] extends AnyVal
+        //  final implicit class RichException extends AnyVal
+        //  final implicit class SeqCharSequence extends CharSequence
+        //  final implicit class StringFormat[A <: <?>] extends AnyVal
+        //  final implicit class any2stringadd[A <: <?>] extends AnyVal
+        //
+        //  /* 40 inherited from scala.Predef */
+        //  implicit def ArrowAssoc[A](self: A): ArrowAssoc[A]
+        //  implicit def Ensuring[A](self: A): Ensuring[A]
+        //  implicit def StringFormat[A](self: A): StringFormat[A]
+        //  implicit def any2stringadd[A](self: A): any2stringadd[A]
+        //
+        //  implicit def $conforms[A]: A <:< A
+        // ...
+        // ...
+        // ...
+
     }
 
     // 9. Explain why 'Ordering' is a type class and why 'Ordered' is not.
