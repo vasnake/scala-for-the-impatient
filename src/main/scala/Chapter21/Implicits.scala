@@ -2,7 +2,7 @@ package Chapter21
 
 import java.io.File
 
-import scala.annotation.implicitNotFound
+import scala.annotation.{implicitNotFound, tailrec}
 import scala.io.Source
 
 object Implicits {
@@ -483,15 +483,9 @@ object Implicits_Exercises {
             }
 
             object Readers {
-                implicit object StringReader extends Reader[String] {
-                    override def read(prompt: String): String = readLine(prompt)
-                }
-                implicit object IntReader extends Reader[Int] {
-                    override def read(prompt: String): Int = readLine(prompt).toInt
-                }
-                implicit object DoubleReader extends Reader[Double] {
-                    override def read(prompt: String): Double = readLine(prompt).toDouble
-                }
+                implicit object StringReader extends Reader[String] { override def read(prompt: String): String = readLine(prompt) }
+                implicit object IntReader extends Reader[Int] { override def read(prompt: String): Int = readLine(prompt).toInt }
+                implicit object DoubleReader extends Reader[Double] { override def read(prompt: String): Double = readLine(prompt).toDouble }
             }
 
             private var nextReader: Reader[_] = _
@@ -520,7 +514,29 @@ object Implicits_Exercises {
     // with the Fraction class of Chapter 11.
     // Supply an implicit class RichFraction that extends Ordered[Fraction].
     def ex5 = {
-        ???
+        def smaller[T](a: T, b: T)(implicit order: T => Ordered[T]) = if (a < b) a else b
+
+        class Fraction(n: Int, d: Int) {
+            import Fraction._
+            private[this] val _gcd = gcd(n.abs, d.abs)
+
+            val num: Int = if (d == 0) 1 else n * d.signum / _gcd
+            val den: Int = if (d == 0) 0 else d * d.signum / _gcd
+            override def toString = s"$num/$den"
+            def double: Double = num.toDouble / den.toDouble
+        }
+
+        object Fraction {
+            def apply(n: Int, d: Int): Fraction = new Fraction(n, d)
+            @tailrec def gcd(a: Int, b: Int): Int = if (b == 0) scala.math.abs(a) else gcd(b, a % b)
+        }
+
+        implicit class RichFraction(self: Fraction) extends Ordered[Fraction] {
+            override def compare(that: Fraction): Int = Ordering[Double].compare(self.double, that.double)
+        }
+
+        // test
+        assert(smaller(Fraction(1,2), Fraction(3,4)).toString == Fraction(1,2).toString)
     }
 
     // 6. Compare objects of the class
