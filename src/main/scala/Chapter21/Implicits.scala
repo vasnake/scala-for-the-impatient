@@ -744,12 +744,35 @@ object Implicits_Exercises {
 
         // test
         assert(average(Seq("Hello", "World")) == "Hlool")
+
     }
 
     // 12. Look up the '=:=' object in Predef.scala.
     // Explain how it works.
     def ex12 = {
-        ???
+
+        object explained {
+
+            // subtype of Function1[From, To]
+            abstract class =:=[From, To] extends (From => To) with Serializable
+
+            // instance of function(x: Any): Any; identity function
+            val singleton_=:= =
+                new =:=[Any,Any] { def apply(x: Any): Any = x }
+
+            // companion
+            object =:= {
+                // implicit conversion Function1[A, A]; identity function
+                implicit def tpEquals[A]: A =:= A =
+                    singleton_=:=.asInstanceOf[A =:= A]
+            }
+            // n.b. no variance!
+
+            // will try to apply implicit conversion from C to Iterable[A]
+            // using tpEquals
+            def firstLast[A, C](it: C)(implicit ev: C =:= Iterable[A]) = ???
+        }
+
     }
 
     // 13. The result of
