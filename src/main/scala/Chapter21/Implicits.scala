@@ -716,7 +716,34 @@ object Implicits_Exercises {
     // The divBy method should retain every n-th letter, so that
     // average("Hello", "World") becomes "Hlool".
     def ex11 = {
-        ???
+
+        // define a type class:
+        trait NumberLike[T] {
+            def plus(x: T, y: T): T
+            def divideBy(x: T, n: Int): T
+            def zero: T
+        }
+
+        // add some members to type class
+        object NumberLike {
+            implicit object NumberLikeString extends NumberLike[String] {
+                override def plus(x: String, y: String): String = x + y
+                override def zero: String = ""
+                override def divideBy(x: String, n: Int): String = {
+                    val pairs = x.zipWithIndex
+                    pairs.filter { case (_, idx) => idx % n == 0 }.map(_._1).mkString
+                }
+            }
+        }
+
+        // calc averages using the type class;
+        def average[T](xs: Seq[T])(implicit ev: NumberLike[T]): T = {
+            val sum = (ev.zero /: xs)(ev.plus)
+            ev.divideBy(sum, xs.length)
+        }
+
+        // test
+        assert(average(Seq("Hello", "World")) == "Hlool")
     }
 
     // 12. Look up the '=:=' object in Predef.scala.
