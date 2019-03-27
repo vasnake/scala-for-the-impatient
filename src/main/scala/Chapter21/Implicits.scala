@@ -429,34 +429,90 @@ object Implicits_Exercises {
     // Read in aString askingFor "Your name" and anInt askingFor "Yourage" and aDouble askingFor "Your weight"
     def ex4 = {
         object Read {
-
-            sealed trait Target
+            // API
             object aString extends Target
             object anInt extends Target
             object aDouble extends Target
 
-            case class Item(klass: Target, value: String)
-
-            private var storage: Map[String, Item] = Map.empty
-            private var nextTarget: Target = _
-
             def in(target: Target): this.type = { nextTarget = target; this }
             def and(target: Target): this.type = in(target)
-
             def askingFor(prompt: String): this.type = {
                 val inp = Option(scala.io.StdIn.readLine(prompt))
                 storage = storage.updated(prompt, Item(nextTarget, inp.getOrElse("")))
                 this
             }
 
+            // internals
+            sealed trait Target
+            case class Item(klass: Target, value: String)
+            private var storage: Map[String, Item] = Map.empty
+            private var nextTarget: Target = _
             override def toString: String = storage.toString
         }
 
+        // employ implicits, e.g. def in(target: String)(implicit reader: Reader[String]) ...
+        object Read2 {
+            // API
+            object aString extends Target
+            object anInt extends Target
+            object aDouble extends Target
+
+            def and(target: aString.type)(implicit reader: Reader[String]): this.type = { nextReader = reader; this }
+            def and(target: anInt.type)(implicit reader: Reader[Int]): this.type = { nextReader = reader; this }
+            def and(target: aDouble.type)(implicit reader: Reader[Double]): this.type = { nextReader = reader; this }
+
+            def in(target: Target): this.type = {
+                target match {
+                    case a: aString.type => and(a)(Readers.StringReader)
+                    case b: anInt.type => and(b)(Readers.IntReader)
+                    case c: aDouble.type => and(c)(Readers.DoubleReader)
+            } }
+
+            def askingFor(prompt: String): this.type = {
+                val res = nextReader.read(prompt)
+                println(s"read value: '$res' of type ${res.getClass.getName}")
+                this
+            }
+
+            // internals
+            sealed trait Target
+
+            trait Reader[T] {
+                def read(prompt: String): T
+                def readLine(prompt: String): String = Option(scala.io.StdIn.readLine(prompt+": ")).getOrElse("")
+            }
+
+            object Readers {
+                implicit object StringReader extends Reader[String] {
+                    override def read(prompt: String): String = readLine(prompt)
+                }
+                implicit object IntReader extends Reader[Int] {
+                    override def read(prompt: String): Int = readLine(prompt).toInt
+                }
+                implicit object DoubleReader extends Reader[Double] {
+                    override def read(prompt: String): Double = readLine(prompt).toDouble
+                }
+            }
+
+            private var nextReader: Reader[_] = _
+        }
+
         // test
-        import Read._
-        val res = Read in aString askingFor "Your name" and anInt askingFor "Your age" and aDouble askingFor "Your weight"
-        // Read.in(aString).askingFor("Your name").and(anInt).askingFor("Your age").and(aDouble).askingFor("Your weight")
-        res.toString
+        def test1 = {
+            import Read._
+            val res = Read in aString askingFor "Your name" and anInt askingFor "Your age" and aDouble askingFor "Your weight"
+            res.toString
+        }
+
+        def test2 = {
+            import Read2.Readers._
+            import Read2._
+            val res = Read2 in aString askingFor "Your name" and anInt askingFor "Your age" and aDouble askingFor "Your weight"
+            res.toString
+        }
+
+        // test1
+        test2
     }
 
     // 5. Provide the machinery that is needed to compute
