@@ -543,7 +543,17 @@ object Implicits_Exercises {
     // java.awt.Point
     // by lexicographic comparison
     def ex6 = {
-        ???
+        import java.awt.Point
+
+        implicit class RichPoint(self: Point) extends Ordered[Point] {
+            // not effective but simple
+            override def compare(that: Point): Int = s"${self.x}${self.y}".compare(s"${that.x}${that.y}")
+        }
+
+        // test
+        val p1 = new Point(1,2)
+        val p2 = new Point(3,4)
+        assert(p1 < p2)
     }
 
     // 7. Continue the previous exercise, comparing two points according to their distance to the origin.
