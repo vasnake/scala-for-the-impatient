@@ -652,7 +652,7 @@ object Implicits_Exercises {
         // trait Ordering is an abstract interface with abstract 'compare' method;
         // any type can join that type class by defining that method;
         // the important feature of this trait that makes it a good type class is definition of
-        // the 'compare' method. It takes two objects of type T and compares them.
+        // the 'compare' method. It takes two objects of type T for comparison;
         // it allows to separate algorithm from object implementation
         val orderingInt = Ordering[Int]
         // trait Ordering[T] extends Comparator[T] with PartialOrdering[T] with Serializable {
@@ -684,7 +684,31 @@ object Implicits_Exercises {
     // Section 21.8, “Type Classes,” on page 331
     // to a Seq[T].
     def ex10 = {
-        ???
+
+        // define a type class:
+        trait NumberLike[T] {
+            def plus(x: T, y: T): T
+            def divideBy(x: T, n: Int): T
+            def zero: T
+        }
+
+        // add some members to type class
+        object NumberLike {
+            implicit object NumberLikeDouble extends NumberLike[Double] {
+                override def plus(x: Double, y: Double): Double = x + y
+                override def divideBy(x: Double, n: Int): Double = x / n
+                override def zero: Double = 0d
+            }
+        }
+
+        // calc averages using the type class;
+        def average[T](xs: Seq[T])(implicit ev: NumberLike[T]): T = {
+            val sum = (ev.zero /: xs)(ev.plus)
+            ev.divideBy(sum, xs.length)
+        }
+
+        // test
+        assert(average(Seq(1d, 2d, 3d)) == 2d)
     }
 
     // 11. Make String a member of the NumberLike type class in
