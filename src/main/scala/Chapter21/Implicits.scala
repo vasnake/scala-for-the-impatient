@@ -554,12 +554,33 @@ object Implicits_Exercises {
         val p1 = new Point(1,2)
         val p2 = new Point(3,4)
         assert(p1 < p2)
+
     }
 
-    // 7. Continue the previous exercise, comparing two points according to their distance to the origin.
+    // 7. Continue the previous exercise,
+    // comparing two points according to their distance to the origin.
     // How can you switch between the two orderings?
     def ex7 = {
-        ???
+        import java.awt.Point
+
+        object PointOrderings {
+            implicit class LexicographicalPoint(self: Point) extends Ordered[Point] {
+                override def compare(that: Point): Int = s"${self.x}${self.y}".compare(s"${that.x}${that.y}")
+            }
+            implicit class DistancePoint(self: Point) extends Ordered[Point] {
+                override def compare(that: Point): Int = self.distanceSq(0, 0).compare(that.distanceSq(0, 0))
+            }
+        }
+
+        // test
+        // switch using diff. imports:
+        // import PointOrderings.LexicographicalPoint
+        import PointOrderings.DistancePoint
+
+        val p1 = new Point(1,2)
+        val p2 = new Point(3,4)
+        assert(p1 < p2)
+
     }
 
     // 8. Use the 'implicitly' command in the REPL to summon the implicit objects described in
