@@ -3,6 +3,10 @@ package Chapter21
 import java.io.File
 
 import scala.annotation.{implicitNotFound, tailrec}
+import scala.collection.{GenTraversableLike, Parallelizable}
+import scala.collection.generic.{CanBuildFrom, FilterMonadic, HasNewBuilder, IndexedSeqFactory}
+import scala.collection.immutable.WrappedString
+import scala.collection.parallel.ParIterable
 import scala.io.Source
 
 object Implicits {
@@ -769,7 +773,7 @@ object Implicits_Exercises {
             // n.b. no variance!
 
             // will try to apply implicit conversion from C to Iterable[A]
-            // using tpEquals
+            // using tpEquals, where compiler will check that C and Iterable[A] are the same type
             def firstLast[A, C](it: C)(implicit ev: C =:= Iterable[A]) = ???
         }
 
@@ -782,7 +786,50 @@ object Implicits_Exercises {
     // is a Vector.
     // Find out why.
     def ex13 = {
-        ???
+        object explained {
+            // simplified copy from lib
+            trait TraversableLike[+A, +Repr] extends Any {
+                self =>
+                def repr: Repr = this.asInstanceOf[Repr]
+
+                def map[B, That](f: A => B)(implicit bf: CanBuildFrom[Repr, B, That]): That = {
+                    val b = bf(repr)
+                    // for (x <- this) b += f(x)
+                    b.result
+                }
+            }
+
+            // toUpper is a function Char => Char;
+            // types A and B in trait are Char;
+            // evidently, CanBuildFrom[Repr, Char, String] exist somewhere (see below)
+            val s: String = "abc".map(_.toUpper)
+
+            object WrappedString { // copy from lib
+                import scala.collection.mutable.{Builder, StringBuilder}
+                // can build string only for chars
+                implicit def canBuildFrom: CanBuildFrom[WrappedString, Char, WrappedString] = new CanBuildFrom[WrappedString, Char, WrappedString] {
+                    def apply(from: WrappedString) = newBuilder
+                    def apply() = newBuilder
+                }
+                def newBuilder: Builder[Char, WrappedString] = StringBuilder.newBuilder mapResult (x => new WrappedString(x))
+            }
+
+            // toInt is a function Char => Int;
+            // type A is a Char, type B is an Int in trait;
+            // CanBuildFrom[Repr, Int, String] not exists,
+            // but CanBuildFrom[Repr, Int, IndexedSeq] evidently does (see below)
+            val v: IndexedSeq[Int] = "123".map(_.toInt)
+
+            object IndexedSeq extends IndexedSeqFactory[IndexedSeq] { // copy from lib
+                import scala.collection.immutable
+                import scala.collection.mutable.Builder
+                def newBuilder[A]: Builder[A, IndexedSeq[A]] = immutable.IndexedSeq.newBuilder[A]
+                // str.map(_toInt) uses that CBF, implemented on Vector[A]
+                implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, IndexedSeq[A]] =
+                    ReusableCBF.asInstanceOf[GenericCanBuildFrom[A]]
+            }
+
+        }
     }
 
 }
