@@ -252,7 +252,7 @@ object Implicits {
         // but using 'implicit conversions' or, better 'context bounds aka implicit values'
         // we can use algorithm w/o changing the class. as-hoc polymorphism, very useful.
 
-        // a trait such as Ordering (abstract generic interface, de facto) is called a
+        // a trait such as Ordering (abstract generic interface, de-facto) is called a
         // type class.
 
         // a type class defines some behaviour and a type can join the class by providing that behaviour
@@ -649,7 +649,33 @@ object Implicits_Exercises {
 
     // 9. Explain why 'Ordering' is a type class and why 'Ordered' is not.
     def ex9 = {
-        ???
+        // trait Ordering is an abstract interface with abstract 'compare' method;
+        // any type can join that type class by defining that method;
+        // the important feature of this trait that makes it a good type class is definition of
+        // the 'compare' method. It takes two objects of type T and compares them.
+        // it allows to separate algorithm from object implementation
+        val orderingInt = Ordering[Int]
+        // trait Ordering[T] extends Comparator[T] with PartialOrdering[T] with Serializable {
+        //  outer =>
+        // ...
+        //  def compare(x: T, y: T): Int
+        // ...
+
+        // well, technically, it is a type class, but intentions are different;
+        // moreover, method 'compare' defined with one argument: other object.
+        // you can't redefine comparison algorithm without changes in type implementation
+        val orderedInt = Ordered[Int]
+        //  *  Ordered should be used for data with a single, natural ordering (like
+        // *  integers) while Ordering allows for multiple ordering implementations.
+        // *  An Ordering instance will be implicitly created if necessary.
+        // *
+        // *  [[scala.math.Ordering]] is an alternative to this trait that allows multiple orderings to be
+        // *  defined for the same type.
+        // ...
+        //trait Ordered[A] extends Any with java.lang.Comparable[A] {
+        // ...
+        //  def compare(that: A): Int
+        // ...
     }
 
     // 10. Generalize the average method in
