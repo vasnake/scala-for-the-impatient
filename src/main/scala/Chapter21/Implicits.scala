@@ -663,8 +663,10 @@ object Implicits_Exercises {
 
         // well, technically, it is a type class, but intentions are different;
         // moreover, method 'compare' defined with one argument: other object.
-        // you can't redefine comparison algorithm without changes in type implementation
-        val orderedInt = Ordered[Int]
+        // you can't redefine comparison algorithm without changes in type implementation;
+        // and it can't be used as a value
+        // val orderedInt = Ordered[Int] // error:value Ordered of type scala.math.Ordered.type does not take type parameters
+        val orderedInt: Ordered[Int] = ???
         //  *  Ordered should be used for data with a single, natural ordering (like
         // *  integers) while Ordering allows for multiple ordering implementations.
         // *  An Ordering instance will be implicitly created if necessary.
