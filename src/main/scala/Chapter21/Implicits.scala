@@ -682,6 +682,12 @@ object Implicits_Exercises {
         // ...
         //  def compare(that: A): Int
         // ...
+        
+        // in other words: 
+        // https://github.com/mikegagnon/type_class_tech_talk#what-is-a-type-class
+        // >  a type class is a trait that defines functionality associated with one or more types --- but is unrelated to the type hierarchy of those types
+        // > ... Ordered is not a type class because a type T must subclass Ordered to acquire its functionality
+
     }
 
     // 10. Generalize the average method in
