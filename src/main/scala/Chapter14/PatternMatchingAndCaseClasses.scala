@@ -275,7 +275,7 @@ object PatternMatchingAndCaseClasses {
             case amount Currency "EUR" => ??? // same as: case Currency(amount, "EUR")
         }
 
-        // the feature is ment for matching sequences: case class ::(head, tail) extends List
+        // the feature is meant for matching sequences: case class ::(head, tail) extends List
         val lst: List[Int] = ???
         lst match { case h :: t => ??? } // same as: case ::(h, t) // calls ::.unapply(lst)
 
